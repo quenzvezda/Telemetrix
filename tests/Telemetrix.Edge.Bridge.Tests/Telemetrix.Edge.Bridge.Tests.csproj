@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Telemetrix.Edge.Bridge\Telemetrix.Edge.Bridge.csproj" />
+  </ItemGroup>
+
+</Project>

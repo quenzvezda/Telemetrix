@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Telemetrix.Contracts/Telemetrix.Contracts.csproj" />
+    <Project Path="src/Telemetrix.Edge.Bridge/Telemetrix.Edge.Bridge.csproj" />
+    <Project Path="src/Telemetrix.MqttSim/Telemetrix.MqttSim.csproj" />
+    <Project Path="src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj" />
+    <Project Path="src/Telemetrix.Transformer/Telemetrix.Transformer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Telemetrix.Edge.Bridge.Tests/Telemetrix.Edge.Bridge.Tests.csproj" />
+    <Project Path="tests/Telemetrix.Integration.Tests/Telemetrix.Integration.Tests.csproj" />
+    <Project Path="tests/Telemetrix.Transformer.Tests/Telemetrix.Transformer.Tests.csproj" />
+  </Folder>
+</Solution>

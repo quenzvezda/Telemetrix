@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <UserSecretsId>dotnet-Telemetrix.Edge.Bridge-30594feb-56bb-4ee7-b9b2-eb26cddad75e</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Telemetrix.Contracts\Telemetrix.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

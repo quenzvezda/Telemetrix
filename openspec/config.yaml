@@ -1,0 +1,20 @@
+schema: spec-driven
+
+context: |
+  Telemetrix is a learning-grade plant telemetry pipeline: OPC UA (and MQTT) -> Edge.Bridge -> Kafka -> Transformer -> TimescaleDB.
+  The design source of truth is docs/plant-telemetry-pipeline.md; requirement IDs FR-xx / NFR-xx come from it.
+  Domain vocabulary is defined in CONTEXT.md; architectural decisions live in docs/adr/.
+  One change per roadmap milestone (ROADMAP.md); a milestone is done when its change is archived.
+  Central guarantee: no sample lost and no duplicate row, even when any single service is killed mid-batch.
+  All timestamps are UTC; the OPC UA source timestamp is the measurement time.
+
+rules:
+  proposal:
+    - Reference the FR/NFR IDs the change covers in "What Changes".
+    - State the roadmap milestone the change belongs to.
+  specs:
+    - Name capabilities for durable pipeline behaviour (e.g. opcua-ingestion, telemetry-storage), never for a milestone.
+    - Copy the FR/NFR ID into the requirement body so tests and commits can cite it.
+  tasks:
+    - Every task names its verification (a dotnet test, a docker compose command, or an observable query).
+    - The last group verifies the milestone's "Done when" criterion from ROADMAP.md.

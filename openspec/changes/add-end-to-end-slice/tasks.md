@@ -1,0 +1,34 @@
+# Tasks
+
+## 1. Decisions and setup
+
+- [ ] 1.1 Resolve D1 (unknown-tag default) and D2 (non-numeric values) from ROADMAP.md; record each as an ADR in `docs/adr/` and update `specs/telemetry-transform/spec.md` if the outcome differs from it
+- [ ] 1.2 Add `Confluent.Kafka`, `Npgsql`, `Dapper` to `Directory.Packages.props` and reference them from the bridge/transformer; verify `dotnet build`
+
+## 2. Contract
+
+- [ ] 2.1 Add `TelemetryBatch`, `BatchSample` and `TelemetryJson` (source-generated context) to `Telemetrix.Contracts`; verify a round-trip unit test against the sample JSON in `docs/plant-telemetry-pipeline.md`, including UTC `Z` timestamps and booleans as 1/0
+
+## 3. Bridge: batching and publishing
+
+- [ ] 3.1 Implement `AssetBatcher` (per-asset batches, size/age flush, flush on shutdown, no empty batches); verify unit tests for each scenario in `specs/telemetry-batching/spec.md` using `FakeTimeProvider`
+- [ ] 3.2 Implement `TopicInitializer` for `plant.telemetry.raw` (6 partitions, 7 d); verify an integration test against a Testcontainers Kafka shows the topic and its config after start, and a second start leaves it unchanged
+- [ ] 3.3 Implement `KafkaBatchPublisher` (key = asset id, JSON value, `acks=all`, idempotence on) and wire channel → batcher → publisher in the bridge host; verify an integration test that consumes the produced message and asserts key, partition stability and contract shape
+- [ ] 3.4 Run the bridge against OPC PLC; verify in Kafka UI that `plant.telemetry.raw` receives one message per asset every ~5 s
+
+## 4. Transformer: pipeline
+
+- [ ] 4.1 Implement `QualityMapper` and `RangeCheck`; verify unit tests for Good/Uncertain/Bad codes, out-of-range, missing value, tag without range
+- [ ] 4.2 Implement `TagResolver` with the unknown-tag policy (`dead-letter` default, `create`); verify unit tests for both policies; the transformer creates `plant.telemetry.dlq` (1 partition, 30 d) at startup
+- [ ] 4.3 Implement `RawBatchConsumer` in group `transformer`; verify an integration test that two consumers split the 6 partitions
+
+## 5. Transformer: storage
+
+- [ ] 5.1 Implement `MeasurementWriter` (temp staging table, binary COPY, `INSERT … ON CONFLICT DO NOTHING`, one transaction per batch); verify Testcontainers TimescaleDB tests: a batch inserts N rows, a replay inserts 0, a forced mid-write failure leaves 0 rows
+- [ ] 5.2 Wire consumer → pipeline → writer; verify an end-to-end integration test (Kafka + TimescaleDB containers) from a produced batch to rows with correct quality and batch id
+
+## 6. Milestone check
+
+- [ ] 6.0 Remove the `--ignore-exit-code 8` line from `tests/Directory.Build.props` now that every test project has tests; verify `dotnet test` exits 0
+
+- [ ] 6.1 Done when: with the compose stack, bridge and transformer running, rows appear in `measurement` and `SELECT time, value FROM measurement JOIN tag USING (tag_id) WHERE name = 'MotorTemperature' ORDER BY time DESC LIMIT 20` shows the live trend

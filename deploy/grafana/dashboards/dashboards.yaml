@@ -1,0 +1,9 @@
+apiVersion: 1
+
+# Dashboard JSON files placed next to this file are loaded on startup (milestone 8).
+providers:
+  - name: telemetrix
+    folder: Telemetrix
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards

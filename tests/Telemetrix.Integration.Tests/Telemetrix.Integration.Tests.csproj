@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Testcontainers.Kafka" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Telemetrix.Edge.Bridge\Telemetrix.Edge.Bridge.csproj" />
+    <ProjectReference Include="..\..\src\Telemetrix.Transformer\Telemetrix.Transformer.csproj" />
+  </ItemGroup>
+
+</Project>
