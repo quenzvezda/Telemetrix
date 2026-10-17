@@ -2,6 +2,8 @@
 
 Nine milestones, each ending in something you can see working. A thin path runs end to end by M3; M4–M9 harden it. Build the client side before the simulator or dashboards.
 
+Status values: Not started → In progress → In review → Done.
+
 Each milestone is one OpenSpec change under `openspec/changes/`. Its `tasks.md` is the working checklist; the milestone is **done** when the change is archived (`/opsx:archive`), which merges its requirements into `openspec/specs/`.
 
 Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.md](docs/plant-telemetry-pipeline.md).

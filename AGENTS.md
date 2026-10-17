@@ -9,13 +9,27 @@ Telemetrix: plant telemetry pipeline in C# / .NET 10 — OPC UA (or MQTT) → `E
 - **What to build next** — `ROADMAP.md`: milestones M1–M9 and open decisions D1–D5.
 - **What a milestone must do** — `openspec/changes/<change>/` (proposal, specs, design, tasks). Specs of finished milestones are in `openspec/specs/`.
 
-## Workflow
+## Roles
 
-1. Work on one milestone at a time = one OpenSpec change. Check open decisions in `ROADMAP.md` first; a task that depends on an unresolved one stops and asks.
-2. Implement through `/opsx:apply <change>`; tick each task in `tasks.md` only after its stated verification passes.
-3. Requirement changes go into the change's delta specs (`/opsx:update`), never only into code.
-4. Milestone done → `/opsx:archive <change>`, then set its status in `ROADMAP.md`.
-5. Cite requirement IDs (FR-xx / NFR-xx) in test names and in commits (see Commits).
+The user is the **reviewer and decision-maker**; the agent writes all code, tests and docs. The user reviews diffs, tests end to end by hand (Docker, Kafka UI, database, Grafana) and decides open questions. Talk to the user in Indonesian; everything written to the repo (code, docs, specs, ADRs, commits) is English.
+
+## Session start
+
+The user will not remember where the project stands. On the first message of a session (a greeting, "lanjut", "status", a question about progress), orient before acting:
+
+1. Read `ROADMAP.md` (milestone status, open decisions), run `npx -y @fission-ai/openspec@1.14.3 list` (task progress per change), `git log --oneline -10` and `git status`.
+2. Report in a few lines: current milestone, tasks done/remaining, anything uncommitted or awaiting review, and the decisions blocking the next step.
+3. Propose the next step and wait for the user's go.
+
+## Milestone loop
+
+1. **Start** — branch `m<N>-<change>` from `main`; set the milestone to *In progress* in `ROADMAP.md`. If it needs an open decision, discuss it with the user first, then record an ADR.
+2. **Build** — `/opsx:apply <change>`: implement `tasks.md` in order, run each task's verification, tick the box only when it passes, one commit per task. A task that depends on an unresolved decision stops and asks.
+3. **Review checkpoint** — after each task group, stop and hand the user a **review package**: what changed and why (commits), what to read in the diff, and step-by-step manual checks — exact commands, URLs (Kafka UI, Grafana), SQL to run, and the expected result. Wait for approval or feedback before the next group.
+4. **Change of plan** — requirement changes go into the change's specs via `/opsx:update`, never only into code.
+5. **Finish** — when the milestone's "Done when" passes the user's manual check: `/opsx:archive <change>`, set *Done* in `ROADMAP.md`, merge the branch into `main`.
+
+Progress lives in `tasks.md` checkboxes (task level), `ROADMAP.md` status (milestone level) and git history — keep all three current so the next session can orient from them alone.
 
 ## Commands
 
