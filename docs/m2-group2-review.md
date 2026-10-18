@@ -2,7 +2,7 @@
 
 Change: `add-opcua-subscription`, tasks 2.1–2.4.
 Branch: `m2-add-opcua-subscription`.
-Tasks 2.1–2.4 are implemented and verified; reviewer acceptance is pending.
+Tasks 2.1–2.4 are implemented and verified. The reviewer supplied successful static, bogus-NodeId and browse logs, confirmed all 33 tests and strict validation, and authorized group 3 on 2026-10-18.
 
 ## What changed and why
 
@@ -99,5 +99,6 @@ this group does not exercise Kafka or TimescaleDB. No SQL, Kafka UI or Grafana
 checks are needed for this group.
 
 Approve this group before task 3.1 (session recovery) starts. The milestone's final
-restart acceptance remains task 4.1; M2 stays In progress until that review and
-archival are complete.
+restart acceptance remains task 4.1. After group 3 implementation, the milestone
+moves to In review for its final manual check; it is Done only after acceptance
+and archival.

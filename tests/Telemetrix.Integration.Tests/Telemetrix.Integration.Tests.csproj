@@ -1,8 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Testcontainers" />
     <PackageReference Include="Testcontainers.Kafka" />
     <PackageReference Include="Testcontainers.PostgreSql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\src\Telemetrix.Edge.Bridge\appsettings*.json"
+          Link="config\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

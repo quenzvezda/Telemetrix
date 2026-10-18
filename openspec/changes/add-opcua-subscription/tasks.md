@@ -15,11 +15,13 @@ Group 1 implementation and automated verification are complete. Reviewer accepte
 - [x] 2.3 Replace the template `Worker` with `OpcUaIngestionWorker`, which logs each sample (asset, tag, value, source timestamp, status code); verify by running the bridge against OPC PLC
 - [x] 2.4 Implement browse discovery from a start node (FR-12); verify OPC PLC telemetry discovery includes all seven static NodeIds, uses server browse names and monitors additional variables found
 
-Group 2 implementation and verification are complete. Reviewer acceptance is pending; see [the review package](../../../docs/m2-group2-review.md).
+Group 2 implementation and verification are complete. Reviewer accepted the manual checks on 2026-10-18 and authorized group 3; see [the review package](../../../docs/m2-group2-review.md).
 
 ## 3. Recovery
 
-- [ ] 3.1 Add session recovery with `SessionReconnectHandler`; verify with `docker compose -f deploy/docker-compose.yml restart opc-plc` while the bridge runs — samples resume for all tags without restarting the bridge
+- [x] 3.1 Add session recovery with `SessionReconnectHandler`; verify with `docker compose -f deploy/docker-compose.yml restart opc-plc` while the bridge runs — samples resume for all tags without restarting the bridge
+
+Group 3 implementation and verification are complete. Reviewer acceptance and the final milestone check are pending; see [the review package](../../../docs/m2-group3-review.md).
 
 ## 4. Milestone check
 

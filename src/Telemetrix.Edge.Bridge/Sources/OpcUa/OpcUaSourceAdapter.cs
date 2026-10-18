@@ -60,9 +60,6 @@ public sealed class OpcUaSourceAdapter(
         }
 
         var endpoint = new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(configuration));
-        using var session = await new DefaultSessionFactory(telemetry).CreateAsync(
-            configuration, endpoint, false, false, configuration.ApplicationName, 60000,
-            new UserIdentity(), default, cancellationToken);
         using var subscription = new Subscription(telemetry, new SubscriptionOptions
         {
             DisplayName = "Telemetrix samples",
@@ -73,6 +70,10 @@ public sealed class OpcUaSourceAdapter(
             SequentialPublishing = true,
             TimestampsToReturn = TimestampsToReturn.Both
         });
+        var session = await new DefaultSessionFactory(telemetry).CreateAsync(
+            configuration, endpoint, false, false, configuration.ApplicationName, 60000,
+            new UserIdentity(), default, cancellationToken);
+        await using var recovery = new OpcUaSessionRecovery(session, telemetry, timeProvider, logger);
         var failedNotification = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var handlers = new List<(MonitoredItem Item, OpcUaTagOptions Tag, MonitoredItemNotificationEventHandler Handler)>();
         try
@@ -145,7 +146,7 @@ public sealed class OpcUaSourceAdapter(
                 settings.Endpoint, subscription.MonitoredItemCount, subscription.CurrentPublishingInterval);
 
             var stopped = Task.Delay(Timeout.InfiniteTimeSpan, timeProvider, cancellationToken);
-            await await Task.WhenAny(stopped, failedNotification.Task);
+            await await Task.WhenAny(stopped, failedNotification.Task, recovery.Failure);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -156,9 +157,6 @@ public sealed class OpcUaSourceAdapter(
             {
                 item.Notification -= handler;
             }
-
-            using var closeTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5), timeProvider);
-            await session.CloseAsync(closeTimeout.Token);
         }
     }
 }
