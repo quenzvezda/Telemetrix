@@ -42,4 +42,13 @@ Verification notes (2026-10-18):
 
 ## 4. Milestone check
 
-- [ ] 4.1 Done when: values change in UaExpert, a topic can be created in Kafka UI, and `measurement` exists in TimescaleDB — tick only after 2.1, 2.2 and 2.4 pass on a fresh `down -v` / `up -d`
+- [x] 4.1 Done when: values change in UaExpert, a topic can be created in Kafka UI, and `measurement` exists in TimescaleDB — tick only after 2.1, 2.2 and 2.4 pass on a fresh `down -v` / `up -d`
+
+Acceptance passed (2026-10-18):
+
+- After G3 review, ran `docker compose -p telemetrix -f deploy/docker-compose.yml down -v` and `up -d` against the primary local stack. Both named volumes were removed and recreated. All six services reached running, with Kafka and TimescaleDB healthy.
+- Read-only queries after the reset returned 7 tags and `public | measurement` from `timescaledb_information.hypertables`.
+- The reviewer confirmed completing both fresh-stack checks. The UaExpert screenshot showed a connected session with Boolean/Int32/UInt32 samples, source timestamps and Good status codes. The Kafka UI screenshot showed `{"message":"hello telemetrix"}` at partition 0, offset 0, and the reviewer confirmed deleting `scratch.test`. A subsequent broker topic listing returned no topics.
+- Grafana's initial account and OPC PLC certificate were recreated with their containers. The stack remains running for subsequent work.
+
+All 11 tasks are complete. M1 is In review pending the archive workflow and merge into main. The manual acceptance gate has passed; no repeat reset is required to close this change. The untracked `.m1-readme-check-20261018` verification clone remains outside the commits; its manual cleanup command is recorded in the G3 review package.

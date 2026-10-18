@@ -12,7 +12,7 @@ Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.m
 
 | # | Milestone | OpenSpec change | Covers | Done when | Status |
 | --- | --- | --- | --- | --- | --- |
-| M1 | Environment | `add-local-environment` | NFR-11 (infra), NFR-10 | Values change in UaExpert; a topic can be created in Kafka UI; `measurement` exists in TimescaleDB | In progress |
+| M1 | Environment | `add-local-environment` | NFR-11 (infra), NFR-10 | Values change in UaExpert; a topic can be created in Kafka UI; `measurement` exists in TimescaleDB | In review |
 | M2 | OPC UA client | `add-opcua-subscription` | FR-10, FR-11, FR-12 | Values print every second with source timestamp and status code; the client resumes after the OPC PLC container restarts | Not started |
 | M3 | First end-to-end slice | `add-end-to-end-slice` | FR-13, FR-14, FR-22, FR-23, FR-30 | Rows appear in `measurement` and a `SELECT` shows the live trend | Not started |
 | M4 | Delivery guarantees | `add-delivery-guarantees` | FR-20, FR-21, FR-24, NFR-01, NFR-03, NFR-05, NFR-08 | Transformer killed under load; row count still equals samples sent | Not started |
