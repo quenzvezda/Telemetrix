@@ -4,7 +4,9 @@
 
 - [x] 1.1 Add the `Sample` record to `Telemetrix.Contracts` (plant, line, asset, tag, value, source/server timestamp in UTC, status code); verify `dotnet build`
 - [x] 1.2 Add `OPCFoundation.NetStandard.Opc.Ua.Client` to `Directory.Packages.props` and reference it from the bridge; verify `dotnet restore`
-- [ ] 1.3 Add `OpcUaOptions` (endpoint, security mode, sampling/publishing interval, queue size, tags, optional browse start node) with validate-on-start, and map the 7 tags to OPC PLC nodes in `appsettings.Development.json`; verify unit tests: missing NodeId and non-`opc.tcp` URL fail validation, an environment variable overrides the endpoint
+- [x] 1.3 Add `OpcUaOptions` (endpoint, security mode, sampling/publishing interval, queue size, tags, optional browse start node) with validate-on-start, and map the 7 tags to OPC PLC nodes in `appsettings.Development.json`; verify unit tests: missing NodeId and non-`opc.tcp` URL fail validation, an environment variable overrides the endpoint
+
+Group 1 implementation and automated verification are complete. Reviewer acceptance is pending; see [the review package](../../../docs/m2-group1-review.md).
 
 ## 2. Subscription
 

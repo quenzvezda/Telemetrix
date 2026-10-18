@@ -4,4 +4,9 @@
     <ProjectReference Include="..\..\src\Telemetrix.Edge.Bridge\Telemetrix.Edge.Bridge.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\src\Telemetrix.Edge.Bridge\appsettings*.json"
+          Link="config\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
