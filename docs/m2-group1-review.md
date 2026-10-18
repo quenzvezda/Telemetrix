@@ -2,7 +2,7 @@
 
 Change: `add-opcua-subscription`, tasks 1.1–1.3.
 Branch: `m2-add-opcua-subscription`.
-Reviewer acceptance is pending.
+Reviewer accepted the code review on 2026-10-18 and authorized group 2.
 
 ## What changed and why
 
@@ -115,4 +115,4 @@ start with later groups/milestones that use those services.
 On 2026-10-18: restore, Debug and Release builds, all 18 tests, strict validation
 of all nine OpenSpec items, and executable checks 2 and 3 passed with the expected
 outcomes. Checks 2 and 3 intentionally exit non-zero. Human review of this group
-is pending; the milestone remains In progress.
+was accepted on 2026-10-18; the milestone remains In progress.

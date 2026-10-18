@@ -13,4 +13,8 @@
     <ProjectReference Include="..\Telemetrix.Contracts\Telemetrix.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Telemetrix.Edge.Bridge.Tests" />
+  </ItemGroup>
+
 </Project>
