@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1's local environment and M2's OPC UA client are complete and manually verified. The Bridge subscribes to configured or discovered OPC UA tags, logs samples with UTC source timestamps and raw status codes, and resumes after a server restart. M3 adds batching, Kafka publishing, transformation and database storage to complete the first end-to-end telemetry flow.
+M1's local environment and M2's OPC UA client are complete and manually verified. M3 is in progress: the Bridge publishes per-asset batches to Kafka, and the Transformer resolves tags, checks quality and writes idempotently to TimescaleDB. Storage is at the group 5 review checkpoint; the milestone still needs final manual acceptance. Delivery guarantees and durable edge buffering follow in M4 and M5.
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
@@ -49,7 +49,7 @@ Acceptance criteria and failure scenarios are tracked in [OpenSpec changes](open
 | Time-series storage | PostgreSQL 17 + TimescaleDB |
 | Visualization | Grafana |
 | Local infrastructure | Docker Compose, Mosquitto, Kafka UI, OPC PLC simulator |
-| Verification | GitHub Actions; Bridge unit tests and Testcontainers OPC UA recovery tests |
+| Verification | GitHub Actions; pure unit tests and Testcontainers OPC UA, Kafka and TimescaleDB tests |
 
 ## Getting started
 
@@ -68,11 +68,11 @@ dotnet build --no-restore -c Release
 dotnet test -c Release
 ```
 
-The suite contains 33 Bridge unit cases and two OPC UA recovery integration cases. Docker must be running for the integration cases, which create their own OPC PLC containers. Additional coverage is added with the corresponding milestones; the Transformer test project is still a scaffold.
+The suite covers contracts, batching, quality and tag resolution, plus OPC UA recovery, Kafka publishing/group assignment/DLQ and transactional TimescaleDB storage. Docker must be running for integration tests, which create disposable infrastructure with generated connection settings. They do not use the local Compose database or its password.
 
 ### Local environment
 
-M1 runs six infrastructure services: OPC PLC, Mosquitto, Kafka, Kafka UI, TimescaleDB and Grafana. Bridge and Transformer are not yet included as Compose services; the end-to-end telemetry flow is added in later milestones. Docker with Compose is sufficient for this infrastructure; the .NET SDK is needed for the service build above.
+Compose runs six infrastructure services: OPC PLC, Mosquitto, Kafka, Kafka UI, TimescaleDB and Grafana. Run Bridge and Transformer on the host with the .NET SDK; they are not included as Compose services.
 
 #### Start the stack
 
@@ -109,13 +109,13 @@ The stack uses local development settings, including unsecured OPC UA and plaint
 
 #### Run the OPC UA Bridge
 
-With OPC PLC running, launch the Bridge from the repository root:
+With OPC PLC and Kafka running, launch the Bridge from the repository root:
 
 ```powershell
 dotnet run --project src/Telemetrix.Edge.Bridge
 ```
 
-The Development launch profile maps seven domain tags to the OPC PLC nodes verified in M1. Sample logs include identity, value, UTC source/server timestamps and raw status code. To exercise recovery, keep the Bridge running and restart OPC PLC from another terminal:
+The Development launch profile maps seven domain tags to the OPC PLC nodes verified in M1. The Bridge creates `plant.telemetry.raw` if absent (six partitions, seven-day retention), then logs published batches with asset, sample count, partition and offset. Samples retain UTC source/server timestamps and raw status codes. To exercise recovery, keep the Bridge running and restart OPC PLC from another terminal:
 
 ```powershell
 docker compose -f deploy/docker-compose.yml restart opc-plc
@@ -128,6 +128,35 @@ dotnet run --project src/Telemetrix.Edge.Bridge -- --OpcUa:BrowseStartNode=Objec
 ```
 
 See the [accepted OPC UA spec](openspec/specs/opcua-ingestion/spec.md) and [M2 recovery review](docs/m2-group3-review.md) for behavior and verification details.
+
+#### Run the Transformer
+
+Start Bridge first so that its raw topic exists. Configure `ConnectionStrings:Telemetry`
+through environment variable `ConnectionStrings__Telemetry` or another .NET configuration
+provider; keep credentials out of committed files. In a dedicated PowerShell terminal,
+enter the database password without putting it in command history:
+
+```powershell
+$dbPassword = Read-Host 'POSTGRES_PASSWORD from deploy/.env' -AsSecureString
+$quotedPassword = ([System.Net.NetworkCredential]::new('', $dbPassword).Password).Replace('"', '""')
+$env:ConnectionStrings__Telemetry = 'Host=localhost;Port=5432;Database=telemetry;Username=telemetry;Password="' + $quotedPassword + '"'
+Remove-Variable dbPassword, quotedPassword
+try {
+    dotnet run --project src/Telemetrix.Transformer -c Release
+} finally {
+    Remove-Item Env:ConnectionStrings__Telemetry
+}
+```
+
+Expect DLQ initialization, catalog loading, partition assignment in group `transformer`
+and `Stored batch` / `Processed batch` logs. Inspect live rows using the SQL in the
+[M3 storage review](docs/m3-group5-review.md). A new consumer group reads retained
+raw batches from the earliest offset. Stop with Ctrl+C.
+
+Unknown tags go to `plant.telemetry.dlq` by default. Explicit
+`--TagResolution:UnknownTagPolicy=create` creates tags for existing assets without
+unit or range. M3 retains Kafka's default auto-commit/store, so crash-safe
+commit-after-write remains M4 work.
 
 #### Browse OPC UA with UaExpert
 
@@ -157,7 +186,7 @@ docker compose -f deploy/docker-compose.yml exec -T timescaledb psql -X -v ON_ER
 docker compose -f deploy/docker-compose.yml exec -T timescaledb psql -X -v ON_ERROR_STOP=1 -U telemetry -d telemetry -c "SELECT hypertable_schema, hypertable_name FROM timescaledb_information.hypertables"
 ```
 
-Expected: the first query returns `7`, and the second includes `public | measurement`. The initialization script seeds two assets and seven tags. Live measurements are added by the later ingestion milestones.
+Expected: the first query returns `7` for the seed catalog (more if tags were explicitly created), and the second includes `public | measurement`. The initialization script seeds two assets and seven tags. Running Bridge and Transformer adds live measurements.
 
 #### Test Grafana's database connection
 
@@ -208,8 +237,8 @@ docker compose -f deploy/docker-compose.yml ps -a
 
 | Path | Purpose |
 | --- | --- |
-| [src/](src/) | Shared contracts, working OPC UA Bridge, and Transformer/simulator scaffolds |
-| [tests/](tests/) | Bridge unit tests, OPC UA recovery integration tests, and Transformer test scaffold |
+| [src/](src/) | Shared contracts, OPC UA Bridge, Transformer pipeline/storage, and simulator scaffolds |
+| [tests/](tests/) | Bridge/Transformer unit tests and disposable infrastructure integration tests |
 | [deploy/](deploy/) | Compose stack, database initialization, and Grafana provisioning |
 | [Design](docs/plant-telemetry-pipeline.md) | Architecture, data model, and FR/NFR requirements |
 | [Domain glossary](CONTEXT.md) | Shared vocabulary for samples, batches, assets, tags, quality, and gaps |

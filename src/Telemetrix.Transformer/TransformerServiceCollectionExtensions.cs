@@ -1,4 +1,5 @@
 using Npgsql;
+using Microsoft.Extensions.Options;
 using Telemetrix.Transformer.Consuming;
 using Telemetrix.Transformer.Pipeline;
 using Telemetrix.Transformer.Storage;
@@ -7,6 +8,17 @@ namespace Telemetrix.Transformer;
 
 public static class TransformerServiceCollectionExtensions
 {
+    public static IServiceCollection AddTransformerPipeline(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddTransformerMetadata(configuration);
+        services.AddSingleton<IMeasurementWriter, MeasurementWriter>();
+        services.AddSingleton<IRawBatchHandler, TelemetryBatchHandler>();
+        services.AddHostedService<TagCatalogInitializer>();
+        services.AddHostedService<RawBatchConsumer>();
+        return services;
+    }
+
     public static IServiceCollection AddTransformerMetadata(this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -16,13 +28,23 @@ public static class TransformerServiceCollectionExtensions
         services.AddOptions<TagResolutionOptions>().Bind(configuration.GetSection(TagResolutionOptions.SectionName))
             .Validate(options => options.UnknownTagPolicy is TagResolutionOptions.DeadLetter or TagResolutionOptions.Create,
                 "TagResolution:UnknownTagPolicy must be dead-letter or create.").ValidateOnStart();
-        services.AddSingleton(_ => NpgsqlDataSource.Create(
-            configuration.GetConnectionString("Telemetry")
-            ?? throw new InvalidOperationException("ConnectionStrings:Telemetry is required.")));
+        services.AddOptions<StorageOptions>().Bind(configuration.GetSection(StorageOptions.SectionName))
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Telemetry),
+                "ConnectionStrings:Telemetry is required.")
+            .Validate(options => IsValidConnectionString(options.Telemetry),
+                "ConnectionStrings:Telemetry must be a valid PostgreSQL connection string.").ValidateOnStart();
+        services.AddSingleton(provider => NpgsqlDataSource.Create(
+            provider.GetRequiredService<IOptions<StorageOptions>>().Value.Telemetry));
         services.AddSingleton<ITagCatalog, PostgresTagCatalog>();
         services.AddSingleton<TagResolver>();
         services.AddSingleton<IDeadLetterPublisher, KafkaDeadLetterPublisher>();
         services.AddHostedService<DeadLetterTopicInitializer>();
         return services;
+    }
+
+    private static bool IsValidConnectionString(string value)
+    {
+        try { _ = new NpgsqlConnectionStringBuilder(value); return true; }
+        catch (ArgumentException) { return false; }
     }
 }

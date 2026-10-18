@@ -33,7 +33,9 @@ Group 4 implementation and verification are complete. Reviewer accepted the resu
 ## 5. Transformer: storage
 
 - [x] 5.1 Implement `MeasurementWriter` (temp staging table, binary COPY, `INSERT … ON CONFLICT DO NOTHING`, one transaction per batch); verify Testcontainers TimescaleDB tests: a batch inserts N rows, a replay inserts 0, a forced mid-write failure leaves 0 rows
-- [ ] 5.2 Wire consumer → pipeline → writer; verify an end-to-end integration test (Kafka + TimescaleDB containers) from a produced batch to rows with correct quality and batch id
+- [x] 5.2 Wire consumer → pipeline → writer; verify an end-to-end integration test (Kafka + TimescaleDB containers) from a produced batch to rows with correct quality and batch id
+
+Group 5 implementation and agent verification are complete as of 2026-10-18: Release build, all 103 tests and strict OpenSpec validation passed. Await reviewer code review and local SQL verification before group 6; see [the review package](../../../docs/m3-group5-review.md).
 
 ## 6. Milestone check
 
