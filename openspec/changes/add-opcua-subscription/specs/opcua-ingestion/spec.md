@@ -32,6 +32,8 @@ When a browse start node is configured instead of a tag list, the bridge SHALL b
 ### Requirement: Sample shape
 Every data-change notification SHALL become exactly one sample carrying plant, line, asset, tag, value, source timestamp, server timestamp and the raw OPC UA status code. Timestamps MUST be UTC, and the source timestamp MUST be the one the server reports, never the bridge's clock (ADR-0009).
 
+Sample values SHALL use nullable double precision numbers. Source adapters SHALL convert booleans to 1/0 before emitting samples; string values are outside the v1 scope (ADR-0010).
+
 #### Scenario: Good value
 - **WHEN** the server reports `MotorTemperature = 71.3` with status Good and source timestamp 09:15:01.000 UTC
 - **THEN** the sample has value 71.3, status code 0 and source timestamp 09:15:01.000 UTC
@@ -43,6 +45,10 @@ Every data-change notification SHALL become exactly one sample carrying plant, l
 #### Scenario: Boolean value
 - **WHEN** the server reports `Running = true`
 - **THEN** the sample value is 1
+
+#### Scenario: Boolean false value
+- **WHEN** the server reports `Running = false`
+- **THEN** the sample value is 0
 
 ### Requirement: Resume after server restart
 When the OPC UA session is lost, the bridge SHALL keep retrying and, once the server is reachable again, SHALL resume delivering samples for every configured tag without a process restart.

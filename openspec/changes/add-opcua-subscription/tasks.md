@@ -2,7 +2,7 @@
 
 ## 1. Contract and configuration
 
-- [ ] 1.1 Add the `Sample` record to `Telemetrix.Contracts` (plant, line, asset, tag, value, source/server timestamp in UTC, status code); verify `dotnet build`
+- [x] 1.1 Add the `Sample` record to `Telemetrix.Contracts` (plant, line, asset, tag, value, source/server timestamp in UTC, status code); verify `dotnet build`
 - [ ] 1.2 Add `OPCFoundation.NetStandard.Opc.Ua.Client` to `Directory.Packages.props` and reference it from the bridge; verify `dotnet restore`
 - [ ] 1.3 Add `OpcUaOptions` (endpoint, security mode, sampling/publishing interval, queue size, tags, optional browse start node) with validate-on-start, and map the 7 tags to OPC PLC nodes in `appsettings.Development.json`; verify unit tests: missing NodeId and non-`opc.tcp` URL fail validation, an environment variable overrides the endpoint
 

@@ -142,7 +142,7 @@ JSON first for readability; switch to Avro or Protobuf with a schema registry as
 }
 ```
 
-`statusCode` is the raw OPC UA StatusCode (0 = Good); the transformer maps it to Good, Uncertain or Bad. Booleans travel as `true`/`false` and are stored as 1/0.
+`statusCode` is the raw OPC UA StatusCode (0 = Good); the transformer maps it to Good, Uncertain or Bad. Sample values use `double?`; source adapters convert booleans to 1/0, and that numeric value travels through batches into storage. Strings are out of scope for v1 (ADR-0010).
 
 ### Database tables
 
