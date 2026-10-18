@@ -22,3 +22,19 @@ only by Bridge unit tests. Source: [NuGet](https://www.nuget.org/packages/Micros
 Verification on 2026-10-18: all 50 Bridge unit tests passed, including six batching
 cases for mixed assets, size, age, quiet input, shutdown and output backpressure.
 Group 2 reviewer acceptance is recorded with this task.
+
+## Task 3.2: topic initialization
+
+`TopicInitializer` creates `plant.telemetry.raw` with six partitions, replication
+factor one for the local broker, and `retention.ms=604800000`. It treats only
+`TopicAlreadyExists` as success and preserves existing topic settings; other
+admin failures fail startup. Kafka bootstrap servers default to `localhost:29092`.
+
+Verification on 2026-10-18: both `KafkaTopicTests` passed against Testcontainers
+Apache Kafka 4.3.1 with broker auto-create disabled. They check first creation,
+repeated startup and preservation of an existing two-partition topic with custom
+retention. The targeted command is:
+
+```powershell
+dotnet test --project tests/Telemetrix.Integration.Tests/Telemetrix.Integration.Tests.csproj -c Release -- --filter-class Telemetrix.Integration.Tests.KafkaTopicTests
+```
