@@ -2,7 +2,7 @@
 
 Change: `add-end-to-end-slice`, tasks 5.1–5.2.
 Branch: `m3-add-end-to-end-slice`.
-Status: awaiting reviewer code review and manual verification before group 6.
+Status: reviewer supplied manual verification and authorized group 6 on 2026-10-18.
 
 ## Task 5.1
 
@@ -155,4 +155,8 @@ All database mutations during agent verification used disposable test containers
 The agent did not launch standalone local Bridge/Transformer processes or change
 the local Compose schema/data.
 
-Await reviewer approval or feedback before group 6. M3 remains In progress.
+The reviewer supplied live Bridge/Transformer logs, SQL rows for all seven seeded
+tags, the MotorTemperature trend, all 103 passing regression cases and strict
+validation, then authorized group 6 on 2026-10-18. See the
+[final review package](m3-group6-review.md) for the recorded evidence and backlog
+observation. Milestone completion is tracked there and in ROADMAP.md.

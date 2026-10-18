@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1's local environment and M2's OPC UA client are complete and manually verified. M3 is in progress: the Bridge publishes per-asset batches to Kafka, and the Transformer resolves tags, checks quality and writes idempotently to TimescaleDB. Storage is at the group 5 review checkpoint; the milestone still needs final manual acceptance. Delivery guarantees and durable edge buffering follow in M4 and M5.
+M1's local environment and M2's OPC UA client are complete and manually verified. M3 is in final review with all 14 implementation tasks complete: the Bridge publishes per-asset batches to Kafka, and the Transformer resolves tags, checks quality and writes idempotently to TimescaleDB. The reviewer verified live measurements and the MotorTemperature trend; the final group checkpoint precedes archive/merge. See the [M3 final review](docs/m3-group6-review.md). Delivery guarantees and durable edge buffering follow in M4 and M5.
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 

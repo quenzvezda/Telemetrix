@@ -43,4 +43,6 @@ Group 5 implementation and verification are complete. Reviewer supplied the live
 
 Task 6.0 verified on 2026-10-18: Release build passed with zero warnings/errors and `dotnet test -c Release` exited successfully with all 103 tests passed and no skips after removing the empty-test exit-code exception.
 
-- [ ] 6.1 Done when: with the compose stack, bridge and transformer running, rows appear in `measurement` and `SELECT time, value FROM measurement JOIN tag USING (tag_id) WHERE name = 'MotorTemperature' ORDER BY time DESC LIMIT 20` shows the live trend
+- [x] 6.1 Done when: with the compose stack, bridge and transformer running, rows appear in `measurement` and `SELECT time, value FROM measurement JOIN tag USING (tag_id) WHERE name = 'MotorTemperature' ORDER BY time DESC LIMIT 20` shows the live trend
+
+Group 6 is complete as of 2026-10-18. Task 6.1 records the reviewer's supplied SQL/live-service evidence and authorization to proceed: all seven tags have measurements and MotorTemperature changes from 402.1 to 403.8. All 14 implementation tasks are checked; M3 is In review, awaiting the final group checkpoint before archive/merge. The observed 16-batch backlog is recorded without claiming it has drained; see [the final review package](../../../docs/m3-group6-review.md).
