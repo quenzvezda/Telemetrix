@@ -70,6 +70,7 @@ public sealed class OpcUaSourceAdapter(
             KeepAliveCount = 10,
             LifetimeCount = 60,
             PublishingEnabled = true,
+            SequentialPublishing = true,
             TimestampsToReturn = TimestampsToReturn.Both
         });
         var failedNotification = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
