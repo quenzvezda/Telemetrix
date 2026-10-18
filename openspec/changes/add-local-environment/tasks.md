@@ -19,7 +19,7 @@ Verification notes (2026-10-18, Docker Desktop):
 - [x] 2.3 Produce to a non-existent topic with `kafka-console-producer.sh` inside the kafka container; verify it fails and no topic is created
 - [x] 2.4 `docker compose ... exec timescaledb psql -U telemetry -d telemetry -c "SELECT count(*) FROM tag"`; verify 7, and that `measurement` appears in `timescaledb_information.hypertables`
 - [x] 2.5 Open Grafana (`http://localhost:3000`), verify the provisioned TimescaleDB data source passes "Save & test"
-- [ ] 2.6 Publish and subscribe one message with `mosquitto_pub`/`mosquitto_sub` inside the mosquitto container; verify it round-trips
+- [x] 2.6 Publish and subscribe one message with `mosquitto_pub`/`mosquitto_sub` inside the mosquitto container; verify it round-trips
 
 Verification notes (2026-10-18):
 
@@ -28,6 +28,9 @@ Verification notes (2026-10-18):
 - 2.3: The broker's topic list was empty before and after a synchronous console-producer attempt to `m1.missing-topic.20261018`. With `max.block.ms=5000`, `request.timeout.ms=3000`, and `delivery.timeout.ms=5000`, the producer reported `UNKNOWN_TOPIC_OR_PARTITION` and exited 1 after the metadata timeout. No topic was auto-created.
 - 2.4: Read-only `psql` queries inside the local `timescaledb` service returned 7 from `SELECT count(*) FROM tag` and `public | measurement` from `SELECT hypertable_schema, hypertable_name FROM timescaledb_information.hypertables`. Both queries succeeded with `ON_ERROR_STOP=1`.
 - 2.5: The reviewer opened the provisioned TimescaleDB data source in Grafana and used its `Test` button. The screenshot showed `Database Connection OK`.
+- 2.6: `mosquitto_sub` subscribed to `telemetrix/m1/smoke` with `-C 1 -W 30 -v -d`. After `mosquitto_pub` sent `m1-mqtt-roundtrip-20261018`, the subscriber reported `SUBACK`, received the exact payload, and disconnected. The publisher succeeded; no retained message was used.
+
+Group 2 is ready for review: [review package and reproduction steps](../../../docs/m1-group2-review.md). Await reviewer approval before group 3.
 
 ## 3. Document
 
