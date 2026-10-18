@@ -3,12 +3,13 @@
 ## 1. Bring the stack up
 
 - [x] 1.1 Copy `deploy/.env.example` to `deploy/.env`, set `POSTGRES_PASSWORD`, run `docker compose -f deploy/docker-compose.yml up -d`; verify with `docker compose -f deploy/docker-compose.yml ps` that every service is running and kafka/timescaledb are healthy
-- [ ] 1.2 Unset `POSTGRES_PASSWORD` and run `docker compose ... config`; verify it fails naming the variable
+- [x] 1.2 Unset `POSTGRES_PASSWORD` and run `docker compose ... config`; verify it fails naming the variable
 - [ ] 1.3 Verify `git status` does not list `deploy/.env`
 
 Verification notes (2026-10-18, Docker Desktop):
 
 - 1.1: Reused the existing local `deploy/.env`. `docker compose -f deploy/docker-compose.yml config --quiet` and `up -d` succeeded. `ps -a` showed all six services running, with Kafka and TimescaleDB healthy. No Compose changes were needed.
+- 1.2: `Test-Path Env:\POSTGRES_PASSWORD` returned `False`. On Windows, `docker compose --env-file NUL -f deploy/docker-compose.yml config --quiet` exited 1 and named the required `POSTGRES_PASSWORD`. The null env file prevents fallback to `deploy/.env`, leaving the local credentials unchanged.
 
 ## 2. Inspect each component
 
