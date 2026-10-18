@@ -2,7 +2,7 @@
 
 Change: `add-end-to-end-slice`, tasks 6.0–6.1.
 Branch: `m3-add-end-to-end-slice`.
-Status: both tasks complete; awaiting final group review before archive/merge.
+Status: reviewer accepted final verification and approved sync/archive on 2026-10-18; M3 is Done.
 
 ## Task 6.0: fail when a test project runs no tests
 
@@ -80,7 +80,7 @@ One commit records each task:
 ```powershell
 git log --oneline --reverse cabb352..HEAD
 git diff cabb352..HEAD -- tests/Directory.Build.props
-git diff cabb352..HEAD -- ROADMAP.md README.md openspec/changes/add-end-to-end-slice/tasks.md docs/m3-group5-review.md docs/m3-group6-review.md
+git diff cabb352..HEAD -- ROADMAP.md README.md openspec/changes/archive/2026-10-18-add-end-to-end-slice/tasks.md docs/m3-group5-review.md docs/m3-group6-review.md openspec/specs
 ```
 
 Check the two deleted MSBuild lines, the provenance of the manual results above,
@@ -99,8 +99,10 @@ npx -y @fission-ai/openspec@1.14.3 validate --all --strict
 npx -y @fission-ai/openspec@1.14.3 list
 ```
 
-Expected: zero build warnings/errors, 103 tests passed with no skips, test exit
-code `0`, nine OpenSpec items valid, and `add-end-to-end-slice` at 14/14 tasks.
+Expected: zero build warnings/errors, 103 tests passed with no skips and test exit
+code `0`. At the G6 checkpoint, nine OpenSpec items were valid and M3 was 14/14.
+After archive, strict validation covers 12 items (six main specs and six active
+changes); M3 is absent from the active list and its archived tasks remain 14/14.
 The build is necessary so test runners receive the changed MSBuild configuration.
 The live SQL verification already supplied above does not need to be repeated
 for this two-line configuration change.
@@ -122,11 +124,25 @@ have run again. Grafana dashboards are M8 work; this group changes no Grafana se
 
 ## Final review checkpoint
 
-Strict OpenSpec validation passed all nine items on 2026-10-18. The refreshed
-apply instructions report `all_done`, with 14/14 tasks complete. ROADMAP.md marks
-M3 In review; implementation and manual live-trend verification are recorded,
-while the change remains active and the branch has not been merged.
+The reviewer confirmed the Release build, all 103 tests (46.202s, zero failures
+or skips), `$LASTEXITCODE` 0, strict validation of all nine pre-archive items and
+M3's Complete status on 2026-10-18, then explicitly approved sync followed by
+archive. Together with the supplied live SQL evidence, this accepts the G6 checkpoint.
 
-Review group 6 before the archive/merge handoff, following AGENTS.md's task-group
-checkpoint. Archive, spec synchronization and merge into `main` are not part of
-this apply run. M4 has not started; D4 remains its open decision.
+All four capabilities were synced into main specs: telemetry-batching,
+telemetry-publishing, telemetry-storage and telemetry-transform. A comparison
+confirmed that all 12 requirement blocks and 18 scenarios match the accepted
+deltas. The deltas had no Purpose sections; descriptive Purpose text was completed
+in the new main specs without changing the requirements. All six main specs
+passed strict validation before archive.
+
+Post-archive strict validation passed all 12 items (six active changes and six
+main specs). The active change list no longer contains M3. Closeout changes only
+specifications and documentation; the runtime code and test configuration are
+the same versions that passed the reviewer and agent test runs above.
+
+The complete change, including `.openspec.yaml`, is archived at
+[`2026-10-18-add-end-to-end-slice`](../openspec/changes/archive/2026-10-18-add-end-to-end-slice/).
+ROADMAP.md marks M3 Done. This closeout is included in the local merge into
+`main` under AGENTS.md. No runtime code, local database data or Kafka offsets
+were changed during closeout. M4 has not started; D4 remains its open decision.

@@ -5,13 +5,13 @@
 - [x] 1.1 Record the accepted D1 (`dead-letter` default, `create` opt-in) in ADR-0011, confirm D2 from ADR-0010 (nullable numeric values, booleans as 1/0, strings out of scope for v1), and align ROADMAP.md and the M3 planning artifacts with both decisions; verify strict OpenSpec validation
 - [x] 1.2 Add `Confluent.Kafka`, `Npgsql`, `Dapper` to `Directory.Packages.props` and reference them from the bridge/transformer; verify `dotnet build`
 
-Group 1 implementation and required verification are complete. Reviewer accepted the code review, Release build, resolved dependencies and all 35 tests on 2026-10-18 and authorized group 2; see [the review package](../../../docs/m3-group1-review.md).
+Group 1 implementation and required verification are complete. Reviewer accepted the code review, Release build, resolved dependencies and all 35 tests on 2026-10-18 and authorized group 2; see [the review package](../../../../docs/m3-group1-review.md).
 
 ## 2. Contract
 
 - [x] 2.1 Add `TelemetryBatch`, `BatchSample` and `TelemetryJson` (source-generated context) to `Telemetrix.Contracts`; verify a round-trip unit test against the sample JSON in `docs/plant-telemetry-pipeline.md`, including UTC `Z` timestamps and booleans as 1/0
 
-Group 2 implementation and required verification are complete. Reviewer accepted the code review, Release build, 44 Bridge tests, all 46 regression tests and strict OpenSpec validation on 2026-10-18 and authorized group 3; see [the review package](../../../docs/m3-group2-review.md).
+Group 2 implementation and required verification are complete. Reviewer accepted the code review, Release build, 44 Bridge tests, all 46 regression tests and strict OpenSpec validation on 2026-10-18 and authorized group 3; see [the review package](../../../../docs/m3-group2-review.md).
 
 ## 3. Bridge: batching and publishing
 
@@ -20,7 +20,7 @@ Group 2 implementation and required verification are complete. Reviewer accepted
 - [x] 3.3 Implement `KafkaBatchPublisher` (key = asset id, JSON value, `acks=all`, idempotence on) and wire channel → batcher → publisher in the bridge host; verify an integration test that consumes the produced message and asserts key, partition stability and contract shape
 - [x] 3.4 Run the bridge against OPC PLC; verify in Kafka UI that `plant.telemetry.raw` receives one message per asset every ~5 s
 
-Group 3 implementation and verification are complete. Reviewer accepted the code and manual verification on 2026-10-18 and authorized group 4 after confirming a single Bridge instance with consecutive offsets and final batches on shutdown; see [the review package](../../../docs/m3-group3-review.md).
+Group 3 implementation and verification are complete. Reviewer accepted the code and manual verification on 2026-10-18 and authorized group 4 after confirming a single Bridge instance with consecutive offsets and final batches on shutdown; see [the review package](../../../../docs/m3-group3-review.md).
 
 ## 4. Transformer: pipeline
 
@@ -28,14 +28,14 @@ Group 3 implementation and verification are complete. Reviewer accepted the code
 - [x] 4.2 Implement `TagResolver` with the unknown-tag policy (`dead-letter` default, `create`); verify unit tests for both policies; the transformer creates `plant.telemetry.dlq` (1 partition, 30 d) at startup
 - [x] 4.3 Implement `RawBatchConsumer` in group `transformer`; verify an integration test that two consumers split the 6 partitions
 
-Group 4 implementation and verification are complete. Reviewer accepted the results and authorized group 5 on 2026-10-18 after confirming the Release build, 29 Transformer unit cases, both consumer cases, catalog/DLQ cases and local Transformer startup/shutdown; see [the review package](../../../docs/m3-group4-review.md).
+Group 4 implementation and verification are complete. Reviewer accepted the results and authorized group 5 on 2026-10-18 after confirming the Release build, 29 Transformer unit cases, both consumer cases, catalog/DLQ cases and local Transformer startup/shutdown; see [the review package](../../../../docs/m3-group4-review.md).
 
 ## 5. Transformer: storage
 
 - [x] 5.1 Implement `MeasurementWriter` (temp staging table, binary COPY, `INSERT … ON CONFLICT DO NOTHING`, one transaction per batch); verify Testcontainers TimescaleDB tests: a batch inserts N rows, a replay inserts 0, a forced mid-write failure leaves 0 rows
 - [x] 5.2 Wire consumer → pipeline → writer; verify an end-to-end integration test (Kafka + TimescaleDB containers) from a produced batch to rows with correct quality and batch id
 
-Group 5 implementation and verification are complete. Reviewer supplied the live Bridge/Transformer logs, SQL results for all seven tags and the MotorTemperature trend, all 103 passing tests and strict validation, then authorized group 6 on 2026-10-18; see [the review package](../../../docs/m3-group5-review.md).
+Group 5 implementation and verification are complete. Reviewer supplied the live Bridge/Transformer logs, SQL results for all seven tags and the MotorTemperature trend, all 103 passing tests and strict validation, then authorized group 6 on 2026-10-18; see [the review package](../../../../docs/m3-group5-review.md).
 
 ## 6. Milestone check
 
@@ -45,4 +45,4 @@ Task 6.0 verified on 2026-10-18: Release build passed with zero warnings/errors 
 
 - [x] 6.1 Done when: with the compose stack, bridge and transformer running, rows appear in `measurement` and `SELECT time, value FROM measurement JOIN tag USING (tag_id) WHERE name = 'MotorTemperature' ORDER BY time DESC LIMIT 20` shows the live trend
 
-Group 6 is complete as of 2026-10-18. Task 6.1 records the reviewer's supplied SQL/live-service evidence and authorization to proceed: all seven tags have measurements and MotorTemperature changes from 402.1 to 403.8. All 14 implementation tasks are checked; M3 is In review, awaiting the final group checkpoint before archive/merge. The observed 16-batch backlog is recorded without claiming it has drained; see [the final review package](../../../docs/m3-group6-review.md).
+Group 6 is complete as of 2026-10-18. Task 6.1 records the reviewer's supplied SQL/live-service evidence: all seven tags have measurements and MotorTemperature changes from 402.1 to 403.8. The reviewer confirmed the Release build, all 103 tests with exit code 0, strict validation and Complete status, then approved spec sync followed by archive. All 14 tasks are complete, all four capabilities are synced to main specs, and M3 is archived and Done. This closeout is included in the local merge into main under AGENTS.md. The observed 16-batch backlog remains unverified as drained; see [the final review package](../../../../docs/m3-group6-review.md).
