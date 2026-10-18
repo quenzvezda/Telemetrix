@@ -35,10 +35,12 @@ Group 4 implementation and verification are complete. Reviewer accepted the resu
 - [x] 5.1 Implement `MeasurementWriter` (temp staging table, binary COPY, `INSERT … ON CONFLICT DO NOTHING`, one transaction per batch); verify Testcontainers TimescaleDB tests: a batch inserts N rows, a replay inserts 0, a forced mid-write failure leaves 0 rows
 - [x] 5.2 Wire consumer → pipeline → writer; verify an end-to-end integration test (Kafka + TimescaleDB containers) from a produced batch to rows with correct quality and batch id
 
-Group 5 implementation and agent verification are complete as of 2026-10-18: Release build, all 103 tests and strict OpenSpec validation passed. Await reviewer code review and local SQL verification before group 6; see [the review package](../../../docs/m3-group5-review.md).
+Group 5 implementation and verification are complete. Reviewer supplied the live Bridge/Transformer logs, SQL results for all seven tags and the MotorTemperature trend, all 103 passing tests and strict validation, then authorized group 6 on 2026-10-18; see [the review package](../../../docs/m3-group5-review.md).
 
 ## 6. Milestone check
 
-- [ ] 6.0 Remove the `--ignore-exit-code 8` line from `tests/Directory.Build.props` now that every test project has tests; verify `dotnet test` exits 0
+- [x] 6.0 Remove the `--ignore-exit-code 8` line from `tests/Directory.Build.props` now that every test project has tests; verify `dotnet test` exits 0
+
+Task 6.0 verified on 2026-10-18: Release build passed with zero warnings/errors and `dotnet test -c Release` exited successfully with all 103 tests passed and no skips after removing the empty-test exit-code exception.
 
 - [ ] 6.1 Done when: with the compose stack, bridge and transformer running, rows appear in `measurement` and `SELECT time, value FROM measurement JOIN tag USING (tag_id) WHERE name = 'MotorTemperature' ORDER BY time DESC LIMIT 20` shows the live trend
