@@ -5,6 +5,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\docs\plant-telemetry-pipeline.md"
+          Link="fixtures\plant-telemetry-pipeline.md" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\Telemetrix.Edge.Bridge\appsettings*.json"
           Link="config\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
