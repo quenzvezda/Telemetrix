@@ -21,14 +21,14 @@ M2 left the bridge writing samples into a `Channel<Sample>` that only a logger r
 
 ### Contracts
 
-- `TelemetryBatch` and `BatchSample` records plus a `TelemetryJson` class exposing `JsonSerializerOptions` (camelCase, UTC `DateTimeOffset`) backed by a source-generated `JsonSerializerContext`. Both services serialise only through it.
+- `TelemetryBatch` and `BatchSample` records plus a `TelemetryJson` class exposing `JsonSerializerOptions` (camelCase, UTC `DateTimeOffset`) backed by a source-generated `JsonSerializerContext`. Both services serialise only through it. Values remain `double?` end to end under ADR-0010; source adapters convert booleans to 1/0 before emitting samples, and strings are out of scope for v1.
 
 ### Transformer
 
 - **Consumer** (`Consuming/RawBatchConsumer`): `BackgroundService` running a blocking `Consume` loop on a dedicated thread (`Task.Run` with `LongRunning`), one batch at a time. Client defaults for commits in M3.
 - **Pipeline** (`Pipeline/`): pure functions, unit-testable without Kafka or Postgres — `QualityMapper` (severity bits 30–31 of the status code), `RangeCheck`, `TagResolver` (in-memory cache of `(asset, tag) → tag_id` loaded at startup, refreshed on miss).
 - **Storage** (`Storage/MeasurementWriter`): per batch, one transaction: `CREATE TEMP TABLE measurement_stage (LIKE measurement INCLUDING DEFAULTS) ON COMMIT DROP`, Npgsql binary `COPY` into it, then `INSERT INTO measurement SELECT … FROM measurement_stage ON CONFLICT (tag_id, time) DO NOTHING`. Rejected: multi-row `INSERT … VALUES` — slower and parameter-count limited.
-- **Non-numeric values** follow decision D2: booleans 1/0; strings are out of scope for v1 and go to the DLQ with reason `unsupported-type`.
+- **Unknown-tag policy** follows accepted D1 (ADR-0011): `dead-letter` by default sends only unknown-tag samples to `plant.telemetry.dlq` with the original batch id and reason `unknown-tag`, while known-tag samples are stored. Explicit `create` configuration inserts unknown tags without unit or valid range before storing their samples.
 
 ## Risks / Trade-offs
 

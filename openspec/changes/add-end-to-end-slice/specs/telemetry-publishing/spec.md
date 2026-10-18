@@ -15,7 +15,7 @@ Every batch SHALL be produced to `plant.telemetry.raw` with the asset id as the 
 - **THEN** all ten carry key `Pump01` and are in the same partition
 
 ### Requirement: Versioned batch message
-Each message value SHALL be a JSON batch with `schemaVersion` (1), a unique `batchId` (UUID), `source`, `endpoint`, `plantId`, `lineId`, `assetId`, `createdAt` and a `samples` array whose items carry `tag`, `value`, `sourceTimestamp`, `serverTimestamp` and the raw `statusCode`. Timestamps MUST be ISO-8601 UTC; booleans MUST travel as 1/0 (ADR-0008).
+Each message value SHALL be a JSON batch with `schemaVersion` (1), a unique `batchId` (UUID), `source`, `endpoint`, `plantId`, `lineId`, `assetId`, `createdAt` and a `samples` array whose items carry `tag`, `value`, `sourceTimestamp`, `serverTimestamp` and the raw `statusCode`. Timestamps MUST be ISO-8601 UTC; values SHALL be numbers or null, with booleans converted to 1/0 by source adapters before batching and strings out of scope for v1 (ADR-0008, ADR-0010).
 
 #### Scenario: Message matches the contract
 - **WHEN** the bridge produces a batch

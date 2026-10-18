@@ -2,7 +2,7 @@
 
 ## 1. Decisions and setup
 
-- [ ] 1.1 Resolve D1 (unknown-tag default) and D2 (non-numeric values) from ROADMAP.md; record each as an ADR in `docs/adr/` and update `specs/telemetry-transform/spec.md` if the outcome differs from it
+- [x] 1.1 Record the accepted D1 (`dead-letter` default, `create` opt-in) in ADR-0011, confirm D2 from ADR-0010 (nullable numeric values, booleans as 1/0, strings out of scope for v1), and align ROADMAP.md and the M3 planning artifacts with both decisions; verify strict OpenSpec validation
 - [ ] 1.2 Add `Confluent.Kafka`, `Npgsql`, `Dapper` to `Directory.Packages.props` and reference them from the bridge/transformer; verify `dotnet build`
 
 ## 2. Contract

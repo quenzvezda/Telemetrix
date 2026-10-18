@@ -26,7 +26,7 @@ A sample whose value lies outside its tag's valid range (`min_valid`, `max_valid
 - **THEN** it is stored with quality 2 and a null value
 
 ### Requirement: Tag resolution with unknown-tag policy
-The transformer SHALL resolve each sample's asset and tag names to the database tag id. For names not in the database it SHALL apply the configured policy: `dead-letter` (default) sends those samples, as a batch with the original batch id and an `unknown-tag` reason, to `plant.telemetry.dlq` and stores the rest; `create` inserts the tag without unit or range and stores the sample (FR-23).
+The transformer SHALL resolve each sample's asset and tag names to the database tag id. For names not in the database it SHALL apply the configured policy: `dead-letter` (default) sends those samples, as a batch with the original batch id and an `unknown-tag` reason, to `plant.telemetry.dlq` and stores the rest; `create` is an explicit opt-in that inserts the tag without unit or range and stores the sample (FR-23, ADR-0011).
 
 #### Scenario: Unknown tag, default policy
 - **WHEN** a Pump01 batch contains samples for `FlowRate` and for an unknown tag `Torque`

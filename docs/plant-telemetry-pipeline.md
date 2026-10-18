@@ -205,7 +205,7 @@ IDs let you reference requirements from tests and commit messages. "Must" items 
 | FR-20 | Transformer | Consume `plant.telemetry.raw` in consumer group `transformer` with auto-commit disabled | Must |
 | FR-21 | Transformer | Reject messages that fail schema validation to `plant.telemetry.dlq` with the error reason in a header | Must |
 | FR-22 | Transformer | Map OPC UA status codes to Good / Uncertain / Bad; mark values outside the tag's valid range as Bad | Must |
-| FR-23 | Transformer | Resolve asset and tag names to database ids, creating unknown tags or sending them to the DLQ (configurable) | Must |
+| FR-23 | Transformer | Resolve asset and tag names to database ids; send unknown-tag samples to the DLQ by default, with automatic tag creation as a configurable opt-in (ADR-0011) | Must |
 | FR-24 | Transformer | Write samples in bulk, then commit offsets; never commit before the write succeeds | Must |
 | FR-25 | Transformer | Republish cleaned batches to `plant.telemetry.clean` | Should |
 | FR-30 | Database | Store raw samples in the `measurement` hypertable and reject duplicate (tag, time) pairs | Must |
@@ -400,7 +400,7 @@ Stretch goals, once milestone 9 is done:
 Decisions to make before or during the build:
 
 - [ ] Batch thresholds: keep 500 samples / 5 s, or tune after measuring latency (NFR-06)?
-- [ ] Unknown tags: auto-create in the database, or send to the dead-letter topic?
-- [ ] Booleans and strings: store in `measurement` as numbers, or add a separate table for non-numeric values?
+- [x] Unknown tags: dead-letter by default; automatic tag creation is an explicit opt-in (ADR-0011).
+- [x] Booleans and strings: nullable numeric values, booleans converted to 1/0 by source adapters, strings out of scope for v1 (ADR-0010).
 - [ ] Buffer limit at the edge: how many hours of data, and what happens when it fills (drop oldest or stop subscribing)?
 - [ ] Keep `plant.telemetry.clean` in v1, or add it only with the separate sink?
