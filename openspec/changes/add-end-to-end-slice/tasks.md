@@ -11,11 +11,11 @@ Group 1 implementation and required verification are complete. Reviewer accepted
 
 - [x] 2.1 Add `TelemetryBatch`, `BatchSample` and `TelemetryJson` (source-generated context) to `Telemetrix.Contracts`; verify a round-trip unit test against the sample JSON in `docs/plant-telemetry-pipeline.md`, including UTC `Z` timestamps and booleans as 1/0
 
-Group 2 implementation and required verification are complete. Reviewer approval is pending; see [the review package](../../../docs/m3-group2-review.md).
+Group 2 implementation and required verification are complete. Reviewer accepted the code review, Release build, 44 Bridge tests, all 46 regression tests and strict OpenSpec validation on 2026-10-18 and authorized group 3; see [the review package](../../../docs/m3-group2-review.md).
 
 ## 3. Bridge: batching and publishing
 
-- [ ] 3.1 Implement `AssetBatcher` (per-asset batches, size/age flush, flush on shutdown, no empty batches); verify unit tests for each scenario in `specs/telemetry-batching/spec.md` using `FakeTimeProvider`
+- [x] 3.1 Implement `AssetBatcher` (per-asset batches, size/age flush, flush on shutdown, no empty batches); verify unit tests for each scenario in `specs/telemetry-batching/spec.md` using `FakeTimeProvider`
 - [ ] 3.2 Implement `TopicInitializer` for `plant.telemetry.raw` (6 partitions, 7 d); verify an integration test against a Testcontainers Kafka shows the topic and its config after start, and a second start leaves it unchanged
 - [ ] 3.3 Implement `KafkaBatchPublisher` (key = asset id, JSON value, `acks=all`, idempotence on) and wire channel → batcher → publisher in the bridge host; verify an integration test that consumes the produced message and asserts key, partition stability and contract shape
 - [ ] 3.4 Run the bridge against OPC PLC; verify in Kafka UI that `plant.telemetry.raw` receives one message per asset every ~5 s

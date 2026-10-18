@@ -2,7 +2,9 @@
 
 Change: `add-end-to-end-slice`, task 2.1.
 Branch: `m3-add-end-to-end-slice`.
-Status: implementation and required verification complete; reviewer approval pending.
+Status: reviewer accepted the code review and manual checks on 2026-10-18,
+including the Release build, 44 Bridge tests, all 46 regression tests and strict
+OpenSpec validation, and authorized group 3.
 
 ## What changed and why
 
@@ -84,5 +86,5 @@ unit tests passed, including the 11 new contract cases; strict OpenSpec validati
 passed all nine items. The full regression suite passed all 46 tests with none
 failed or skipped, including both OPC UA recovery integration cases. The staged
 diff passed `git diff --cached --check`. OpenSpec confirms 3/14 tasks complete.
-Group 3 (batching and Kafka publishing) awaits reviewer approval under AGENTS.md's
-task-group checkpoint.
+The reviewer accepted the code review and manual checks on 2026-10-18 and
+authorized group 3 (batching and Kafka publishing).
