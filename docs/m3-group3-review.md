@@ -38,3 +38,29 @@ retention. The targeted command is:
 ```powershell
 dotnet test --project tests/Telemetrix.Integration.Tests/Telemetrix.Integration.Tests.csproj -c Release -- --filter-class Telemetrix.Integration.Tests.KafkaTopicTests
 ```
+
+## Task 3.3: publishing and host lifecycle
+
+`KafkaBatchPublisher` awaits delivery of each shared UTF-8 JSON batch, keyed by
+asset id, with `acks=all` and idempotence enabled. Delivery logs include batch id,
+asset, sample count, partition and offset. Delivery timeout is ten seconds;
+persistent Kafka outages and disk buffering remain M5 work.
+
+The host initializes the topic before starting ingestion. Its pipeline uses
+bounded channels of 1,024 samples and 64 batches. Normal shutdown cancels the
+source, completes its channel, flushes open batches, and awaits publishing. A
+failing stage cancels and awaits its peers; the host shutdown deadline can abort
+a blocked drain. `Batching:MaxSamples`, `Batching:MaxAge` and
+`Kafka:BootstrapServers` validate at startup and support standard environment
+variable overrides.
+
+Verification on 2026-10-18: Release build passed with zero warnings/errors; all 55
+Bridge tests passed. `KafkaPublishingTests` passed against Testcontainers Kafka:
+the real host delivered ten Pump01 batches and one Tank01 batch, with correct
+keys, stable partitions, arrival order, JSON envelope and unique UUID v7 batch
+ids, then drained on shutdown. Worker tests also cover a partial batch on shutdown
+and publisher failure stopping its source. Targeted command:
+
+```powershell
+dotnet test --project tests/Telemetrix.Integration.Tests/Telemetrix.Integration.Tests.csproj -c Release -- --filter-class Telemetrix.Integration.Tests.KafkaPublishingTests
+```

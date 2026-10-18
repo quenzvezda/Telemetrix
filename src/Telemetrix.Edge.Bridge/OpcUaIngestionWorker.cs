@@ -1,48 +1,72 @@
 using System.Threading.Channels;
 using Telemetrix.Contracts;
+using Telemetrix.Edge.Bridge.Batching;
+using Telemetrix.Edge.Bridge.Publishing;
 using Telemetrix.Edge.Bridge.Sources;
 
 namespace Telemetrix.Edge.Bridge;
 
-public sealed class OpcUaIngestionWorker(
-    ISourceAdapter source,
-    ILogger<OpcUaIngestionWorker> logger) : BackgroundService
+public sealed class OpcUaIngestionWorker(ISourceAdapter source, AssetBatcher batcher,
+    IBatchPublisher publisher) : BackgroundService
 {
+    private readonly CancellationTokenSource forceStop = new();
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var channel = Channel.CreateBounded<Sample>(new BoundedChannelOptions(1024)
+        var samples = Channel.CreateBounded<Sample>(new BoundedChannelOptions(1024)
         {
             SingleReader = true,
             FullMode = BoundedChannelFullMode.Wait
         });
-        using var sourceCancellation = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-        var collecting = CollectAsync(channel.Writer, sourceCancellation.Token);
+        var batches = Channel.CreateBounded<TelemetryBatch>(new BoundedChannelOptions(64)
+        {
+            SingleReader = true,
+            SingleWriter = true,
+            FullMode = BoundedChannelFullMode.Wait
+        });
+        using var pipelineAbort = CancellationTokenSource.CreateLinkedTokenSource(forceStop.Token);
+        using var sourceStop = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, pipelineAbort.Token);
+        var collecting = CollectAsync(samples.Writer, sourceStop.Token);
+        var batching = batcher.RunAsync(samples.Reader, batches.Writer, pipelineAbort.Token);
+        var publishing = publisher.RunAsync(batches.Reader, pipelineAbort.Token);
+        var stages = new List<Task> { collecting, batching, publishing };
         try
         {
-            await foreach (var sample in channel.Reader.ReadAllAsync(stoppingToken))
+            while (stages.Count > 0)
             {
-                logger.LogInformation(
-                    "Sample {Plant}/{Line}/{Asset}/{Tag}: value={Value}, source={SourceTimestamp:O}, server={ServerTimestamp:O}, status=0x{StatusCode:X8}",
-                    sample.Plant, sample.Line, sample.Asset, sample.Tag, sample.Value,
-                    sample.SourceTimestamp, sample.ServerTimestamp, sample.StatusCode);
+                var completed = await Task.WhenAny(stages);
+                await completed;
+                stages.Remove(completed);
             }
-
-            await collecting;
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        catch
         {
-        }
-        finally
-        {
-            await sourceCancellation.CancelAsync();
+            await pipelineAbort.CancelAsync();
+            await sourceStop.CancelAsync();
             try
             {
-                await collecting;
+                await Task.WhenAll(collecting, batching, publishing);
             }
-            catch (OperationCanceledException) when (sourceCancellation.IsCancellationRequested)
+            catch
             {
+                // Preserve the first failing stage after observing every stage's completion.
             }
+            throw;
         }
+    }
+
+    public override async Task StopAsync(CancellationToken cancellationToken)
+    {
+        // Stop the source first; only the host shutdown deadline aborts the drain.
+        using var deadline = cancellationToken.Register(() => forceStop.Cancel());
+        await base.StopAsync(cancellationToken);
+    }
+
+    public override void Dispose()
+    {
+        forceStop.Cancel();
+        base.Dispose();
+        forceStop.Dispose();
     }
 
     private async Task CollectAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
@@ -51,6 +75,9 @@ public sealed class OpcUaIngestionWorker(
         try
         {
             await source.RunAsync(writer, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
         }
         catch (Exception exception)
         {

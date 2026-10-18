@@ -8,7 +8,7 @@ builder.Services.AddOpcUaOptions(builder.Configuration);
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ITelemetryContext, ServiceProviderTelemetryContext>();
 builder.Services.AddSingleton<ISourceAdapter, OpcUaSourceAdapter>();
-builder.Services.AddHostedService<OpcUaIngestionWorker>();
+builder.Services.AddBridgePipeline(builder.Configuration);
 
 var host = builder.Build();
 host.Run();

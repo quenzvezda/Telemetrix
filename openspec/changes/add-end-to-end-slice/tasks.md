@@ -17,7 +17,7 @@ Group 2 implementation and required verification are complete. Reviewer accepted
 
 - [x] 3.1 Implement `AssetBatcher` (per-asset batches, size/age flush, flush on shutdown, no empty batches); verify unit tests for each scenario in `specs/telemetry-batching/spec.md` using `FakeTimeProvider`
 - [x] 3.2 Implement `TopicInitializer` for `plant.telemetry.raw` (6 partitions, 7 d); verify an integration test against a Testcontainers Kafka shows the topic and its config after start, and a second start leaves it unchanged
-- [ ] 3.3 Implement `KafkaBatchPublisher` (key = asset id, JSON value, `acks=all`, idempotence on) and wire channel → batcher → publisher in the bridge host; verify an integration test that consumes the produced message and asserts key, partition stability and contract shape
+- [x] 3.3 Implement `KafkaBatchPublisher` (key = asset id, JSON value, `acks=all`, idempotence on) and wire channel → batcher → publisher in the bridge host; verify an integration test that consumes the produced message and asserts key, partition stability and contract shape
 - [ ] 3.4 Run the bridge against OPC PLC; verify in Kafka UI that `plant.telemetry.raw` receives one message per asset every ~5 s
 
 ## 4. Transformer: pipeline
