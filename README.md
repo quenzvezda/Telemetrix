@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1's local environment is implemented and manually verified. The repository contains service scaffolds, Docker Compose infrastructure, database initialization SQL, Grafana provisioning, CI, and a specification-driven roadmap. Pipeline behavior is being implemented incrementally; the services do not yet deliver an end-to-end telemetry flow.
+M1's local environment and M2's OPC UA client are complete and manually verified. The Bridge subscribes to configured or discovered OPC UA tags, logs samples with UTC source timestamps and raw status codes, and resumes after a server restart. M3 adds batching, Kafka publishing, transformation and database storage to complete the first end-to-end telemetry flow.
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
@@ -49,7 +49,7 @@ Acceptance criteria and failure scenarios are tracked in [OpenSpec changes](open
 | Time-series storage | PostgreSQL 17 + TimescaleDB |
 | Visualization | Grafana |
 | Local infrastructure | Docker Compose, Mosquitto, Kafka UI, OPC PLC simulator |
-| Verification | GitHub Actions; Testcontainers integration tests planned |
+| Verification | GitHub Actions; Bridge unit tests and Testcontainers OPC UA recovery tests |
 
 ## Getting started
 
@@ -68,7 +68,7 @@ dotnet build --no-restore -c Release
 dotnet test -c Release
 ```
 
-The test projects are currently scaffolds. Scenario coverage will be added with the corresponding milestones.
+The suite contains 33 Bridge unit cases and two OPC UA recovery integration cases. Docker must be running for the integration cases, which create their own OPC PLC containers. Additional coverage is added with the corresponding milestones; the Transformer test project is still a scaffold.
 
 ### Local environment
 
@@ -106,6 +106,28 @@ Expected: all six services are `Up`, and `kafka` and `timescaledb` become `healt
 | Grafana | <http://localhost:3000> | `http://grafana:3000` | Initial login `admin` / `admin` |
 
 The stack uses local development settings, including unsecured OPC UA and plaintext Kafka listeners. Production security is tracked in M9.
+
+#### Run the OPC UA Bridge
+
+With OPC PLC running, launch the Bridge from the repository root:
+
+```powershell
+dotnet run --project src/Telemetrix.Edge.Bridge
+```
+
+The Development launch profile maps seven domain tags to the OPC PLC nodes verified in M1. Sample logs include identity, value, UTC source/server timestamps and raw status code. To exercise recovery, keep the Bridge running and restart OPC PLC from another terminal:
+
+```powershell
+docker compose -f deploy/docker-compose.yml restart opc-plc
+```
+
+Samples resume after the session is restored. Stop the Bridge with Ctrl+C. To discover all variables under OPC PLC's telemetry folder using server browse names, run:
+
+```powershell
+dotnet run --project src/Telemetrix.Edge.Bridge -- --OpcUa:BrowseStartNode=Objects/OpcPlc/Telemetry
+```
+
+See the [accepted OPC UA spec](openspec/specs/opcua-ingestion/spec.md) and [M2 recovery review](docs/m2-group3-review.md) for behavior and verification details.
 
 #### Browse OPC UA with UaExpert
 
@@ -186,8 +208,8 @@ docker compose -f deploy/docker-compose.yml ps -a
 
 | Path | Purpose |
 | --- | --- |
-| [src/](src/) | Contracts, edge bridge, transformer, and simulator project scaffolds |
-| [tests/](tests/) | Unit and integration test project scaffolds |
+| [src/](src/) | Shared contracts, working OPC UA Bridge, and Transformer/simulator scaffolds |
+| [tests/](tests/) | Bridge unit tests, OPC UA recovery integration tests, and Transformer test scaffold |
 | [deploy/](deploy/) | Compose stack, database initialization, and Grafana provisioning |
 | [Design](docs/plant-telemetry-pipeline.md) | Architecture, data model, and FR/NFR requirements |
 | [Domain glossary](CONTEXT.md) | Shared vocabulary for samples, batches, assets, tags, quality, and gaps |
