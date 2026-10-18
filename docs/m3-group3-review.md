@@ -2,7 +2,7 @@
 
 Change: `add-end-to-end-slice`, tasks 3.1–3.4.
 Branch: `m3-add-end-to-end-slice`.
-Status: implementation and agent verification complete; reviewer approval pending.
+Status: reviewer accepted the code and manual verification on 2026-10-18 and authorized group 4.
 
 ## Task 3.1: per-asset batching
 
@@ -176,4 +176,17 @@ with no failures or skips, including 55 Bridge unit tests, two OPC UA recovery
 cases, two Kafka topic cases and the real-host Kafka publishing case. Strict
 OpenSpec validation passed all nine items. The live OPC PLC → Kafka UI check is
 recorded above. All tasks in group 3 are complete; group 4 (Transformer pipeline)
-awaits reviewer approval under AGENTS.md's task-group checkpoint.
+was authorized by the reviewer on 2026-10-18 after the single-instance verification below.
+
+## Reviewer verification and process cleanup
+
+The reviewer confirmed all 60 tests and strict validation of all nine OpenSpec
+items. Their initial build encountered MSB3027/MSB3021 because an agent-started
+Bridge child process survived cancellation of its parent command. That specific
+process was stopped; Release build then passed with zero warnings/errors and no
+Bridge process remained. Future live checks must verify child-process cleanup.
+
+The reviewer then ran one Bridge instance: Pump01 stayed in partition 2 with
+consecutive offsets 342–346, and Tank01 stayed in partition 3 with consecutive
+offsets 340–344. Shutdown published the final six Pump01 samples and one Tank01
+sample. Group 4 was explicitly authorized after these results.

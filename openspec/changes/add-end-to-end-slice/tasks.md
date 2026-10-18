@@ -20,11 +20,11 @@ Group 2 implementation and required verification are complete. Reviewer accepted
 - [x] 3.3 Implement `KafkaBatchPublisher` (key = asset id, JSON value, `acks=all`, idempotence on) and wire channel → batcher → publisher in the bridge host; verify an integration test that consumes the produced message and asserts key, partition stability and contract shape
 - [x] 3.4 Run the bridge against OPC PLC; verify in Kafka UI that `plant.telemetry.raw` receives one message per asset every ~5 s
 
-Group 3 implementation and agent verification are complete, including the live OPC PLC → Kafka UI check. Reviewer approval is pending; see [the review package](../../../docs/m3-group3-review.md).
+Group 3 implementation and verification are complete. Reviewer accepted the code and manual verification on 2026-10-18 and authorized group 4 after confirming a single Bridge instance with consecutive offsets and final batches on shutdown; see [the review package](../../../docs/m3-group3-review.md).
 
 ## 4. Transformer: pipeline
 
-- [ ] 4.1 Implement `QualityMapper` and `RangeCheck`; verify unit tests for Good/Uncertain/Bad codes, out-of-range, missing value, tag without range
+- [x] 4.1 Implement `QualityMapper` and `RangeCheck`; verify unit tests for Good/Uncertain/Bad codes, out-of-range, missing value, tag without range
 - [ ] 4.2 Implement `TagResolver` with the unknown-tag policy (`dead-letter` default, `create`); verify unit tests for both policies; the transformer creates `plant.telemetry.dlq` (1 partition, 30 d) at startup
 - [ ] 4.3 Implement `RawBatchConsumer` in group `transformer`; verify an integration test that two consumers split the 6 partitions
 
