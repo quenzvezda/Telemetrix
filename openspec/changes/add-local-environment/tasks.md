@@ -34,7 +34,11 @@ Group 2 is ready for review: [review package and reproduction steps](../../../do
 
 ## 3. Document
 
-- [ ] 3.1 Fill the README "Local environment" section: start, endpoints table, UaExpert tip, reset (`down -v`); verify by following it from a fresh clone
+- [x] 3.1 Fill the README "Local environment" section: start, endpoints table, UaExpert tip, reset (`down -v`); verify by following it from a fresh clone
+
+Verification notes (2026-10-18):
+
+- 3.1: Expanded the README's Local environment section and followed its startup, Kafka UI, Grafana, database, MQTT and reset steps from a local clone using the isolated `telemetrix-m1-doccheck` Compose project with fresh volumes. All six services ran, Kafka/TimescaleDB were healthy, SQL returned 7 tags and the measurement hypertable, Grafana reported `Database Connection OK`, and Kafka/MQTT round-trips succeeded. UaExpert instructions reflect the reviewer's G2 walkthrough; final fresh-volume manual acceptance remains task 4.1. The temporary Compose resources were removed and the original containers restarted. See the [G3 review package](../../../docs/m1-group3-review.md), including the remaining temporary-directory cleanup.
 
 ## 4. Milestone check
 

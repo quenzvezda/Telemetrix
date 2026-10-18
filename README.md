@@ -70,41 +70,117 @@ dotnet test -c Release
 
 The test projects are currently scaffolds. Scenario coverage will be added with the corresponding milestones.
 
-### Local infrastructure
+### Local environment
 
-From the repository root:
+M1 runs six infrastructure services: OPC PLC, Mosquitto, Kafka, Kafka UI, TimescaleDB and Grafana. Bridge and Transformer are not yet included as Compose services; the end-to-end telemetry flow is added in later milestones. Docker with Compose is sufficient for this infrastructure; the .NET SDK is needed for the service build above.
 
-```sh
-cp deploy/.env.example deploy/.env
+#### Start the stack
+
+Run all commands from the repository root. On a fresh clone, create the local environment file in PowerShell:
+
+```powershell
+Copy-Item deploy/.env.example deploy/.env
 ```
 
-In PowerShell, use `Copy-Item deploy/.env.example deploy/.env`. Set `POSTGRES_PASSWORD` in `deploy/.env`, then start the stack:
+On a POSIX shell, use `cp deploy/.env.example deploy/.env` instead. Open `deploy/.env` and replace `change-me` with a local password for `POSTGRES_PASSWORD`. Keep an existing `.env` when resuming work; it is ignored by Git and must not be committed.
 
-```sh
+Validate the configuration without printing its resolved secrets, then start the stack:
+
+```powershell
+docker compose -f deploy/docker-compose.yml config --quiet
 docker compose -f deploy/docker-compose.yml up -d
-docker compose -f deploy/docker-compose.yml ps
+docker compose -f deploy/docker-compose.yml ps -a
 ```
 
-This starts the infrastructure services. Bridge and Transformer are not yet included as Compose services. OPC PLC simulation and node mapping are verified as part of the environment and ingestion milestones.
+Expected: all six services are `Up`, and `kafka` and `timescaledb` become `healthy`. The first start downloads the pinned images and initializes an empty database volume. If `POSTGRES_PASSWORD` is missing or empty, Compose stops with an error naming that variable. If a service exits or remains unhealthy, inspect its logs with `docker compose -f deploy/docker-compose.yml logs --tail 100 <service>`.
 
-| Service | Local endpoint |
-| --- | --- |
-| OPC PLC | `opc.tcp://localhost:50000` |
-| MQTT / Mosquitto | `localhost:1883` |
-| Kafka, host / Compose clients | `localhost:29092` / `kafka:9092` |
-| Kafka UI | <http://localhost:8080> |
-| TimescaleDB | `localhost:5432`, database and user: `telemetry` |
-| Grafana | <http://localhost:3000>, initial login: `admin` / `admin` |
+#### Endpoints and accounts
 
-The stack uses local development settings, including unsecured OPC UA and plaintext Kafka listeners. Production security is tracked in the roadmap.
+| Service | From the host | From another Compose service | Account / notes |
+| --- | --- | --- | --- |
+| OPC PLC | `opc.tcp://localhost:50000` | `opc.tcp://opc-plc:50000` | Security None, Anonymous |
+| MQTT / Mosquitto | `localhost:1883` | `mosquitto:1883` | Anonymous |
+| Kafka | `localhost:29092` | `kafka:9092` | Create topics explicitly |
+| Kafka UI | <http://localhost:8080> | `http://kafka-ui:8080` | Cluster `local` |
+| TimescaleDB | `localhost:5432` | `timescaledb:5432` | Database and user `telemetry`; password from `deploy/.env` |
+| Grafana | <http://localhost:3000> | `http://grafana:3000` | Initial login `admin` / `admin` |
 
-Stop the stack while retaining its data:
+The stack uses local development settings, including unsecured OPC UA and plaintext Kafka listeners. Production security is tracked in M9.
 
-```sh
-docker compose -f deploy/docker-compose.yml down
+#### Browse OPC UA with UaExpert
+
+Install [UaExpert](https://www.unified-automation.com/downloads/opc-ua-clients/uaexpert.html) on the host. On first launch, create its application certificate; `Telemetrix` can be used for the required Organization field, with the other defaults retained.
+
+1. Choose **Server > Add**, add `opc.tcp://localhost:50000` under **Custom Discovery**, and expand the OPC PLC server to see its endpoints.
+2. If **Replace Hostname** appears, choose **Yes** to use `localhost` instead of the container hostname returned by discovery.
+3. Select an endpoint with security policy **None** and security mode **None**, keep **Anonymous**, and confirm with **OK**.
+4. Select the server and choose **Server > Connect**. For the local OPC PLC certificate, use **Trust Server Certificate**, or accept it temporarily for the session, then continue.
+5. Expand **Objects > OpcPlc > Telemetry** in Address Space and drag variables such as `FastUInt1` and `AlternatingBoolean` into Data Access View.
+6. Verify that values change and that source timestamps, data types and status codes are visible. Nodes intended to simulate poor quality can show non-Good status codes.
+
+The [M1 node inventory](docs/m1-opcua-verification.md) records the observed NodeIds and data types for M2 mapping. Namespace index `3` was observed in this server; check the namespace table when configuring a client. If a container is recreated, its hostname and certificate can change, so repeat discovery or certificate acceptance as needed.
+
+#### Inspect Kafka
+
+Open [Kafka UI](http://localhost:8080), select **local > Topics**, and create `scratch.test` with one partition and replication factor one. Produce `{"message":"hello telemetrix"}`, verify it on the **Messages** tab, then delete the test topic.
+
+Topic auto-creation is disabled. Sending to an uncreated topic must fail; see the [group 2 review commands](docs/m1-group2-review.md#23-missing-kafka-topic) for the bounded console-producer check.
+
+#### Inspect TimescaleDB
+
+Use `psql` inside the container; no host PostgreSQL client is required:
+
+```powershell
+docker compose -f deploy/docker-compose.yml exec -T timescaledb psql -X -v ON_ERROR_STOP=1 -U telemetry -d telemetry -c "SELECT count(*) FROM tag"
+docker compose -f deploy/docker-compose.yml exec -T timescaledb psql -X -v ON_ERROR_STOP=1 -U telemetry -d telemetry -c "SELECT hypertable_schema, hypertable_name FROM timescaledb_information.hypertables"
 ```
 
-To reset Kafka and database data, run `docker compose -f deploy/docker-compose.yml down -v`. Database initialization SQL runs only when the database volume is empty.
+Expected: the first query returns `7`, and the second includes `public | measurement`. The initialization script seeds two assets and seven tags. Live measurements are added by the later ingestion milestones.
+
+#### Test Grafana's database connection
+
+Sign in at <http://localhost:3000> with `admin` / `admin` on first start, then set a new Grafana password when prompted. On later visits, use the password you set.
+
+Open **Connections > Data sources > TimescaleDB**, scroll to the bottom and click **Test**. Expected: **Database Connection OK**. The provisioned data source already contains its database settings; creating another connection is unnecessary.
+
+The Grafana login is separate from the PostgreSQL account. `POSTGRES_PASSWORD` supplied to Grafana is used by the data source to connect as database user `telemetry`; it does not set the Grafana administrator password.
+
+#### Test MQTT
+
+In terminal A, start a subscriber that exits after one message or 30 seconds:
+
+```powershell
+docker compose -f deploy/docker-compose.yml exec -T mosquitto mosquitto_sub -h localhost -t telemetrix/m1/smoke -C 1 -W 30 -v -d
+```
+
+When terminal A reports `SUBACK`, publish from terminal B:
+
+```powershell
+docker compose -f deploy/docker-compose.yml exec -T mosquitto mosquitto_pub -h localhost -t telemetrix/m1/smoke -m hello
+```
+
+Expected in terminal A: `telemetrix/m1/smoke hello`. The publisher succeeds without output. These commands use the MQTT tools bundled in the Mosquitto container.
+
+#### Stop, resume and reset
+
+For a normal pause, keep the containers and their current state:
+
+```powershell
+docker compose -f deploy/docker-compose.yml stop
+docker compose -f deploy/docker-compose.yml start
+```
+
+`docker compose -f deploy/docker-compose.yml down` removes the containers and network while keeping the named Kafka and database volumes. Grafana's local accounts and dashboards, and the OPC PLC certificate, are not backed by named volumes in this Compose file; use `stop` / `start` to keep their current containers.
+
+To deliberately reset the local environment, remove the containers **and Kafka/database data**, then start again:
+
+```powershell
+docker compose -f deploy/docker-compose.yml down -v
+docker compose -f deploy/docker-compose.yml up -d
+docker compose -f deploy/docker-compose.yml ps -a
+```
+
+`deploy/.env` stays in place. `deploy/sql/init.sql` runs only when the database volume is empty, so this reset recreates the schema and seed tags. Reconnect UaExpert and repeat the inspection steps after a reset. Detailed checks and recorded results are available in the [M1 group 2 review package](docs/m1-group2-review.md).
 
 ## Repository guide
 
