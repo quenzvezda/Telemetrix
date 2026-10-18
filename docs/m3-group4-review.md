@@ -2,7 +2,7 @@
 
 Change: `add-end-to-end-slice`, tasks 4.1–4.3.
 Branch: `m3-add-end-to-end-slice`.
-Status: implementation and required verification complete; reviewer approval pending.
+Status: reviewer accepted verification and authorized group 5 on 2026-10-18.
 
 ## Task 4.1: quality and range checks
 
@@ -164,5 +164,6 @@ the staged diff passed `git diff --cached --check`. OpenSpec confirms tasks
 4.1–4.3 complete and overall progress 10/14. No standalone Bridge/Transformer
 process was launched by the agent during this group.
 
-Group 5 (bulk measurement storage and end-to-end wiring) awaits reviewer approval
-under AGENTS.md's task-group checkpoint. M3 remains In progress.
+The reviewer confirmed the Release build, 29 Transformer unit cases, both raw
+consumer cases, the catalog/DLQ cases, and local DLQ creation plus clean host
+shutdown, then authorized group 5 on 2026-10-18. M3 remains In progress.

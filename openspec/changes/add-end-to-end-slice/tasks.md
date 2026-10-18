@@ -28,11 +28,11 @@ Group 3 implementation and verification are complete. Reviewer accepted the code
 - [x] 4.2 Implement `TagResolver` with the unknown-tag policy (`dead-letter` default, `create`); verify unit tests for both policies; the transformer creates `plant.telemetry.dlq` (1 partition, 30 d) at startup
 - [x] 4.3 Implement `RawBatchConsumer` in group `transformer`; verify an integration test that two consumers split the 6 partitions
 
-Group 4 implementation and required verification are complete. Reviewer approval is pending; see [the review package](../../../docs/m3-group4-review.md).
+Group 4 implementation and verification are complete. Reviewer accepted the results and authorized group 5 on 2026-10-18 after confirming the Release build, 29 Transformer unit cases, both consumer cases, catalog/DLQ cases and local Transformer startup/shutdown; see [the review package](../../../docs/m3-group4-review.md).
 
 ## 5. Transformer: storage
 
-- [ ] 5.1 Implement `MeasurementWriter` (temp staging table, binary COPY, `INSERT … ON CONFLICT DO NOTHING`, one transaction per batch); verify Testcontainers TimescaleDB tests: a batch inserts N rows, a replay inserts 0, a forced mid-write failure leaves 0 rows
+- [x] 5.1 Implement `MeasurementWriter` (temp staging table, binary COPY, `INSERT … ON CONFLICT DO NOTHING`, one transaction per batch); verify Testcontainers TimescaleDB tests: a batch inserts N rows, a replay inserts 0, a forced mid-write failure leaves 0 rows
 - [ ] 5.2 Wire consumer → pipeline → writer; verify an end-to-end integration test (Kafka + TimescaleDB containers) from a produced batch to rows with correct quality and batch id
 
 ## 6. Milestone check
