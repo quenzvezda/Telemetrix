@@ -77,7 +77,15 @@ public sealed class OpcUaSourceAdapter(
         var handlers = new List<(MonitoredItem Item, OpcUaTagOptions Tag, MonitoredItemNotificationEventHandler Handler)>();
         try
         {
-            foreach (var tag in settings.Tags)
+            var tags = string.IsNullOrWhiteSpace(settings.BrowseStartNode)
+                ? settings.Tags
+                : await OpcUaTagDiscovery.DiscoverAsync(session, settings.BrowseStartNode, cancellationToken);
+            if (tags.Count == 0)
+            {
+                throw new InvalidOperationException("OpcUa:BrowseStartNode contains no variables to monitor.");
+            }
+
+            foreach (var tag in tags)
             {
                 var item = new MonitoredItem(telemetry, new MonitoredItemOptions
                 {

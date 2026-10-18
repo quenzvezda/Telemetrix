@@ -17,6 +17,7 @@ M2 builds only the input side of the bridge; output is the log. M3 replaces the 
 - **OPC Foundation stack** (`OPCFoundation.NetStandard.Opc.Ua.Client`). Build `ApplicationConfiguration` in code, not XML. Auto-accept server certificates only while the security mode is None. Session recovery uses the SDK's `SessionReconnectHandler`, which transfers or recreates the subscription.
 - **Options**: an `OpcUa` section bound to `OpcUaOptions`, validated on start; tags are an array of `{ Asset, Tag, NodeId }`; env override via the standard `OpcUa__Endpoint` convention.
 - **Worker**: `OpcUaIngestionWorker` (`BackgroundService`) runs the adapter plus, for M2 only, a channel reader that logs each sample with structured fields.
+- **Browse discovery**: when `BrowseStartNode` is set, it takes precedence over the static list. Accept a NodeId or an `Objects/...` browse path, follow forward hierarchical references, and derive each tag's name from its variable browse name and asset from the nearest parent object. Follow continuation points and visit each local NodeId once. OPC PLC uses generic names; discovery includes the seven statically mapped NodeIds without retaining their aliases, and may find additional variables. The reviewer confirmed this interpretation on 2026-10-18.
 
 ## Risks / Trade-offs
 

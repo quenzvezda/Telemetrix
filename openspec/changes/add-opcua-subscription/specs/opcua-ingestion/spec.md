@@ -29,6 +29,11 @@ When a browse start node is configured instead of a tag list, the bridge SHALL b
 - **WHEN** the browse start node is `Objects/Plant01/Line01`
 - **THEN** the bridge monitors one item per variable under each asset object, with the asset taken from the parent object and the tag from the variable's browse name
 
+#### Scenario: Browse OPC PLC telemetry
+- **WHEN** the browse start node is `Objects/OpcPlc/Telemetry`
+- **THEN** the bridge monitors every variable found there using the server's browse names, and the discovered NodeIds include all seven development mappings even though the static aliases differ
+- **AND** the browse start node takes precedence over any configured static tag list
+
 ### Requirement: Sample shape
 Every data-change notification SHALL become exactly one sample carrying plant, line, asset, tag, value, source timestamp, server timestamp and the raw OPC UA status code. Timestamps MUST be UTC, and the source timestamp MUST be the one the server reports, never the bridge's clock (ADR-0009).
 

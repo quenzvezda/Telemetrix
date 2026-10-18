@@ -49,4 +49,26 @@ public class OpcUaSampleMapperTests
         Assert.Null(sample.Value);
         Assert.Equal(StatusCodes.BadNoData.Code, sample.StatusCode);
     }
+
+    [Fact]
+    public void UnsupportedStringPreservesMetadataWithoutInventingANumber()
+    {
+        var source = new DateTimeOffset(2026, 10, 18, 5, 15, 1, TimeSpan.Zero);
+        var notification = new DataValue(new Variant("71.3"), StatusCodes.Good, source, source);
+
+        var sample = OpcUaSampleMapper.Map(new OpcUaOptions(), new OpcUaTagOptions(), notification);
+
+        Assert.Null(sample.Value);
+        Assert.Equal(source, sample.SourceTimestamp);
+        Assert.Equal(StatusCodes.Good.Code, sample.StatusCode);
+    }
+
+    [Fact]
+    public void NumericArraysDoNotBecomeAnInventedScalarZero()
+    {
+        var sample = OpcUaSampleMapper.Map(new OpcUaOptions(), new OpcUaTagOptions(),
+            new DataValue(new Variant((ArrayOf<int>)[1, 2])));
+
+        Assert.Null(sample.Value);
+    }
 }
