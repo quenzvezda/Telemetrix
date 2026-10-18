@@ -3,7 +3,9 @@
 ## 1. Decisions and setup
 
 - [x] 1.1 Record the accepted D1 (`dead-letter` default, `create` opt-in) in ADR-0011, confirm D2 from ADR-0010 (nullable numeric values, booleans as 1/0, strings out of scope for v1), and align ROADMAP.md and the M3 planning artifacts with both decisions; verify strict OpenSpec validation
-- [ ] 1.2 Add `Confluent.Kafka`, `Npgsql`, `Dapper` to `Directory.Packages.props` and reference them from the bridge/transformer; verify `dotnet build`
+- [x] 1.2 Add `Confluent.Kafka`, `Npgsql`, `Dapper` to `Directory.Packages.props` and reference them from the bridge/transformer; verify `dotnet build`
+
+Group 1 implementation and required verification are complete. Reviewer approval is pending; see [the review package](../../../docs/m3-group1-review.md).
 
 ## 2. Contract
 
