@@ -1,7 +1,7 @@
 using Telemetrix.Transformer;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddTransformerMetadata(builder.Configuration);
 
 var host = builder.Build();
 host.Run();

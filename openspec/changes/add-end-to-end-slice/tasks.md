@@ -25,7 +25,7 @@ Group 3 implementation and verification are complete. Reviewer accepted the code
 ## 4. Transformer: pipeline
 
 - [x] 4.1 Implement `QualityMapper` and `RangeCheck`; verify unit tests for Good/Uncertain/Bad codes, out-of-range, missing value, tag without range
-- [ ] 4.2 Implement `TagResolver` with the unknown-tag policy (`dead-letter` default, `create`); verify unit tests for both policies; the transformer creates `plant.telemetry.dlq` (1 partition, 30 d) at startup
+- [x] 4.2 Implement `TagResolver` with the unknown-tag policy (`dead-letter` default, `create`); verify unit tests for both policies; the transformer creates `plant.telemetry.dlq` (1 partition, 30 d) at startup
 - [ ] 4.3 Implement `RawBatchConsumer` in group `transformer`; verify an integration test that two consumers split the 6 partitions
 
 ## 5. Transformer: storage
