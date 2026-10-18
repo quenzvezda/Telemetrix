@@ -1,3 +1,7 @@
+## Purpose
+
+Collect samples from OPC UA servers through configurable tag subscriptions or browse discovery, preserving source timestamps and raw status codes and resuming collection after a server restart.
+
 ## ADDED Requirements
 
 ### Requirement: Configurable OPC UA connection and tag list
@@ -35,7 +39,7 @@ When a browse start node is configured instead of a tag list, the bridge SHALL b
 - **AND** the browse start node takes precedence over any configured static tag list
 
 ### Requirement: Sample shape
-Every data-change notification SHALL become exactly one sample carrying plant, line, asset, tag, value, source timestamp, server timestamp and the raw OPC UA status code. Timestamps MUST be UTC, and the source timestamp MUST be the one the server reports, never the bridge's clock (ADR-0009).
+Every data-change notification SHALL become exactly one sample carrying plant, line, asset, tag, value, source timestamp, server timestamp and the raw OPC UA status code (FR-11). Timestamps MUST be UTC, and the source timestamp MUST be the one the server reports, never the bridge's clock (ADR-0009).
 
 Sample values SHALL use nullable double precision numbers. Source adapters SHALL convert booleans to 1/0 before emitting samples; string values are outside the v1 scope (ADR-0010).
 
@@ -56,7 +60,7 @@ Sample values SHALL use nullable double precision numbers. Source adapters SHALL
 - **THEN** the sample value is 0
 
 ### Requirement: Resume after server restart
-When the OPC UA session is lost, the bridge SHALL keep retrying and, once the server is reachable again, SHALL resume delivering samples for every configured tag without a process restart.
+When the OPC UA session is lost, the bridge SHALL keep retrying and, once the server is reachable again, SHALL resume delivering samples for every configured tag without a process restart (FR-11).
 
 #### Scenario: Simulator container restarted
 - **WHEN** the OPC UA server is restarted while the bridge runs

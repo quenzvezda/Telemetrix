@@ -21,8 +21,10 @@ Group 2 implementation and verification are complete. Reviewer accepted the manu
 
 - [x] 3.1 Add session recovery with `SessionReconnectHandler`; verify with `docker compose -f deploy/docker-compose.yml restart opc-plc` while the bridge runs — samples resume for all tags without restarting the bridge
 
-Group 3 implementation and verification are complete. Reviewer acceptance and the final milestone check are pending; see [the review package](../../../docs/m2-group3-review.md).
+Group 3 implementation and verification are complete. Reviewer accepted the code and manual recovery check on 2026-10-18; see [the review package](../../../docs/m2-group3-review.md).
 
 ## 4. Milestone check
 
-- [ ] 4.1 Done when: values print every second with source timestamps and status codes, and the client resumes after the OPC PLC container restarts
+- [x] 4.1 Done when: values print every second with source timestamps and status codes, and the client resumes after the OPC PLC container restarts
+
+Reviewer acceptance on 2026-10-18: one continuous Bridge run showed a lost session, restoration with one subscription, and fresh samples for all seven tags after the server restart. The reviewer also confirmed code review, Release build, all 35 tests, strict validation of all nine OpenSpec items and a clean diff whitespace check. M2 is ready for spec sync, archive and merge under AGENTS.md.

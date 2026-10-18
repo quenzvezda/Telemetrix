@@ -2,7 +2,7 @@
 
 Change: `add-opcua-subscription`, task 3.1.
 Branch: `m2-add-opcua-subscription`.
-Reviewer acceptance and the milestone check (task 4.1) are pending.
+The reviewer accepted the code and final milestone check (task 4.1) on 2026-10-18.
 
 ## What changed and why
 
@@ -50,6 +50,18 @@ two OPC UA integration cases, strict validation of all nine OpenSpec items, and
 the diff whitespace check. The final focused integration run also required
 source timestamps newer than the completed container restart and passed both
 cases.
+
+## Reviewer acceptance
+
+On 2026-10-18, the reviewer supplied a continuous Bridge log showing seven
+requested tags, a 1,000 ms publishing interval, an interruption with
+`BadSecureChannelClosed`, and restoration with active session
+`ns=7;i=896216852` and one subscription. Sample logs after restoration cover all
+seven configured tags with advancing source timestamps. The application was
+then shut down normally. This log proves one manual restart recovery; the
+repeated-restart cases are also covered by the automated and agent checks above.
+The reviewer confirmed code review, a successful Release build, all 35 tests,
+strict validation of nine OpenSpec items and an empty diff whitespace check.
 
 ## Automated checks
 
@@ -135,5 +147,5 @@ Run all commands from the repository root.
 
 No SQL, Kafka UI or Grafana checks are needed for this group. Successful reviewer
 confirmation of the default subscription and restart checks also supplies the
-evidence for task 4.1. That checkbox stays open until the reviewer confirms it;
-archive/merge follow the repository's milestone loop.
+evidence for task 4.1. The reviewer confirmed it on 2026-10-18; archive/merge
+follow the repository's milestone loop.
