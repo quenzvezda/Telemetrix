@@ -1,12 +1,14 @@
 # M1 group 2 review
 
+Historical review checkpoint. M1 was subsequently accepted and [archived](../openspec/changes/archive/2026-10-18-add-local-environment/tasks.md) on 2026-10-18.
+
 Change: `add-local-environment`. Branch: `m1-add-local-environment`.
 All six component checks passed on 2026-10-18. The changes record verification
 evidence and the OPC UA node inventory; no service code or infrastructure
 configuration needed changes in this group.
 
 Review the group 2 checkboxes and evidence in
-[tasks.md](../openspec/changes/add-local-environment/tasks.md), and the
+[tasks.md](../openspec/changes/archive/2026-10-18-add-local-environment/tasks.md), and the
 [OPC UA node inventory](m1-opcua-verification.md).
 
 The following PowerShell commands run from the repository root. They reproduce
@@ -15,8 +17,8 @@ the checks for review; the existing stack can remain running throughout.
 Show the task commits and the complete group 2 documentation diff:
 
 ```powershell
-git log --oneline 1e05964..HEAD
-git diff 1e05964..HEAD -- openspec/changes/add-local-environment/tasks.md docs/m1-opcua-verification.md docs/m1-group2-review.md
+git log --oneline 1e05964..8939845
+git diff 1e05964..8939845 -- openspec/changes/add-local-environment/tasks.md docs/m1-opcua-verification.md docs/m1-group2-review.md
 ```
 
 ## 2.1 OPC UA

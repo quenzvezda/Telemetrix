@@ -1,4 +1,10 @@
-## ADDED Requirements
+# local-environment Specification
+
+## Purpose
+
+Provide a reproducible local infrastructure environment for collecting, inspecting, and storing plant telemetry during development.
+
+## Requirements
 
 ### Requirement: Single-command infrastructure startup
 The local infrastructure (OPC UA simulator, MQTT broker, Kafka broker, Kafka UI, TimescaleDB, Grafana) SHALL start from a fresh clone with one `docker compose up` once `deploy/.env` exists (NFR-11).
@@ -12,7 +18,7 @@ The local infrastructure (OPC UA simulator, MQTT broker, Kafka broker, Kafka UI,
 - **THEN** compose refuses to start and names the missing variable
 
 ### Requirement: Well-known endpoints
-The stack SHALL expose: OPC UA on `opc.tcp://localhost:50000`, MQTT on `localhost:1883`, Kafka on `localhost:29092` for host clients and `kafka:9092` for containers, Kafka UI on `http://localhost:8080`, PostgreSQL on `localhost:5432` (database `telemetry`), Grafana on `http://localhost:3000`.
+The stack SHALL expose: OPC UA on `opc.tcp://localhost:50000`, MQTT on `localhost:1883`, Kafka on `localhost:29092` for host clients and `kafka:9092` for containers, Kafka UI on `http://localhost:8080`, PostgreSQL on `localhost:5432` (database `telemetry`), Grafana on `http://localhost:3000` (NFR-11).
 
 #### Scenario: Host client reaches Kafka
 - **WHEN** a client on the host bootstraps from `localhost:29092`
@@ -23,14 +29,14 @@ The stack SHALL expose: OPC UA on `opc.tcp://localhost:50000`, MQTT on `localhos
 - **THEN** it can browse the address space and sees values changing
 
 ### Requirement: Seeded telemetry schema
-On first start with an empty volume the database SHALL contain the `asset`, `tag` and `measurement` tables, `measurement` SHALL be a hypertable on `time` with a unique `(tag_id, time)` key, and the pumping line's 2 assets and 7 tags SHALL be seeded.
+On first start with an empty volume the database SHALL contain the `asset`, `tag` and `measurement` tables, `measurement` SHALL be a hypertable on `time` with a unique `(tag_id, time)` key, and the pumping line's 2 assets and 7 tags SHALL be seeded (NFR-11).
 
 #### Scenario: Schema present after first start
 - **WHEN** the stack starts on an empty `tsdata` volume
 - **THEN** `SELECT count(*) FROM tag` returns 7 and `measurement` is listed in `timescaledb_information.hypertables`
 
 ### Requirement: Explicit topic creation
-The Kafka broker SHALL NOT create topics implicitly; producing to a topic that does not exist MUST fail.
+The Kafka broker SHALL NOT create topics implicitly; producing to a topic that does not exist MUST fail (NFR-11).
 
 #### Scenario: Typo in topic name
 - **WHEN** a client produces to a topic that was never created

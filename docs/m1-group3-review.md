@@ -1,5 +1,7 @@
 # M1 group 3 review
 
+Historical review checkpoint. M1 was subsequently accepted and [archived](../openspec/changes/archive/2026-10-18-add-local-environment/tasks.md) on 2026-10-18.
+
 Change: `add-local-environment`. Task: 3.1. Date: 2026-10-18.
 
 ## What changed
@@ -60,8 +62,8 @@ the account table, UaExpert prompts and reset explanation.
 Run these commands from the primary repository root:
 
 ```powershell
-git show --stat HEAD
-git show HEAD -- README.md openspec/changes/add-local-environment/tasks.md docs/m1-group3-review.md
+git show --stat c82e289
+git show c82e289 -- README.md openspec/changes/add-local-environment/tasks.md docs/m1-group3-review.md
 docker compose -f deploy/docker-compose.yml ps -a
 docker compose -f deploy/docker-compose.yml exec -T timescaledb psql -X -v ON_ERROR_STOP=1 -U telemetry -d telemetry -c "SELECT count(*) FROM tag"
 ```

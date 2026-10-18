@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-The repository contains service scaffolds, Docker Compose infrastructure definitions, database initialization SQL, Grafana provisioning, CI, and a specification-driven roadmap. Pipeline behavior is being implemented incrementally; the services do not yet deliver an end-to-end telemetry flow.
+M1's local environment is implemented and manually verified. The repository contains service scaffolds, Docker Compose infrastructure, database initialization SQL, Grafana provisioning, CI, and a specification-driven roadmap. Pipeline behavior is being implemented incrementally; the services do not yet deliver an end-to-end telemetry flow.
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
@@ -201,7 +201,7 @@ Each milestone maps to one OpenSpec change. Tasks include verification criteria,
 
 ```sh
 npx -y @fission-ai/openspec@1.14.3 list
-npx -y @fission-ai/openspec@1.14.3 show add-local-environment
+npx -y @fission-ai/openspec@1.14.3 show local-environment --type spec
 ```
 
 OpenSpec workflows for Claude Code live in `.claude/`; Codex adapters live in `.agents/skills/`. Both use the same workflow instructions and project review checkpoints.
