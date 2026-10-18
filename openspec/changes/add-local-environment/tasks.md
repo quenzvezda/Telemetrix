@@ -14,12 +14,16 @@ Verification notes (2026-10-18, Docker Desktop):
 
 ## 2. Inspect each component
 
-- [ ] 2.1 Connect UaExpert to `opc.tcp://localhost:50000` (security None), browse `Objects/OpcPlc/Telemetry`; verify values change and note the NodeIds you will map to the 7 tags in M2
+- [x] 2.1 Connect UaExpert to `opc.tcp://localhost:50000` (security None), browse `Objects/OpcPlc/Telemetry`; verify values change and note the NodeIds you will map to the 7 tags in M2
 - [ ] 2.2 In Kafka UI (`http://localhost:8080`) create topic `scratch.test`, produce and read one message; verify, then delete the topic
 - [ ] 2.3 Produce to a non-existent topic with `kafka-console-producer.sh` inside the kafka container; verify it fails and no topic is created
 - [ ] 2.4 `docker compose ... exec timescaledb psql -U telemetry -d telemetry -c "SELECT count(*) FROM tag"`; verify 7, and that `measurement` appears in `timescaledb_information.hypertables`
 - [ ] 2.5 Open Grafana (`http://localhost:3000`), verify the provisioned TimescaleDB data source passes "Save & test"
 - [ ] 2.6 Publish and subscribe one message with `mosquitto_pub`/`mosquitto_sub` inside the mosquitto container; verify it round-trips
+
+Verification notes (2026-10-18):
+
+- 2.1: The reviewer connected in UaExpert, browsed `Objects/OpcPlc/Telemetry`, and confirmed changing values. The screenshots exposed 12 NodeIds and their data types; see [OPC UA verification](../../../docs/m1-opcua-verification.md) for the inventory and Windows discovery/certificate steps.
 
 ## 3. Document
 
