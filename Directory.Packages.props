@@ -6,6 +6,9 @@
   <ItemGroup Label="Hosting">
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
   </ItemGroup>
+  <ItemGroup Label="OPC UA">
+    <PackageVersion Include="OPCFoundation.NetStandard.Opc.Ua.Client" Version="2.0.1" />
+  </ItemGroup>
   <ItemGroup Label="Testing">
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
     <PackageVersion Include="Testcontainers.Kafka" Version="4.16.0" />
