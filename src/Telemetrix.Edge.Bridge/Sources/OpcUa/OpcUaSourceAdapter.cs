@@ -15,6 +15,8 @@ public sealed class OpcUaSourceAdapter(
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
     {
         var settings = options.Value;
+        var pkiPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Telemetrix", "pki");
         var configuration = new ApplicationConfiguration(telemetry)
         {
             ApplicationName = "Telemetrix.Edge.Bridge",
@@ -22,6 +24,27 @@ public sealed class OpcUaSourceAdapter(
             ApplicationType = ApplicationType.Client,
             SecurityConfiguration = new SecurityConfiguration
             {
+                ApplicationCertificates =
+                [
+                    new CertificateIdentifier
+                    {
+                        StoreType = "Directory",
+                        StorePath = Path.Combine(pkiPath, "own"),
+                        SubjectName = "CN=Telemetrix.Edge.Bridge"
+                    }
+                ],
+                TrustedPeerCertificates = new CertificateTrustList
+                {
+                    StoreType = "Directory", StorePath = Path.Combine(pkiPath, "trusted")
+                },
+                TrustedIssuerCertificates = new CertificateTrustList
+                {
+                    StoreType = "Directory", StorePath = Path.Combine(pkiPath, "issuers")
+                },
+                RejectedCertificateStore = new CertificateStoreIdentifier
+                {
+                    StoreType = "Directory", StorePath = Path.Combine(pkiPath, "rejected")
+                },
                 AutoAcceptUntrustedCertificates = true
             },
             TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
@@ -44,11 +67,13 @@ public sealed class OpcUaSourceAdapter(
         {
             DisplayName = "Telemetrix samples",
             PublishingInterval = settings.PublishingIntervalMs,
+            KeepAliveCount = 10,
+            LifetimeCount = 60,
             PublishingEnabled = true,
             TimestampsToReturn = TimestampsToReturn.Both
         });
         var failedNotification = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var handlers = new List<(MonitoredItem Item, MonitoredItemNotificationEventHandler Handler)>();
+        var handlers = new List<(MonitoredItem Item, OpcUaTagOptions Tag, MonitoredItemNotificationEventHandler Handler)>();
         try
         {
             foreach (var tag in settings.Tags)
@@ -84,14 +109,30 @@ public sealed class OpcUaSourceAdapter(
                     }
                 };
                 item.Notification += handler;
-                handlers.Add((item, handler));
+                handlers.Add((item, tag, handler));
                 subscription.AddItem(item);
             }
 
             session.AddSubscription(subscription);
             await subscription.CreateAsync(cancellationToken);
+            foreach (var (item, tag, _) in handlers)
+            {
+                var error = item.Status.Error;
+                if (error is not null && ServiceResult.IsBad(error))
+                {
+                    logger.LogWarning(
+                        "OPC UA monitored item failed for {Asset}/{Tag} at {NodeId}: {StatusCode} (0x{RawStatusCode:X8})",
+                        tag.Asset, tag.Tag, tag.NodeId, error.StatusCode, error.StatusCode.Code);
+                }
+                else
+                {
+                    logger.LogInformation(
+                        "OPC UA monitored item created for {Asset}/{Tag} at {NodeId}; sampling {SamplingIntervalMs} ms, queue {QueueSize}",
+                        tag.Asset, tag.Tag, tag.NodeId, item.Status.SamplingInterval, item.Status.QueueSize);
+                }
+            }
             logger.LogInformation(
-                "OPC UA subscription created at {Endpoint} with {TagCount} tags; publishing {PublishingIntervalMs} ms",
+                "OPC UA subscription created at {Endpoint} with {RequestedTagCount} requested tags; publishing {PublishingIntervalMs} ms",
                 settings.Endpoint, subscription.MonitoredItemCount, subscription.CurrentPublishingInterval);
 
             var stopped = Task.Delay(Timeout.InfiniteTimeSpan, timeProvider, cancellationToken);
@@ -102,7 +143,7 @@ public sealed class OpcUaSourceAdapter(
         }
         finally
         {
-            foreach (var (item, handler) in handlers)
+            foreach (var (item, _, handler) in handlers)
             {
                 item.Notification -= handler;
             }

@@ -11,7 +11,7 @@ Group 1 implementation and automated verification are complete. Reviewer accepte
 ## 2. Subscription
 
 - [x] 2.1 Define `ISourceAdapter` and implement `OpcUaSourceAdapter` (session, one subscription, one monitored item per tag, notification → `Sample` into the channel); verify unit tests of the notification-to-sample mapping for Good, Bad and boolean values
-- [ ] 2.2 Log monitored-item creation failures per tag and keep the rest; verify by adding one bogus NodeId and running against OPC PLC
+- [x] 2.2 Log monitored-item creation failures per tag and keep the rest; verify by adding one bogus NodeId and running against OPC PLC
 - [ ] 2.3 Replace the template `Worker` with `OpcUaIngestionWorker`, which logs each sample (asset, tag, value, source timestamp, status code); verify by running the bridge against OPC PLC
 - [ ] 2.4 Implement browse discovery from a start node (FR-12); verify it finds the same tags as the static list on OPC PLC's telemetry folder
 
