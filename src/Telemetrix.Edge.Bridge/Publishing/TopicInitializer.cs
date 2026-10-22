@@ -4,9 +4,40 @@ using Microsoft.Extensions.Options;
 
 namespace Telemetrix.Edge.Bridge.Publishing;
 
-public sealed class TopicInitializer(IOptions<KafkaOptions> options, ILogger<TopicInitializer> logger) : IHostedService
+public sealed class TopicInitializer(IOptions<KafkaOptions> options, ILogger<TopicInitializer> logger) : BackgroundService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
+    private bool ready;
+
+    public override async Task StartAsync(CancellationToken cancellationToken)
+    {
+        ready = await TryInitializeAsync(cancellationToken);
+        await base.StartAsync(cancellationToken);
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!ready)
+        {
+            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+            ready = await TryInitializeAsync(stoppingToken);
+        }
+    }
+
+    private async Task<bool> TryInitializeAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await InitializeAsync(cancellationToken);
+            return true;
+        }
+        catch (KafkaException exception)
+        {
+            logger.LogWarning(exception, "Kafka topic initialization unavailable; collecting to the edge buffer while retrying");
+            return false;
+        }
+    }
+
+    private async Task InitializeAsync(CancellationToken cancellationToken)
     {
         using var admin = new AdminClientBuilder(new AdminClientConfig
         {
@@ -34,5 +65,4 @@ public sealed class TopicInitializer(IOptions<KafkaOptions> options, ILogger<Top
         }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

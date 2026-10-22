@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Telemetrix.Edge.Bridge.Batching;
 using Telemetrix.Edge.Bridge.Publishing;
 using Telemetrix.Edge.Bridge.Sources.OpcUa;
+using Telemetrix.Edge.Bridge.Buffer;
 
 namespace Telemetrix.Edge.Bridge;
 
@@ -18,6 +19,13 @@ public static class BridgeServiceCollectionExtensions
             .Validate(options => !string.IsNullOrWhiteSpace(options.BootstrapServers),
                 "Kafka:BootstrapServers is required.")
             .ValidateOnStart();
+        services.AddOptions<BufferOptions>().Bind(configuration.GetSection(BufferOptions.SectionName))
+            .Validate(options => options.MaxBytes > 0, "Buffer:MaxBytes must be positive.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Path), "Buffer:Path is required.")
+            .ValidateOnStart();
+        services.AddSingleton<SqliteBuffer>();
+        services.AddSingleton<IKafkaTransport, KafkaTransport>();
+        services.AddSingleton<StoreAndForwardQueue>();
         services.AddSingleton(provider => new AssetBatcher(
             provider.GetRequiredService<IOptions<BatchingOptions>>().Value,
             provider.GetRequiredService<TimeProvider>(), "opcua",
@@ -25,6 +33,7 @@ public static class BridgeServiceCollectionExtensions
         services.AddSingleton<IBatchPublisher, KafkaBatchPublisher>();
         // Hosted services start in registration order: topic readiness precedes source ingestion.
         services.AddHostedService<TopicInitializer>();
+        services.AddHostedService<BufferReplayWorker>();
         services.AddHostedService<OpcUaIngestionWorker>();
         return services;
     }

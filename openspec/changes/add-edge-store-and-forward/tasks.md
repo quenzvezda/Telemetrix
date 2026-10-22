@@ -8,7 +8,7 @@
 
 - [x] 2.1 Add Microsoft.Data.Sqlite to `Directory.Packages.props` and the bridge; create the `buffered_entries` table on startup (WAL, `synchronous=FULL`); verify with a unit test that opens a temp file and finds the table
 - [x] 2.2 Implement bounded append / read-oldest / delete in `Buffer/`; verify FIFO order, restart survival, hard quota, default one-hour sizing and source pause/resume thresholds without dropping accepted batches
-- [ ] 2.3 Implement the Direct/Draining publisher state machine in `Publishing/`; verify unit tests with a fake producer: failure switches to Draining, new batches queue behind buffered ones, empty buffer returns to Direct
+- [x] 2.3 Implement the Direct/Draining publisher state machine in `Publishing/`; verify unit tests with a fake producer: failure switches to Draining, new batches queue behind buffered ones, empty buffer returns to Direct
 - [ ] 2.4 Add `bridge.buffer.batches` / `bridge.buffer.samples` gauges and the start/empty log messages; verify with a unit test using `MeterListener`
 - [ ] 2.5 Document buffer location and settings in the bridge `appsettings.json` comments / README section; verify the documented path matches the default
 
