@@ -11,6 +11,13 @@ public static class TelemetryJson
     public static byte[] Serialize(TelemetryBatch batch) =>
         JsonSerializer.SerializeToUtf8Bytes(batch, Context.TelemetryBatch);
 
+    public static byte[] Serialize(PlantEvent plantEvent) =>
+        JsonSerializer.SerializeToUtf8Bytes(plantEvent, Context.PlantEvent);
+
+    public static PlantEvent DeserializePlantEvent(ReadOnlySpan<byte> utf8Json) =>
+        JsonSerializer.Deserialize(utf8Json, Context.PlantEvent)
+        ?? throw new JsonException("A plant event cannot be null.");
+
     public static TelemetryBatch Deserialize(ReadOnlySpan<byte> utf8Json) =>
         JsonSerializer.Deserialize(utf8Json, Context.TelemetryBatch)
         ?? throw new JsonException("A telemetry batch cannot be null.");
