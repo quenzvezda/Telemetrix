@@ -19,7 +19,7 @@
 
 ## 4. Ordering
 
-- [ ] 4.1 Unit test: two consecutive batches of one asset are written in order and source timestamps per tag are non-decreasing (NFR-05)
+- [x] 4.1 Unit test: two consecutive batches of one asset are written in order and source timestamps per tag are non-decreasing (NFR-05)
 
 ## 5. Delivery guarantees proven
 
