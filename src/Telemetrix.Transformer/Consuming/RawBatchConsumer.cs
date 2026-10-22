@@ -16,7 +16,11 @@ public sealed class RawBatchConsumer(IOptions<KafkaOptions> options, RawBatchPro
             "Assigned raw partitions {Partitions} in group {Group}",
             string.Join(",", partitions.Select(partition => partition.Partition.Value)), KafkaOptions.ConsumerGroup))
           .SetPartitionsRevokedHandler((_, partitions) => logger.LogInformation(
-              "Revoked raw partitions {Partitions}",
+              // Callbacks run inside Consume, after the previous Process + Commit has returned.
+              "Revoked raw partitions {Partitions}; completed batches were already committed",
+              string.Join(",", partitions.Select(partition => partition.Partition.Value))))
+          .SetPartitionsLostHandler((_, partitions) => logger.LogWarning(
+              "Lost raw partitions {Partitions}; leaving offsets unchanged for replay",
               string.Join(",", partitions.Select(partition => partition.Partition.Value))))
           .Build();
         try

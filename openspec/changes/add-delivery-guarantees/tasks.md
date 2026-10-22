@@ -9,7 +9,7 @@
 - [x] 2.1 Disable auto-commit and auto offset store; consume in group `transformer`; verify with a unit test on the consumer config (FR-20)
 - [x] 2.2 Restructure the consume loop to `validate → map → write → commit`, committing only after `Storage` returns; verify with a unit test using a fake storage that throws, asserting no commit happened (FR-24)
 - [x] 2.3 Wrap the write in an unbounded exponential-backoff retry via Microsoft.Extensions.Resilience; verify with a unit test that a storage failing twice then succeeding results in exactly one commit
-- [ ] 2.4 Handle partitions revoked/lost as in design.md; verify by an integration test that starts a second consumer in the group mid-stream and asserts the row count is unchanged
+- [x] 2.4 Handle partitions revoked/lost as in design.md; verify by an integration test that starts a second consumer in the group mid-stream and asserts the row count is unchanged
 
 ## 3. Dead-letter topic
 
