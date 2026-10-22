@@ -1,10 +1,12 @@
 using Telemetrix.Transformer.Consuming;
 using Telemetrix.Transformer.Storage;
+using Polly;
 
 namespace Telemetrix.Transformer.Pipeline;
 
 public sealed class TelemetryBatchHandler(TagResolver resolver, IMeasurementWriter writer,
-    IDeadLetterPublisher deadLetterPublisher, ILogger<TelemetryBatchHandler> logger) : IRawBatchHandler
+    IDeadLetterPublisher deadLetterPublisher, ILogger<TelemetryBatchHandler> logger,
+    ResiliencePipeline storageRetry) : IRawBatchHandler
 {
     public async Task HandleAsync(RawBatchDelivery delivery, CancellationToken cancellationToken)
     {
@@ -15,7 +17,16 @@ public sealed class TelemetryBatchHandler(TagResolver resolver, IMeasurementWrit
             RangeCheck.Evaluate(resolved.Sample.Value, QualityMapper.Map(resolved.Sample.StatusCode),
                 resolved.Tag.MinValid, resolved.Tag.MaxValid))).ToArray();
 
-        var inserted = await writer.WriteAsync(batch.BatchId, validated, cancellationToken);
+        var inserted = await storageRetry.ExecuteAsync(async ct =>
+        {
+            try { return await writer.WriteAsync(batch.BatchId, validated, ct); }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                ct.ThrowIfCancellationRequested();
+                logger.LogError(exception, "Storage failed for batch {BatchId}; retaining the raw offset for retry", batch.BatchId);
+                throw;
+            }
+        }, cancellationToken);
         if (resolution.DeadLetterBatch is { } unknown)
             await deadLetterPublisher.PublishUnknownTagsAsync(unknown, cancellationToken);
 

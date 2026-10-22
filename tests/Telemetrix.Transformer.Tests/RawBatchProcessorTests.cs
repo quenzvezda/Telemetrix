@@ -1,6 +1,8 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
+using Polly;
 using Telemetrix.Contracts;
 using Telemetrix.Transformer.Consuming;
 using Telemetrix.Transformer.Pipeline;
@@ -18,7 +20,7 @@ public class RawBatchProcessorTests
         using var resolver = new TagResolver(new Catalog(), Options.Create(new TagResolutionOptions()));
         var failure = new InvalidOperationException("storage failed");
         var handler = new TelemetryBatchHandler(resolver, new Writer(() => throw failure), new Publisher(),
-            NullLogger<TelemetryBatchHandler>.Instance);
+            NullLogger<TelemetryBatchHandler>.Instance, ResiliencePipeline.Empty);
         var processor = new RawBatchProcessor(handler);
         var committed = false;
 
@@ -33,7 +35,7 @@ public class RawBatchProcessorTests
         using var resolver = new TagResolver(new Catalog(), Options.Create(new TagResolutionOptions()));
         var events = new List<string>();
         var handler = new TelemetryBatchHandler(resolver, new Writer(() => events.Add("write")),
-            new Publisher(() => events.Add("dead-letter")), NullLogger<TelemetryBatchHandler>.Instance);
+            new Publisher(() => events.Add("dead-letter")), NullLogger<TelemetryBatchHandler>.Instance, ResiliencePipeline.Empty);
         var processor = new RawBatchProcessor(handler);
         var thread = Environment.CurrentManagedThreadId;
 
@@ -44,6 +46,51 @@ public class RawBatchProcessorTests
         }, TestContext.Current.CancellationToken);
 
         Assert.Equal(new[] { "write", "dead-letter", "commit" }, events);
+    }
+
+    [Fact]
+    public async Task StorageRetriesTheSameBatchTwiceThenCommitsExactlyOnce()
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        deadline.CancelAfter(TimeSpan.FromSeconds(10));
+        using var resolver = new TagResolver(new Catalog(), Options.Create(new TagResolutionOptions()));
+        var time = new FakeTimeProvider();
+        var attempts = 0;
+        var commits = 0;
+        var handler = new TelemetryBatchHandler(resolver, new Writer(() =>
+        {
+            if (Interlocked.Increment(ref attempts) < 3) throw new IOException("database unavailable");
+        }), new Publisher(), NullLogger<TelemetryBatchHandler>.Instance, StorageRetry.Create(time));
+        var processor = new RawBatchProcessor(handler);
+        var processing = Task.Run(() => processor.Process(Result(), () => commits++, deadline.Token), deadline.Token);
+
+        while (!processing.IsCompleted)
+        {
+            time.Advance(TimeSpan.FromSeconds(30));
+            await Task.Delay(10, deadline.Token);
+        }
+        await processing;
+
+        Assert.Equal(3, attempts);
+        Assert.Equal(1, commits);
+    }
+
+    [Fact]
+    public void CancellationDuringStorageRetryNeverCommits()
+    {
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        using var resolver = new TagResolver(new Catalog(), Options.Create(new TagResolutionOptions()));
+        var handler = new TelemetryBatchHandler(resolver, new Writer(() =>
+        {
+            cancellation.Cancel();
+            throw new IOException("database unavailable");
+        }), new Publisher(), NullLogger<TelemetryBatchHandler>.Instance, StorageRetry.Create(new FakeTimeProvider()));
+        var committed = false;
+
+        Assert.ThrowsAny<OperationCanceledException>(() => new RawBatchProcessor(handler).Process(
+            Result(), () => committed = true, cancellation.Token));
+
+        Assert.False(committed);
     }
 
     private static ConsumeResult<string, byte[]> Result(bool unknown = false)
