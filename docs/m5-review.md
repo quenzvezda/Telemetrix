@@ -61,3 +61,11 @@ plant event were persisted, the Bridge host was stopped and recreated with the
 same SQLite file while Kafka remained paused, and a third batch joined the FIFO.
 After unpause, all three batch identities and the event arrived, raw values were
 ordered 1 → 2 → 3, and the first persisted payload was byte-identical on replay.
+
+The production-host OPC UA → Bridge → Kafka test also passed: stop the OPC PLC
+container, observe lost events for both assets, restart, then consume all seven
+fresh tags and six keyed plant events within 30 seconds of server readiness.
+This uses the real shared publication path and Kafka, without a fake event
+publisher. Additional source tests cover initial server unavailability and two
+capacity pause/resume cycles: no samples are collected while paused, collection
+resumes automatically, and every transition carries `buffer-capacity`.
