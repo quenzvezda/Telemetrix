@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1's local environment, M2's OPC UA client and M3's first end-to-end slice are complete, manually verified and archived. The Bridge publishes per-asset batches to Kafka, and the Transformer resolves tags, checks quality and writes idempotently to TimescaleDB. The reviewer verified live measurements and the MotorTemperature trend; see the [M3 final review](docs/m3-group6-review.md) and [accepted specifications](openspec/specs/). Delivery guarantees and durable edge buffering follow in M4 and M5.
+M1's local environment, M2's OPC UA client and M3's first end-to-end slice are complete, manually verified and archived; see the [M3 final review](docs/m3-group6-review.md) and [accepted specifications](openspec/specs/). M4 delivery guarantees are implemented and in final review: Transformer commits offsets after durable processing, retries storage failures and dead-letters invalid batches. Replay, rebalance and crash checks are recorded in the [M4 review package](docs/m4-review.md). Durable edge buffering follows in M5; the clean topic is deferred to the separate sink (ADR-0012).
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
@@ -155,8 +155,27 @@ raw batches from the earliest offset. Stop with Ctrl+C.
 
 Unknown tags go to `plant.telemetry.dlq` by default. Explicit
 `--TagResolution:UnknownTagPolicy=create` creates tags for existing assets without
-unit or range. M3 retains Kafka's default auto-commit/store, so crash-safe
-commit-after-write remains M4 work.
+unit or range. Automatic offset commit and storage are disabled. Transformer commits
+only after database storage and any required DLQ acknowledgement succeed; storage
+failures are retried with backoff until success or shutdown. Invalid envelopes go
+to DLQ with their original key/payload and error/origin headers before committing.
+Kafka replay is safe because `(tag_id, time)` is unique (ADR-0003).
+
+#### Verify Transformer crash recovery
+
+With Docker running, execute the bounded, deterministic M4 check:
+
+```powershell
+./scripts/Test-M4Delivery.ps1
+```
+
+It kills the production Transformer container while a source is publishing 20,000
+distinct samples, restarts it, then checks all batch counts and zero Kafka lag.
+The script creates a uniquely named disposable Compose project and cleans up only
+that project's containers, network, images and database volume. It uses no normal
+local stack volumes, host ports or credentials. See the [M4 review](docs/m4-review.md)
+for evidence and expected output. The same check runs in CI; the one-hour NFR-01
+observation and M5 Kafka-outage buffering are separate checks.
 
 #### Browse OPC UA with UaExpert
 
@@ -239,6 +258,8 @@ docker compose -f deploy/docker-compose.yml ps -a
 | --- | --- |
 | [src/](src/) | Shared contracts, OPC UA Bridge, Transformer pipeline/storage, and simulator scaffolds |
 | [tests/](tests/) | Bridge/Transformer unit tests and disposable infrastructure integration tests |
+| [tools/Telemetrix.DeliveryProbe/](tools/Telemetrix.DeliveryProbe/) | Deterministic test source and read-only verifier for the M4 container crash check |
+| [scripts/Test-M4Delivery.ps1](scripts/Test-M4Delivery.ps1) | Isolated kill-under-load review harness |
 | [deploy/](deploy/) | Compose stack, database initialization, and Grafana provisioning |
 | [Design](docs/plant-telemetry-pipeline.md) | Architecture, data model, and FR/NFR requirements |
 | [Domain glossary](CONTEXT.md) | Shared vocabulary for samples, batches, assets, tags, quality, and gaps |
