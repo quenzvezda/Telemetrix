@@ -4,7 +4,6 @@ using Microsoft.Extensions.Options;
 using Telemetrix.Edge.Bridge.Buffer;
 using System.Text.Json;
 using Telemetrix.Contracts;
-using Telemetrix.Edge.Bridge.Sources.OpcUa;
 
 namespace Telemetrix.Edge.Bridge.Tests;
 
@@ -130,7 +129,7 @@ public sealed class SqliteBufferTests : IDisposable
                 new BatchSample(tag.Tag, 123456.789012345, start.AddSeconds(window * 5 + index * 0.5),
                     start.AddSeconds(window * 5 + index * 0.5), uint.MaxValue))).ToArray();
             bytes += TelemetryJson.Serialize(new TelemetryBatch(1, Guid.NewGuid(), "opcua",
-                new OpcUaOptions().Endpoint, "Plant01", "Line01", asset.Key,
+                "opc.tcp://localhost:50000", "Plant01", "Line01", asset.Key,
                 start.AddSeconds(window * 5), samples)).Length;
         }
         Assert.True(bytes < new BufferOptions().MaxBytes * 0.5,

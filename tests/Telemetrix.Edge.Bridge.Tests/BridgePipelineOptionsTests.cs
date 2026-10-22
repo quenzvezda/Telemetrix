@@ -9,8 +9,9 @@ using Telemetrix.Edge.Bridge.Sources.OpcUa;
 
 namespace Telemetrix.Edge.Bridge.Tests;
 
-public class BridgePipelineOptionsTests
+public class BridgePipelineOptionsTests : IDisposable
 {
+    private readonly string directory = Path.Combine(Path.GetTempPath(), $"telemetrix-options-{Guid.NewGuid():N}");
     [Theory]
     [InlineData("Batching:MaxSamples", "0")]
     [InlineData("Batching:MaxAge", "00:00:00")]
@@ -20,6 +21,10 @@ public class BridgePipelineOptionsTests
     public async Task InvalidPipelineOptionsFailBeforeStartingKafka(string key, string value)
     {
         var builder = Host.CreateApplicationBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Buffer:Path"] = Path.Combine(directory, "bridge.db")
+        });
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { [key] = value });
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.Configure<OpcUaOptions>(options => options.Endpoint = "opc.tcp://localhost:50000");
@@ -37,5 +42,10 @@ public class BridgePipelineOptionsTests
     {
         public Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("Invalid configuration must prevent ingestion.");
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(directory)) Directory.Delete(directory, true);
     }
 }
