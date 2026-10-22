@@ -8,6 +8,7 @@
     <PackageReference Include="Confluent.Kafka" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Resilience" />
     <PackageReference Include="Npgsql" />
   </ItemGroup>
 

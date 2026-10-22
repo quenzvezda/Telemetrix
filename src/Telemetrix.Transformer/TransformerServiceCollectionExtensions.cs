@@ -1,4 +1,5 @@
 using Npgsql;
+using Polly;
 using Microsoft.Extensions.Options;
 using Telemetrix.Transformer.Consuming;
 using Telemetrix.Transformer.Pipeline;
@@ -13,6 +14,8 @@ public static class TransformerServiceCollectionExtensions
     {
         services.AddTransformerMetadata(configuration);
         services.AddSingleton<IMeasurementWriter, MeasurementWriter>();
+        services.AddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<ResiliencePipeline>(provider => StorageRetry.Create(provider.GetRequiredService<TimeProvider>()));
         services.AddSingleton<IRawBatchHandler, TelemetryBatchHandler>();
         services.AddSingleton<RawBatchProcessor>();
         services.AddHostedService<TagCatalogInitializer>();

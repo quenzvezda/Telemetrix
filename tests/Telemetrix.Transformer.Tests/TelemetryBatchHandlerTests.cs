@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Polly;
 using Telemetrix.Contracts;
 using Telemetrix.Transformer.Consuming;
 using Telemetrix.Transformer.Pipeline;
@@ -17,7 +18,8 @@ public class TelemetryBatchHandlerTests
         using var resolver = new TagResolver(new Catalog(), Options.Create(new TagResolutionOptions()));
         var writer = new Writer();
         var publisher = new Publisher();
-        var handler = new TelemetryBatchHandler(resolver, writer, publisher, NullLogger<TelemetryBatchHandler>.Instance);
+        var handler = new TelemetryBatchHandler(resolver, writer, publisher, NullLogger<TelemetryBatchHandler>.Instance,
+            ResiliencePipeline.Empty);
         var batch = Batch();
 
         await handler.HandleAsync(new RawBatchDelivery(batch, "Pump01", 2, 42), TestContext.Current.CancellationToken);
@@ -42,7 +44,8 @@ public class TelemetryBatchHandlerTests
         var failure = new InvalidOperationException("test failure");
         var writer = new Writer { Failure = failWrite ? failure : null };
         var publisher = new Publisher { Failure = failWrite ? null : failure };
-        var handler = new TelemetryBatchHandler(resolver, writer, publisher, NullLogger<TelemetryBatchHandler>.Instance);
+        var handler = new TelemetryBatchHandler(resolver, writer, publisher, NullLogger<TelemetryBatchHandler>.Instance,
+            ResiliencePipeline.Empty);
 
         Assert.Same(failure, await Assert.ThrowsAsync<InvalidOperationException>(() => handler.HandleAsync(
             new RawBatchDelivery(Batch(), "Pump01", 2, 42), TestContext.Current.CancellationToken)));
