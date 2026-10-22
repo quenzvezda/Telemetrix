@@ -14,7 +14,7 @@
 
 ## 3. OPC UA reconnect
 
-- [ ] 3.1 Add keep-alive monitoring and `SessionReconnectHandler`, with session recreate fallback on server restart; verify manually by restarting `opc-plc` and seeing samples resume
+- [x] 3.1 Add keep-alive monitoring and `SessionReconnectHandler`, with session recreate fallback on server restart; verify manually by restarting `opc-plc` and seeing samples resume
 - [ ] 3.2 Add exponential backoff (1 s → 15 s, ±20 % jitter); verify a unit test of the delay sequence
 
 ## 4. Plant events

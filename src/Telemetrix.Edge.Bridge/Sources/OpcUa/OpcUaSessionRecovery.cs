@@ -19,7 +19,7 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
         this.session = session;
         this.timeProvider = timeProvider;
         this.logger = logger;
-        reconnect = new SessionReconnectHandler(telemetry, true, -1, timeProvider);
+        reconnect = new SessionReconnectHandler(telemetry, true, 15000, timeProvider);
         Attach(session);
     }
 

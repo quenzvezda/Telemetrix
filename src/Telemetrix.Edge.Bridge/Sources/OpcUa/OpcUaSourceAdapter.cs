@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Opc.Ua;
 using Opc.Ua.Client;
 using Telemetrix.Contracts;
+using Telemetrix.Edge.Bridge.Buffer;
 
 namespace Telemetrix.Edge.Bridge.Sources.OpcUa;
 
@@ -10,9 +11,48 @@ public sealed class OpcUaSourceAdapter(
     IOptions<OpcUaOptions> options,
     ITelemetryContext telemetry,
     TimeProvider timeProvider,
-    ILogger<OpcUaSourceAdapter> logger) : ISourceAdapter
+    ILogger<OpcUaSourceAdapter> logger,
+    SqliteBuffer? buffer = null) : ISourceAdapter
 {
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
+    {
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                while (buffer?.IsCollectionPaused == true)
+                    await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, cancellationToken);
+                using var sessionStop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                var capacity = PauseAtCapacityAsync(sessionStop);
+                try
+                {
+                    await RunSessionAsync(writer, sessionStop.Token);
+                }
+                catch (ServiceResultException exception)
+                {
+                    logger.LogWarning(exception, "OPC UA session creation failed; retrying connection");
+                    await Task.Delay(TimeSpan.FromSeconds(1), timeProvider, cancellationToken);
+                }
+                finally
+                {
+                    await sessionStop.CancelAsync();
+                    try { await capacity; }
+                    catch (OperationCanceledException) when (sessionStop.IsCancellationRequested) { }
+                }
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
+    }
+
+    private async Task PauseAtCapacityAsync(CancellationTokenSource sessionStop)
+    {
+        while (buffer?.IsCollectionPaused != true)
+            await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, sessionStop.Token);
+        logger.LogWarning("OPC UA subscription stopping for buffer-capacity; replay remains active");
+        await sessionStop.CancelAsync();
+    }
+
+    private async Task RunSessionAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
     {
         var settings = options.Value;
         var pkiPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -47,7 +87,7 @@ public sealed class OpcUaSourceAdapter(
                 },
                 AutoAcceptUntrustedCertificates = true
             },
-            TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
+            TransportQuotas = new TransportQuotas { OperationTimeout = 5000 },
             ClientConfiguration = new ClientConfiguration { DefaultSessionTimeout = 60000 }
         };
         await configuration.ValidateAsync(ApplicationType.Client, cancellationToken);
