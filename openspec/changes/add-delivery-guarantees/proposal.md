@@ -14,21 +14,21 @@ Milestone: M4 — Delivery guarantees.
 - Samples of one asset are processed in source-timestamp order (NFR-05).
 - Bridge producer runs with `acks=all` and idempotence enabled (NFR-08).
 - Integration tests prove exactly-once storage (NFR-01) and kill-mid-batch recovery (NFR-03).
-- Out of scope: republishing to `plant.telemetry.clean` (FR-25, open decision D4).
+- Out of scope: republishing to `plant.telemetry.clean` (FR-25, D4 resolved in ADR-0012).
 
 ## Capabilities
 
 ### New Capabilities
 
-- `telemetry-transform`: consumption, validation, dead-lettering and commit semantics of the transformer (adds to the requirements introduced in M3).
-- `telemetry-publishing`: producer durability settings for raw batches (adds to the requirements introduced in M3).
+None.
 
 ### Modified Capabilities
 
-None (M3 is not archived yet; requirements are added as new).
+- `telemetry-transform`: consumption, validation, dead-lettering and commit semantics of the transformer (adds to the requirements introduced in M3).
+- `telemetry-publishing`: producer durability settings for raw batches (adds to the requirements introduced in M3).
 
 ## Impact
 
 - `Telemetrix.Transformer` (Consuming, Pipeline), `Telemetrix.Edge.Bridge` (Publishing), `Telemetrix.Contracts` (validation of `schemaVersion`).
-- New topic `plant.telemetry.dlq` (1 partition, 30 days), created by the transformer at startup (ADR-0007).
+- Reuse the M3 topic `plant.telemetry.dlq` (1 partition, 30 days), created by the transformer at startup (ADR-0007).
 - `tests/Telemetrix.Transformer.Tests`, `tests/Telemetrix.Integration.Tests` (Kafka + TimescaleDB via Testcontainers).

@@ -403,4 +403,4 @@ Decisions to make before or during the build:
 - [x] Unknown tags: dead-letter by default; automatic tag creation is an explicit opt-in (ADR-0011).
 - [x] Booleans and strings: nullable numeric values, booleans converted to 1/0 by source adapters, strings out of scope for v1 (ADR-0010).
 - [ ] Buffer limit at the edge: how many hours of data, and what happens when it fills (drop oldest or stop subscribing)?
-- [ ] Keep `plant.telemetry.clean` in v1, or add it only with the separate sink?
+- [x] Defer `plant.telemetry.clean` (FR-25) to the separate-sink stretch goal (ADR-0012).
