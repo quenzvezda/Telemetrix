@@ -1,6 +1,7 @@
 using Npgsql;
 using Polly;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Telemetrix.Transformer.Consuming;
 using Telemetrix.Transformer.Pipeline;
 using Telemetrix.Transformer.Storage;
@@ -14,7 +15,6 @@ public static class TransformerServiceCollectionExtensions
     {
         services.AddTransformerMetadata(configuration);
         services.AddSingleton<IMeasurementWriter, MeasurementWriter>();
-        services.AddSingleton<TimeProvider>(TimeProvider.System);
         services.AddSingleton<ResiliencePipeline>(provider => StorageRetry.Create(provider.GetRequiredService<TimeProvider>()));
         services.AddSingleton<IRawBatchHandler, TelemetryBatchHandler>();
         services.AddSingleton<RawBatchProcessor>();
@@ -41,7 +41,10 @@ public static class TransformerServiceCollectionExtensions
             provider.GetRequiredService<IOptions<StorageOptions>>().Value.Telemetry));
         services.AddSingleton<ITagCatalog, PostgresTagCatalog>();
         services.AddSingleton<TagResolver>();
-        services.AddSingleton<IDeadLetterPublisher, KafkaDeadLetterPublisher>();
+        services.TryAddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<KafkaDeadLetterPublisher>();
+        services.AddSingleton<IDeadLetterPublisher>(provider => provider.GetRequiredService<KafkaDeadLetterPublisher>());
+        services.AddSingleton<IInvalidBatchPublisher>(provider => provider.GetRequiredService<KafkaDeadLetterPublisher>());
         services.AddHostedService<DeadLetterTopicInitializer>();
         return services;
     }
