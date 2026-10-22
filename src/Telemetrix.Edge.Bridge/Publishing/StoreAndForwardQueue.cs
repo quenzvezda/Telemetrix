@@ -40,11 +40,12 @@ public sealed class StoreAndForwardQueue(SqliteBuffer buffer, IKafkaTransport tr
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (buffer.ReadOldest() is not { } oldest)
+            if (buffer.Depth.Batches == 0)
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, cancellationToken);
                 continue;
             }
+            var oldest = buffer.ReadOldest()!;
             try
             {
                 await transport.PublishAsync(oldest, cancellationToken);

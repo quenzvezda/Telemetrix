@@ -14,6 +14,68 @@ public sealed class StoreAndForwardTests : IDisposable
     private CancellationToken Ct => TestContext.Current.CancellationToken;
 
     [Fact]
+    public async Task ConcurrentAdmissionCannotPassAnUnacknowledgedDirectDelivery()
+    {
+        using var buffer = Open();
+        using var queue = Queue(buffer);
+        var attempted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.Unavailable = true;
+        transport.BeforeDelivery = async (_, ct) =>
+        {
+            attempted.TrySetResult();
+            await release.Task.WaitAsync(ct);
+        };
+        var first = queue.PublishAsync(Entry(1), Ct);
+        await attempted.Task.WaitAsync(Ct);
+        var second = queue.PublishAsync(Entry(2), Ct);
+        Assert.False(second.IsCompleted);
+        release.SetResult();
+        await Task.WhenAll(first, second);
+        Assert.Equal(2, buffer.Depth.Batches);
+        Assert.Equal(new byte[] { 1 }, buffer.ReadOldest()!.Payload);
+        transport.BeforeDelivery = null;
+        transport.Unavailable = false;
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+        var replay = queue.ReplayAsync(stop.Token);
+        await WaitAsync(() => buffer.Depth.Batches == 0);
+        await stop.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);
+        Assert.Equal(new byte[] { 1, 2 }, transport.Delivered.Select(entry => entry.Payload[0]));
+    }
+
+    [Fact]
+    public async Task CancellingUnacknowledgedReplayKeepsTheHeadForTheNextRun()
+    {
+        using var buffer = Open();
+        using var queue = Queue(buffer);
+        Assert.True(buffer.TryAppend(Entry(1)));
+        Assert.True(buffer.TryAppend(Entry(2)));
+        var attempted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        transport.BeforeDelivery = async (_, ct) =>
+        {
+            attempted.TrySetResult();
+            await Task.Delay(Timeout.InfiniteTimeSpan, ct);
+        };
+        using (var stop = CancellationTokenSource.CreateLinkedTokenSource(Ct))
+        {
+            var replay = queue.ReplayAsync(stop.Token);
+            await attempted.Task.WaitAsync(Ct);
+            await stop.CancelAsync();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);
+        }
+        Assert.Equal(2, buffer.Depth.Batches);
+        Assert.Equal(new byte[] { 1 }, buffer.ReadOldest()!.Payload);
+        transport.BeforeDelivery = null;
+        using var resume = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+        var resumed = queue.ReplayAsync(resume.Token);
+        await WaitAsync(() => buffer.Depth.Batches == 0);
+        await resume.CancelAsync();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => resumed);
+        Assert.Equal(new byte[] { 1, 2 }, transport.Delivered.Select(entry => entry.Payload[0]));
+    }
+
+    [Fact]
     public async Task FailureSpillsNewInputBehindOldAndReturnsToDirectAfterDrain()
     {
         using var buffer = Open();
@@ -93,12 +155,13 @@ public sealed class StoreAndForwardTests : IDisposable
     {
         public volatile bool Unavailable;
         public ConcurrentQueue<BufferedEntry> Delivered { get; } = new();
-        public Task PublishAsync(BufferedEntry entry, CancellationToken cancellationToken)
+        public Func<BufferedEntry, CancellationToken, Task>? BeforeDelivery { get; set; }
+        public async Task PublishAsync(BufferedEntry entry, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (BeforeDelivery is not null) await BeforeDelivery(entry, cancellationToken);
             if (Unavailable) throw new KafkaException(new Error(ErrorCode.Local_Transport));
             Delivered.Enqueue(entry);
-            return Task.CompletedTask;
         }
     }
 }
