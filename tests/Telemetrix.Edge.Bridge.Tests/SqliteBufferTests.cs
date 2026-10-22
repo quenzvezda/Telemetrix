@@ -1,4 +1,5 @@
 using Microsoft.Data.Sqlite;
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Options;
 using Telemetrix.Edge.Bridge.Buffer;
 using System.Text.Json;
@@ -26,6 +27,28 @@ public sealed class SqliteBufferTests : IDisposable
         Assert.Equal("wal", command.ExecuteScalar());
         command.CommandText = "PRAGMA synchronous";
         Assert.Equal(2L, command.ExecuteScalar());
+    }
+
+    [Fact]
+    public void ObservableMetricsFollowDurableDepthThroughReplay()
+    {
+        using var buffer = Open();
+        var observed = new Dictionary<string, long>();
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, active) =>
+        {
+            if (ReferenceEquals(instrument.Meter, buffer.Meter)) active.EnableMeasurementEvents(instrument);
+        };
+        listener.SetMeasurementEventCallback<long>((instrument, value, _, _) => observed[instrument.Name] = value);
+        listener.Start();
+        Assert.True(buffer.TryAppend(Entry(10, 5)));
+        listener.RecordObservableInstruments();
+        Assert.Equal(1, observed["bridge.buffer.batches"]);
+        Assert.Equal(5, observed["bridge.buffer.samples"]);
+        buffer.DeleteAcknowledged(buffer.ReadOldest()!);
+        listener.RecordObservableInstruments();
+        Assert.Equal(0, observed["bridge.buffer.batches"]);
+        Assert.Equal(0, observed["bridge.buffer.samples"]);
     }
 
     [Fact]
