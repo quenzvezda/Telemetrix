@@ -29,8 +29,8 @@ public class RawBatchConsumerTests
         }).Build();
         var firstHandler = new CapturingHandler();
         var secondHandler = new CapturingHandler();
-        using var first = new RawBatchConsumer(options, firstHandler, NullLogger<RawBatchConsumer>.Instance);
-        using var second = new RawBatchConsumer(options, secondHandler, NullLogger<RawBatchConsumer>.Instance);
+        using var first = new RawBatchConsumer(options, new RawBatchProcessor(firstHandler), NullLogger<RawBatchConsumer>.Instance);
+        using var second = new RawBatchConsumer(options, new RawBatchProcessor(secondHandler), NullLogger<RawBatchConsumer>.Instance);
         try
         {
             await first.StartAsync(ct);
@@ -110,7 +110,7 @@ public class RawBatchConsumerTests
         await producer.ProduceAsync(KafkaOptions.RawTopic,
             new Message<string, byte[]> { Key = batch.AssetId, Value = TelemetryJson.Serialize(batch) }, ct);
         var failure = new InvalidOperationException("handler failed");
-        using var consumer = new RawBatchConsumer(options, new FailingHandler(failure), NullLogger<RawBatchConsumer>.Instance);
+        using var consumer = new RawBatchConsumer(options, new RawBatchProcessor(new FailingHandler(failure)), NullLogger<RawBatchConsumer>.Instance);
         try
         {
             await consumer.StartAsync(ct);

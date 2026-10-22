@@ -14,6 +14,7 @@ public static class TransformerServiceCollectionExtensions
         services.AddTransformerMetadata(configuration);
         services.AddSingleton<IMeasurementWriter, MeasurementWriter>();
         services.AddSingleton<IRawBatchHandler, TelemetryBatchHandler>();
+        services.AddSingleton<RawBatchProcessor>();
         services.AddHostedService<TagCatalogInitializer>();
         services.AddHostedService<RawBatchConsumer>();
         return services;

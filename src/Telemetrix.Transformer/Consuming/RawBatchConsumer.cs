@@ -1,10 +1,9 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
-using Telemetrix.Contracts;
 
 namespace Telemetrix.Transformer.Consuming;
 
-public sealed class RawBatchConsumer(IOptions<KafkaOptions> options, IRawBatchHandler handler,
+public sealed class RawBatchConsumer(IOptions<KafkaOptions> options, RawBatchProcessor processor,
     ILogger<RawBatchConsumer> logger) : BackgroundService
 {
     protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.Factory.StartNew(
@@ -26,13 +25,10 @@ public sealed class RawBatchConsumer(IOptions<KafkaOptions> options, IRawBatchHa
             while (!stoppingToken.IsCancellationRequested)
             {
                 var result = consumer.Consume(stoppingToken);
-                var batch = TelemetryJson.Deserialize(result.Message.Value);
-                var delivery = new RawBatchDelivery(batch, result.Message.Key,
-                    result.Partition.Value, result.Offset.Value);
                 // Keep Consume, callbacks and Close on this dedicated thread; process one batch at a time.
-                handler.HandleAsync(delivery, stoppingToken).GetAwaiter().GetResult();
-                logger.LogInformation("Handled batch {BatchId} for {AssetId} at partition={Partition}, offset={Offset}",
-                    batch.BatchId, batch.AssetId, delivery.Partition, delivery.Offset);
+                processor.Process(result, () => consumer.Commit(result), stoppingToken);
+                logger.LogInformation("Committed raw batch at partition={Partition}, offset={Offset}",
+                    result.Partition.Value, result.Offset.Value);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
