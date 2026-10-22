@@ -171,7 +171,12 @@ public class OpcUaRecoveryTests(ITestOutputHelper output) : IDisposable
                 throw new InvalidOperationException("The source stopped before all tags resumed.");
             }
 
-            var sample = await next;
+            Sample sample;
+            try { sample = await next; }
+            catch (OperationCanceledException exception) when (ct.IsCancellationRequested)
+            {
+                throw new TimeoutException($"Missing fresh tags after recovery: {string.Join(", ", expected.Except(seen))}", exception);
+            }
             if (sample.SourceTimestamp >= after)
             {
                 Assert.Equal(TimeSpan.Zero, sample.SourceTimestamp.Offset);

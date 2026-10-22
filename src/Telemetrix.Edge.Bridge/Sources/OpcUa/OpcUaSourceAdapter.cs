@@ -18,6 +18,7 @@ public sealed class OpcUaSourceAdapter(
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
     {
         var attempt = 0;
+        var restoring = false;
         try
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -29,8 +30,9 @@ public sealed class OpcUaSourceAdapter(
                 var pausedForCapacity = false;
                 try
                 {
-                    await RunSessionAsync(writer, sessionStop.Token);
+                    await RunSessionAsync(writer, restoring, sessionStop.Token);
                     attempt = 0;
+                    restoring = true;
                 }
                 catch (ServiceResultException exception)
                 {
@@ -61,7 +63,7 @@ public sealed class OpcUaSourceAdapter(
         return true;
     }
 
-    private async Task RunSessionAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
+    private async Task RunSessionAsync(ChannelWriter<Sample> writer, bool restoring, CancellationToken cancellationToken)
     {
         var settings = options.Value;
         var pkiPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -180,6 +182,7 @@ public sealed class OpcUaSourceAdapter(
             session.AddSubscription(subscription);
             await subscription.CreateAsync(cancellationToken);
             if (eventTracker is not null) await eventTracker.RestoredAsync(cancellationToken);
+            if (restoring) logger.LogInformation("OPC UA session restored; monitored items recreated from configuration");
             foreach (var (item, tag, _) in handlers)
             {
                 var error = item.Status.Error;
@@ -201,7 +204,7 @@ public sealed class OpcUaSourceAdapter(
                 settings.Endpoint, subscription.MonitoredItemCount, subscription.CurrentPublishingInterval);
 
             var stopped = Task.Delay(Timeout.InfiniteTimeSpan, timeProvider, cancellationToken);
-            await await Task.WhenAny(stopped, failedNotification.Task, recovery.Failure);
+            await await Task.WhenAny(stopped, failedNotification.Task, recovery.Failure, recovery.Recreated);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

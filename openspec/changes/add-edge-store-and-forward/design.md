@@ -44,7 +44,10 @@ Pause/restart stops and recreates the subscription; report `buffer-capacity` gap
 
 ### Recovery and events
 
-Keep `SessionReconnectHandler` for transfer/recreate recovery with bounded retry.
+Keep `SessionReconnectHandler` for reactivation with bounded retry. If the SDK
+replaces a session, restart the source cycle and recreate the subscription and
+monitored items from configured or freshly browsed tags before reporting restored.
+A nonzero SDK subscription count alone does not prove notifications resumed.
 Session creation failures use exponential delay (1 s, factor 2, 15 s cap, 20%
 jitter). Keep-alive checks run every five seconds. Initial unavailability retries.
 

@@ -69,3 +69,9 @@ This uses the real shared publication path and Kafka, without a fake event
 publisher. Additional source tests cover initial server unavailability and two
 capacity pause/resume cycles: no samples are collected while paused, collection
 resumes automatically, and every transition carries `buffer-capacity`.
+
+The first Linux CI run exposed a recovery case where the SDK reported a replaced
+session with one subscription but fresh tags did not resume within 30 seconds.
+The Bridge now treats a replaced SDK session as a request to rebuild the source
+cycle and all monitored items from configuration before publishing restored.
+The 30-second acceptance deadline remains unchanged.

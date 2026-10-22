@@ -9,6 +9,7 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
     private readonly TimeProvider timeProvider;
     private readonly ILogger logger;
     private readonly TaskCompletionSource failure = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource recreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly SessionReconnectHandler reconnect;
     private ISession session;
     private bool stopping;
@@ -28,6 +29,7 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
     }
 
     public Task Failure => failure.Task;
+    public Task Recreated => recreated.Task;
 
     private void Attach(ISession active)
     {
@@ -91,6 +93,12 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
                     previous.KeepAlive -= OnKeepAlive;
                     session = recovered;
                     Attach(session);
+                    // SDK session recreation can leave copied monitored items silent even
+                    // though SubscriptionCount is nonzero. Rebuild from configured tags
+                    // before announcing restoration or accepting the replacement as ready.
+                    logger.LogInformation("OPC UA session replaced; rebuilding monitored items from configuration");
+                    recreated.TrySetResult();
+                    return;
                 }
 
                 restored?.Invoke();
