@@ -12,15 +12,8 @@ public sealed class RawBatchConsumer(IOptions<KafkaOptions> options, IRawBatchHa
 
     private void Consume(CancellationToken stoppingToken)
     {
-        using var consumer = new ConsumerBuilder<string, byte[]>(new ConsumerConfig
-        {
-            BootstrapServers = options.Value.BootstrapServers,
-            GroupId = KafkaOptions.ConsumerGroup,
-            ClientId = "telemetrix-transformer",
-            AutoOffsetReset = AutoOffsetReset.Earliest,
-            AllowAutoCreateTopics = false
-            // M3 keeps client-default auto-commit/store; commit-after-write belongs to M4.
-        }).SetPartitionsAssignedHandler((_, partitions) => logger.LogInformation(
+        using var consumer = new ConsumerBuilder<string, byte[]>(CreateConfig(options.Value))
+          .SetPartitionsAssignedHandler((_, partitions) => logger.LogInformation(
             "Assigned raw partitions {Partitions} in group {Group}",
             string.Join(",", partitions.Select(partition => partition.Partition.Value)), KafkaOptions.ConsumerGroup))
           .SetPartitionsRevokedHandler((_, partitions) => logger.LogInformation(
@@ -50,4 +43,15 @@ public sealed class RawBatchConsumer(IOptions<KafkaOptions> options, IRawBatchHa
             consumer.Close();
         }
     }
+
+    public static ConsumerConfig CreateConfig(KafkaOptions options) => new()
+    {
+        BootstrapServers = options.BootstrapServers,
+        GroupId = KafkaOptions.ConsumerGroup,
+        ClientId = "telemetrix-transformer",
+        AutoOffsetReset = AutoOffsetReset.Earliest,
+        EnableAutoCommit = false,
+        EnableAutoOffsetStore = false,
+        AllowAutoCreateTopics = false
+    };
 }
