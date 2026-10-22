@@ -81,9 +81,19 @@ internal sealed class DeliveryTestEnvironment : IAsyncDisposable
         while (true)
         {
             ct.ThrowIfCancellationRequested();
-            var committed = inspector.Committed(Enumerable.Range(0, offsets.Length)
-                .Select(p => new TopicPartition(KafkaOptions.RawTopic, new Partition(p))), TimeSpan.FromSeconds(10));
-            if (committed.All(p => p.Offset.Value == offsets[p.Partition.Value])) return;
+            try
+            {
+                var committed = inspector.Committed(Enumerable.Range(0, offsets.Length)
+                    .Select(p => new TopicPartition(KafkaOptions.RawTopic, new Partition(p))), TimeSpan.FromSeconds(10));
+                if (committed.All(p => p.Offset.Value == offsets[p.Partition.Value])) return;
+            }
+            catch (KafkaException exception) when (exception.Error.Code is ErrorCode.GroupLoadInProgress
+                or ErrorCode.GroupCoordinatorNotAvailable or ErrorCode.NotCoordinatorForGroup or ErrorCode.Local_TimedOut)
+            {
+                // A fresh broker can move the coordinator while the inspector discovers it.
+                // Keep the same deadline and exact offset assertion; permanent errors still fail.
+                Console.WriteLine("Offset inspection readiness: {0}", exception.Error.Code);
+            }
             await Task.Delay(50, ct);
         }
     }

@@ -83,6 +83,11 @@ The Bridge now treats a replaced SDK session as a request to rebuild the source
 cycle and all monitored items from configuration before publishing restored.
 The 30-second acceptance deadline remains unchanged.
 
+A later CI run exposed `NotCoordinatorForGroup` during the test-only committed
+offset inspection of a fresh Kafka broker. The inspector now retries only
+transient coordinator/read timeout errors within its existing deadline. It still
+requires the exact committed offsets and propagates permanent broker errors.
+
 ## Repeatable review checks
 
 Run from the repository root with Docker running:
