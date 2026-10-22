@@ -21,7 +21,7 @@
 
 - [x] 4.1 Add `PlantEvent` to `Telemetrix.Contracts`; verify a JSON round-trip unit test
 - [x] 4.2 Create `plant.events` (3 partitions, 30 d) at bridge startup; verify settings in Kafka UI
-- [ ] 4.3 Emit ConnectionLost / ConnectionRestored / Gap through the store-and-forward queue; verify a unit test with a fake source that drops and restores, asserting event order and gap bounds
+- [x] 4.3 Emit ConnectionLost / ConnectionRestored / Gap through the store-and-forward queue; verify a unit test with a fake source that drops and restores, asserting event order and gap bounds
 
 ## 5. Milestone verification
 

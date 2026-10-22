@@ -12,7 +12,8 @@ public sealed class OpcUaSourceAdapter(
     ITelemetryContext telemetry,
     TimeProvider timeProvider,
     ILogger<OpcUaSourceAdapter> logger,
-    SqliteBuffer? buffer = null) : ISourceAdapter
+    SqliteBuffer? buffer = null,
+    PlantEventTracker? eventTracker = null) : ISourceAdapter
 {
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
     {
@@ -25,6 +26,7 @@ public sealed class OpcUaSourceAdapter(
                     await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, cancellationToken);
                 using var sessionStop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 var capacity = PauseAtCapacityAsync(sessionStop);
+                var pausedForCapacity = false;
                 try
                 {
                     await RunSessionAsync(writer, sessionStop.Token);
@@ -40,20 +42,23 @@ public sealed class OpcUaSourceAdapter(
                 finally
                 {
                     await sessionStop.CancelAsync();
-                    try { await capacity; }
+                    try { pausedForCapacity = await capacity; }
                     catch (OperationCanceledException) when (sessionStop.IsCancellationRequested) { }
                 }
+                if (pausedForCapacity && eventTracker is not null)
+                    await eventTracker.LostAsync("buffer-capacity", cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
     }
 
-    private async Task PauseAtCapacityAsync(CancellationTokenSource sessionStop)
+    private async Task<bool> PauseAtCapacityAsync(CancellationTokenSource sessionStop)
     {
         while (buffer?.IsCollectionPaused != true)
             await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, sessionStop.Token);
         logger.LogWarning("OPC UA subscription stopping for buffer-capacity; replay remains active");
         await sessionStop.CancelAsync();
+        return true;
     }
 
     private async Task RunSessionAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
@@ -117,7 +122,9 @@ public sealed class OpcUaSourceAdapter(
         var session = await new DefaultSessionFactory(telemetry).CreateAsync(
             configuration, endpoint, false, false, configuration.ApplicationName, 60000,
             new UserIdentity(), default, cancellationToken);
-        await using var recovery = new OpcUaSessionRecovery(session, telemetry, timeProvider, logger);
+        await using var recovery = new OpcUaSessionRecovery(session, telemetry, timeProvider, logger,
+            reason => eventTracker?.LostAsync(reason, cancellationToken).GetAwaiter().GetResult(),
+            () => eventTracker?.RestoredAsync(cancellationToken).GetAwaiter().GetResult());
         var failedNotification = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var handlers = new List<(MonitoredItem Item, OpcUaTagOptions Tag, MonitoredItemNotificationEventHandler Handler)>();
         try
@@ -129,6 +136,8 @@ public sealed class OpcUaSourceAdapter(
             {
                 throw new InvalidOperationException("OpcUa:BrowseStartNode contains no variables to monitor.");
             }
+
+            eventTracker?.TrackAssets(tags.Select(tag => tag.Asset));
 
             foreach (var tag in tags)
             {
@@ -149,6 +158,7 @@ public sealed class OpcUaSourceAdapter(
                         foreach (var notification in monitoredItem.DequeueValues())
                         {
                             var sample = OpcUaSampleMapper.Map(settings, tag, notification);
+                            eventTracker?.SampleAsync(sample, cancellationToken).GetAwaiter().GetResult();
                             // The SDK callback is synchronous. Waiting here applies channel back-pressure
                             // without async-void callbacks or untracked writes that could lose samples.
                             writer.WriteAsync(sample, cancellationToken).AsTask().GetAwaiter().GetResult();
@@ -169,6 +179,7 @@ public sealed class OpcUaSourceAdapter(
 
             session.AddSubscription(subscription);
             await subscription.CreateAsync(cancellationToken);
+            if (eventTracker is not null) await eventTracker.RestoredAsync(cancellationToken);
             foreach (var (item, tag, _) in handlers)
             {
                 var error = item.Status.Error;

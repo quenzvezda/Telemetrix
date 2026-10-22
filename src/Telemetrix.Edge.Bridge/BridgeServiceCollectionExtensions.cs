@@ -26,6 +26,8 @@ public static class BridgeServiceCollectionExtensions
         services.AddSingleton<SqliteBuffer>();
         services.AddSingleton<IKafkaTransport, KafkaTransport>();
         services.AddSingleton<StoreAndForwardQueue>();
+        services.AddSingleton<IPlantEventPublisher, PlantEventPublisher>();
+        services.AddSingleton<PlantEventTracker>();
         services.AddSingleton(provider => new AssetBatcher(
             provider.GetRequiredService<IOptions<BatchingOptions>>().Value,
             provider.GetRequiredService<TimeProvider>(), "opcua",

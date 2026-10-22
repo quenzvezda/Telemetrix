@@ -12,13 +12,17 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
     private readonly SessionReconnectHandler reconnect;
     private ISession session;
     private bool stopping;
+    private readonly Action<string>? interrupted;
+    private readonly Action? restored;
 
     public OpcUaSessionRecovery(ISession session, ITelemetryContext telemetry,
-        TimeProvider timeProvider, ILogger logger)
+        TimeProvider timeProvider, ILogger logger, Action<string>? interrupted = null, Action? restored = null)
     {
         this.session = session;
         this.timeProvider = timeProvider;
         this.logger = logger;
+        this.interrupted = interrupted;
+        this.restored = restored;
         reconnect = new SessionReconnectHandler(telemetry, true, 15000, timeProvider);
         Attach(session);
     }
@@ -49,6 +53,7 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
                 if (state == SessionReconnectHandler.ReconnectState.Triggered)
                 {
                     logger.LogWarning("OPC UA session interrupted with {StatusCode}; retrying connection", args.Status);
+                    interrupted?.Invoke(args.Status?.ToString() ?? "keepalive-failed");
                 }
 
                 args.CancelKeepAlive = true;
@@ -88,6 +93,7 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
                     Attach(session);
                 }
 
+                restored?.Invoke();
                 logger.LogInformation("OPC UA session restored; active session {SessionId}, subscriptions {SubscriptionCount}",
                     session.SessionId, session.SubscriptionCount);
             }

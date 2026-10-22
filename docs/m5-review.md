@@ -46,3 +46,10 @@ ignored buffer path, and inspected `plant.events` in Kafka UI: 3 partitions and
 `retention.ms=2592000000` (30 days). Those services were stopped afterwards;
 existing local topics and retained data were preserved. The new empty events
 topic remains as the Bridge-owned M5 topic.
+
+Event tracking unit tests use an interrupted fake source and verify one lost →
+restored → gap sequence per asset, exact source-timestamp gap bounds, deduplicated
+transition callbacks and no invented samples for either source failure or buffer
+capacity. The Bridge unit suite reached 75 passing tests. The repeated OPC PLC
+restart test also passed with event tracking enabled for both tag modes; every
+restart asserts all tags and ordered gaps resume within 30 seconds.

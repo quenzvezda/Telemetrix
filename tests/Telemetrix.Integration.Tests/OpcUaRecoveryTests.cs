@@ -9,6 +9,8 @@ using Microsoft.Extensions.Options;
 using Opc.Ua;
 using Telemetrix.Contracts;
 using Telemetrix.Edge.Bridge.Sources.OpcUa;
+using Telemetrix.Edge.Bridge.Publishing;
+using System.Collections.Concurrent;
 
 namespace Telemetrix.Integration.Tests;
 
@@ -54,8 +56,10 @@ public class OpcUaRecoveryTests(ITestOutputHelper output)
             : tag.Tag).ToHashSet();
         var logger = new RecoveryLog(output);
         using var services = new ServiceCollection().AddLogging(logging => logging.AddProvider(logger)).BuildServiceProvider();
+        var events = new CapturingEvents();
+        using var tracker = new PlantEventTracker(Options.Create(options), events, TimeProvider.System);
         var adapter = new OpcUaSourceAdapter(Options.Create(options),
-            new ServiceProviderTelemetryContext(services), TimeProvider.System, logger);
+            new ServiceProviderTelemetryContext(services), TimeProvider.System, logger, eventTracker: tracker);
         var channel = Channel.CreateBounded<Sample>(256);
         using var sourceCancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var running = adapter.RunAsync(channel.Writer, sourceCancellation.Token);
@@ -72,8 +76,30 @@ public class OpcUaRecoveryTests(ITestOutputHelper output)
                 var restartCompleted = TimeProvider.System.GetUtcNow();
 
                 // Source timestamps must be newer than the restart; queued old samples cannot pass.
-                await ObserveAllTagsAsync(channel.Reader, running, expectedTags, restartCompleted, ct);
-                await logger.WaitForAsync("OPC UA session restored", running, ct);
+                using var recoveryDeadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                recoveryDeadline.CancelAfter(TimeSpan.FromSeconds(30));
+                await ObserveAllTagsAsync(channel.Reader, running, expectedTags, restartCompleted, recoveryDeadline.Token);
+                await logger.WaitForAsync("OPC UA session restored", running, recoveryDeadline.Token);
+                while (events.Values.Count(value => value.Type == PlantEventType.Gap) <
+                       events.Values.Count(value => value.Type == PlantEventType.ConnectionRestored))
+                    await Task.Delay(50, recoveryDeadline.Token);
+                var elapsed = TimeProvider.System.GetUtcNow() - restartCompleted;
+                Assert.True(elapsed < TimeSpan.FromSeconds(30));
+                output.WriteLine($"NFR-04 restart {restart + 1}: all tags and gaps resumed in {elapsed.TotalSeconds:F3} s");
+                Assert.NotEmpty(events.Values);
+                foreach (var asset in events.Values.GroupBy(value => value.AssetId))
+                {
+                    var transitions = asset.ToArray();
+                    Assert.Equal(Enumerable.Range(0, restart + 1).SelectMany(_ => new[]
+                    {
+                        PlantEventType.ConnectionLost, PlantEventType.ConnectionRestored, PlantEventType.Gap
+                    }), transitions.Select(value => value.Type));
+                    Assert.All(transitions.Where(value => value.Type == PlantEventType.Gap), value =>
+                    {
+                        Assert.NotNull(value.GapStart);
+                        Assert.True(value.GapEnd > value.GapStart);
+                    });
+                }
                 Assert.False(running.IsCompleted);
             }
 
@@ -163,6 +189,16 @@ public class OpcUaRecoveryTests(ITestOutputHelper output)
                     return;
                 }
             }
+        }
+    }
+
+    private sealed class CapturingEvents : IPlantEventPublisher
+    {
+        public ConcurrentQueue<PlantEvent> Values { get; } = new();
+        public Task PublishAsync(PlantEvent plantEvent, CancellationToken cancellationToken)
+        {
+            Values.Enqueue(plantEvent);
+            return Task.CompletedTask;
         }
     }
 }
