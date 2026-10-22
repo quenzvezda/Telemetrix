@@ -53,3 +53,11 @@ transition callbacks and no invented samples for either source failure or buffer
 capacity. The Bridge unit suite reached 75 passing tests. The repeated OPC PLC
 restart test also passed with event tracking enabled for both tag modes; every
 restart asserts all tags and ordered gaps resume within 30 seconds.
+
+## Group 5: outage and restart verification
+
+The disposable Kafka pause/restart integration test passed: two batches and a
+plant event were persisted, the Bridge host was stopped and recreated with the
+same SQLite file while Kafka remained paused, and a third batch joined the FIFO.
+After unpause, all three batch identities and the event arrived, raw values were
+ordered 1 → 2 → 3, and the first persisted payload was byte-identical on replay.
