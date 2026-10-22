@@ -18,6 +18,15 @@ jobs:
       # Integration tests use Testcontainers; Docker is available on ubuntu-latest runners.
       - run: dotnet test --no-build -c Release
 
+  delivery-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Kill the transformer under deterministic load
+        shell: pwsh
+        run: ./scripts/Test-M4Delivery.ps1
+
   openspec:
     runs-on: ubuntu-latest
     steps:
