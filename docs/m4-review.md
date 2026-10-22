@@ -113,6 +113,65 @@ suite passed 134 tests, zero failures/skips, in 2m 48.238s: 56 Bridge unit cases
 59 Transformer unit cases and 19 integration cases. Strict OpenSpec validation
 passed all 12 current items. CI verification is tracked by task 5.4.
 
+### CI readiness follow-up
+
+The first CI attempt timed out in the pre-existing OPC UA repeated-restart test's
+two-minute budget. No OPC UA source code changed in M4. Both OPC UA cases passed
+when rerun in isolation locally (2m 46.723s total), and both passed on the next CI
+attempt. No OPC UA runtime fix is claimed from that observation.
+
+That next CI attempt exposed a separate consumer-group readiness failure:
+`DescribeConsumerGroupsAsync` threw before the expected group became stable.
+`ConsumerGroupReadiness` now shares the bounded polling logic between the old
+consumer test and the M4 rebalance test. It retries only group-not-found,
+coordinator-loading, coordinator-unavailable, not-coordinator and local request-timeout responses;
+other errors still fail immediately and include their codes in test output.
+The deterministic regression failed before the change and passed afterwards;
+the authorization-error case proves permanent failures are not swallowed.
+The real two-consumer/takeover and handler-failure tests also passed afterwards.
+No tests were skipped, no membership assertions were removed, and no production
+retry or delivery behavior changed in this follow-up.
+
+The added error-code diagnostic identified `Local_TimedOut` in CI's first
+10-second admin describe request. A timeout of one request is now retried inside
+the existing overall test deadline. Its exact error was added to the regression
+cases, observed failing before that addition to the retry predicate, then passing.
+The complete local suite passed 136 cases before this last additional regression
+case; the three readiness regression cases all passed afterwards.
+
+### Final CI evidence (task 5.4)
+
+[GitHub Actions run 39730425435](https://github.com/quenzvezda/Telemetrix/actions/runs/39730425435)
+passed on commit `4f2bc0f`: all three jobs (`build-test`, `delivery-review`,
+`openspec`) succeeded. Release build had zero warnings/errors; all 137 tests passed,
+with zero failures/skips, in 1m 34.210s. The readiness follow-up added three test
+cases, bringing the integration test project's total to 22; the Bridge and
+Transformer unit totals remain 56 and 59 respectively.
+
+The CI kill check observed 440 measurements while the source was still running,
+killed Transformer with exit 137, then verified all 2,000 batches / 20,000 samples
+and lag 0 after restart. The script finished successfully and cleaned its isolated
+resources. These results cover the final runtime and test changes.
+
+All 13 tracked M4 tasks are complete. Milestone status is **In review** and the
+change remains active in [draft PR #1](https://github.com/quenzvezda/Telemetrix/pull/1).
+Final reviewer acceptance, spec sync/archive and merge have not been performed.
+
+## Commit map
+
+| Area | Commits |
+| --- | --- |
+| D4 / M4 planning | `f166e96` |
+| Group 1: producer durability | `944da79` |
+| Group 2: consumer config, commits, retry, rebalance | `2e5d05b`, `d0b374d`, `5efa21c`, `081d23b` |
+| Group 3: DLQ settings, validation and continuation | `6c64b61`, `97ee97b`, `8316629` |
+| Group 4: ordering | `f3ed9b5` |
+| Group 5: replay, crash hooks and real SIGKILL harness | `2a16e19`, `a8dd8a9`, `6d7cd38` |
+| CI group-readiness regressions | `75d4e2a`, `4f2bc0f` |
+
+The final documentation commit records task 5.4 and the review status. Use the
+commands below for the full current commit list and diff.
+
 ## Reviewer commands
 
 ```powershell

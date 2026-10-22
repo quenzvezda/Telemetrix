@@ -60,3 +60,7 @@ Ordering comes from keying by `assetId` (ADR-0004) plus single-threaded processi
 - [Poison batch that passes validation but always fails the write (e.g. FK violation) stalls a partition forever] → log at Error with batchId, expose consumer lag (M8); unknown tags are handled before the write per D1.
 - [Synchronous commit per batch limits throughput] → measured in M8 (NFR-07); multi-message transactions are the fallback.
 - [DLQ duplicates after crash] → acceptable; DLQ is for human inspection.
+
+## Verification notes
+
+All 13 tracked tasks are implemented. The agent's isolated production-container SIGKILL check on 2026-10-22 stored all 20,000 distinct samples in 2,000 complete batches with zero lag after restart. [CI run 39730425435](https://github.com/quenzvezda/Telemetrix/actions/runs/39730425435) passed all three jobs, including 137 tests with no failures/skips, strict OpenSpec validation and the same real container kill check. The [review package](../../../docs/m4-review.md) records exact commands, commit groups, results and the bounded-load scope. Milestone status is In review; final reviewer acceptance and archival are pending.
