@@ -10,7 +10,7 @@ The transformer SHALL consume `plant.telemetry.raw` as a member of consumer grou
 
 ### Requirement: Commit only after a durable write
 
-The transformer MUST commit a batch's offset only after every measurement of that batch has been durably written to the database or the batch has been dead-lettered. A failed write MUST NOT be committed and SHALL be retried (FR-24).
+The transformer MUST commit a batch's offset only after all known-tag samples have been durably written to the database and all rejected samples have been acknowledged by the dead-letter topic, or the entire invalid batch has been acknowledged by the dead-letter topic (ADR-0011). A failed write MUST NOT be committed and SHALL be retried (FR-24).
 
 #### Scenario: Write succeeds
 - **WHEN** a batch's measurements are written successfully

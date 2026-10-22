@@ -12,14 +12,14 @@ After M3 the transformer consumes `plant.telemetry.raw`, maps quality, resolves 
 
 **Non-Goals:**
 - Kafka transactions / exactly-once semantics on the Kafka side (rejected in ADR-0003).
-- `plant.telemetry.clean` republishing (FR-25, decision D4).
+- `plant.telemetry.clean` republishing (FR-25, D4 resolved in ADR-0012).
 - Unknown-tag handling policy (decided in M3, D1).
 
 ## Decisions
 
 ### Consume loop: one batch at a time per partition, commit after write
 
-`Consuming/TransformerConsumer` (a `BackgroundService`) runs `Consume → Validate → Map → Write → Commit` sequentially. Confluent.Kafka settings: `EnableAutoCommit=false`, `EnableAutoOffsetStore=false`, `AutoOffsetReset=Earliest`, `IsolationLevel=ReadCommitted` is not needed. After `Storage` returns, the loop calls `StoreOffset(result)` then `Commit(result)` synchronously.
+`Consuming/RawBatchConsumer` (a `BackgroundService`) runs `Consume → Validate → Map → Write → Commit` sequentially. Confluent.Kafka settings: `EnableAutoCommit=false`, `EnableAutoOffsetStore=false`, `AutoOffsetReset=Earliest`, `IsolationLevel=ReadCommitted` is not needed. After the handler returns from storage and any unknown-tag dead-letter publication, `RawBatchProcessor` invokes a commit callback. The consumer calls `Commit(result)` synchronously on its dedicated thread; this commits the next offset explicitly without using the local offset store. Failed processing never reaches that callback.
 
 - Alternative: batch several Kafka messages per DB transaction and commit the highest offset. Faster, but complicates partial failure; revisit only if NFR-07 (M8) needs it. The `ON CONFLICT` key makes it safe to add later.
 - A DB write failure is retried with `Microsoft.Extensions.Resilience` (exponential backoff, unbounded attempts, jitter); the loop does not advance. This intentionally stalls the partition rather than skip data.
@@ -47,7 +47,7 @@ Ordering comes from keying by `assetId` (ADR-0004) plus single-threaded processi
 
 ### Producer settings (bridge)
 
-`Publishing/BatchProducer`: `Acks=All`, `EnableIdempotence=true`, `MaxInFlight=5` (the maximum that keeps ordering with idempotence), `LingerMs=5`, `CompressionType=Lz4`. Asserted by a unit test on the built `ProducerConfig`.
+`Publishing/KafkaBatchPublisher`: `Acks=All`, `EnableIdempotence=true`, `MaxInFlight=5` (the maximum that keeps ordering with idempotence), `LingerMs=5`, `CompressionType=Lz4`. Asserted by a unit test on the built `ProducerConfig`.
 
 ### Verification
 
