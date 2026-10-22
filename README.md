@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1's local environment, M2's OPC UA client and M3's first end-to-end slice are complete, manually verified and archived; see the [M3 final review](docs/m3-group6-review.md) and [accepted specifications](openspec/specs/). M4 delivery guarantees are implemented and in final review: Transformer commits offsets after durable processing, retries storage failures and dead-letters invalid batches. Replay, rebalance and crash checks are recorded in the [M4 review package](docs/m4-review.md). Durable edge buffering follows in M5; the clean topic is deferred to the separate sink (ADR-0012).
+M1–M4 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M4 review](docs/m4-review.md). M5 edge resilience is in progress: SQLite store-and-forward retains failed deliveries across restarts. The clean topic is deferred to the separate sink (ADR-0012).
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
@@ -45,7 +45,7 @@ Acceptance criteria and failure scenarios are tracked in [OpenSpec](openspec/) a
 | Services | C# / .NET 10 Worker Services |
 | Industrial connectivity | OPC UA, MQTT |
 | Event streaming | Apache Kafka |
-| Planned edge buffer | SQLite |
+| Edge buffer | SQLite |
 | Time-series storage | PostgreSQL 17 + TimescaleDB |
 | Visualization | Grafana |
 | Local infrastructure | Docker Compose, Mosquitto, Kafka UI, OPC PLC simulator |
@@ -115,7 +115,7 @@ With OPC PLC and Kafka running, launch the Bridge from the repository root:
 dotnet run --project src/Telemetrix.Edge.Bridge
 ```
 
-The Development launch profile maps seven domain tags to the OPC PLC nodes verified in M1. The Bridge creates `plant.telemetry.raw` if absent (six partitions, seven-day retention), then logs published batches with asset, sample count, partition and offset. Samples retain UTC source/server timestamps and raw status codes. To exercise recovery, keep the Bridge running and restart OPC PLC from another terminal:
+The Development launch profile maps seven domain tags to the OPC PLC nodes verified in M1. The Bridge creates its owned topics if absent, then logs accepted batches with asset and sample count. An accepted batch has either been acknowledged by Kafka or persisted in the edge buffer. Samples retain UTC source/server timestamps and raw status codes. To exercise recovery, keep the Bridge running and restart OPC PLC from another terminal:
 
 ```powershell
 docker compose -f deploy/docker-compose.yml restart opc-plc
@@ -128,6 +128,37 @@ dotnet run --project src/Telemetrix.Edge.Bridge -- --OpcUa:BrowseStartNode=Objec
 ```
 
 See the [accepted OPC UA spec](openspec/specs/opcua-ingestion/spec.md) and [M2 recovery review](docs/m2-group3-review.md) for behavior and verification details.
+
+#### Edge buffer settings
+
+The default SQLite file is `LocalApplicationData/Telemetrix/buffer/bridge.db`
+(`%LOCALAPPDATA%\Telemetrix\buffer\bridge.db` on Windows). Override
+`Buffer:Path` / `Buffer__Path` with an absolute path in a persistent writable
+directory; each Bridge instance must own a different file. Preserve the file
+across restarts and container replacements. `*.db`, WAL and shared-memory files
+are ignored by Git.
+
+`Buffer:MaxBytes` / `Buffer__MaxBytes` defaults to `67108864` (64 MiB of serialized
+payloads). The sizing test covers an hour of the default seven tags with a
+notification every 500 ms and leaves more than half the quota free. Retention
+does not expire by age. Provision extra space for SQLite pages, indexes and WAL;
+this setting is a payload quota, not a filesystem quota.
+
+At 80% usage collection pauses; at 50% it can resume. Already buffered batches
+are retained and replay continues. Source changes while paused are unavailable;
+plant events report the gap with reason `buffer-capacity` (ADR-0013).
+An entry larger than the entire quota fails configuration at runtime rather than
+being discarded. Do not lower the quota below the size of a serialized batch.
+
+Kafka delivery failures switch to buffering. Incoming batches join the FIFO until
+it is empty, and replay deletes an entry only after acknowledgement. Ambiguous
+acknowledgements can cause replay; Transformer storage remains duplicate-safe.
+Graceful stop persists accepted input; an abrupt kill before a pending delivery
+has spilled to disk still has an in-memory loss window.
+
+The Bridge logs buffering start, empty, and capacity transitions. Meter
+`Telemetrix.Edge.Bridge` exposes `bridge.buffer.batches` (queued entries, including
+plant events) and `bridge.buffer.samples`; exporters follow in M8.
 
 #### Run the Transformer
 

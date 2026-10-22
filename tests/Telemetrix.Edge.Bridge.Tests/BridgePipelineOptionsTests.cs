@@ -15,6 +15,8 @@ public class BridgePipelineOptionsTests
     [InlineData("Batching:MaxSamples", "0")]
     [InlineData("Batching:MaxAge", "00:00:00")]
     [InlineData("Kafka:BootstrapServers", "")]
+    [InlineData("Buffer:MaxBytes", "0")]
+    [InlineData("Buffer:Path", "")]
     public async Task InvalidPipelineOptionsFailBeforeStartingKafka(string key, string value)
     {
         var builder = Host.CreateApplicationBuilder();

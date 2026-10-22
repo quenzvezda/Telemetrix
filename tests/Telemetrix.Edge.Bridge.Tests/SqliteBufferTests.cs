@@ -15,6 +15,14 @@ public sealed class SqliteBufferTests : IDisposable
     private string DatabasePath => System.IO.Path.Combine(directory, "bridge.db");
 
     [Fact]
+    public void DefaultLocationMatchesTheDocumentedLocalApplicationDataDirectory()
+    {
+        Assert.Equal(System.IO.Path.Combine(Environment.GetFolderPath(
+            Environment.SpecialFolder.LocalApplicationData), "Telemetrix", "buffer", "bridge.db"),
+            new BufferOptions().Path);
+    }
+
+    [Fact]
     public void StartupCreatesDurableSchema()
     {
         using var buffer = Open();
