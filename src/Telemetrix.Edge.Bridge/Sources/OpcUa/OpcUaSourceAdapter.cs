@@ -16,6 +16,7 @@ public sealed class OpcUaSourceAdapter(
 {
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
     {
+        var attempt = 0;
         try
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -27,11 +28,14 @@ public sealed class OpcUaSourceAdapter(
                 try
                 {
                     await RunSessionAsync(writer, sessionStop.Token);
+                    attempt = 0;
                 }
                 catch (ServiceResultException exception)
                 {
                     logger.LogWarning(exception, "OPC UA session creation failed; retrying connection");
-                    await Task.Delay(TimeSpan.FromSeconds(1), timeProvider, cancellationToken);
+                    var delay = ReconnectBackoff.Delay(attempt, Random.Shared.NextDouble());
+                    attempt = Math.Min(attempt + 1, 4);
+                    await Task.Delay(delay, timeProvider, cancellationToken);
                 }
                 finally
                 {
