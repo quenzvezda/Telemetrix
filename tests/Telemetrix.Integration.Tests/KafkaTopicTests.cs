@@ -44,6 +44,7 @@ public class KafkaTopicTests
         {
             using var initializer = new TopicInitializer(options, NullLogger<TopicInitializer>.Instance);
             await initializer.StartAsync(ct);
+            await initializer.Ready.WaitAsync(ct);
             await initializer.StopAsync(ct);
 
             var metadata = admin.GetMetadata(topicName, TimeSpan.FromSeconds(10));

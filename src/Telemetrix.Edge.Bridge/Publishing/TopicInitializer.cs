@@ -7,6 +7,10 @@ namespace Telemetrix.Edge.Bridge.Publishing;
 public sealed class TopicInitializer(IOptions<KafkaOptions> options, ILogger<TopicInitializer> logger) : BackgroundService
 {
     private bool ready;
+    private readonly TaskCompletionSource readiness = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    // Development tools can wait explicitly; ingestion can still buffer while Kafka is down.
+    public Task Ready => readiness.Task;
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -28,6 +32,7 @@ public sealed class TopicInitializer(IOptions<KafkaOptions> options, ILogger<Top
         try
         {
             await InitializeAsync(cancellationToken);
+            readiness.TrySetResult();
             return true;
         }
         catch (KafkaException exception)
@@ -49,27 +54,28 @@ public sealed class TopicInitializer(IOptions<KafkaOptions> options, ILogger<Top
             (KafkaOptions.EventsTopic, 3, "2592000000")
         })
         {
-        try
-        {
-            await admin.CreateTopicsAsync([new TopicSpecification
+            try
             {
-                Name = name,
-                NumPartitions = partitions,
-                ReplicationFactor = 1,
-                Configs = new Dictionary<string, string> { ["retention.ms"] = retention }
-            }], new CreateTopicsOptions
+                await admin.CreateTopicsAsync([new TopicSpecification
+                {
+                    Name = name,
+                    NumPartitions = partitions,
+                    ReplicationFactor = 1,
+                    Configs = new Dictionary<string, string> { ["retention.ms"] = retention }
+                }], new CreateTopicsOptions
+                {
+                    RequestTimeout = TimeSpan.FromSeconds(15),
+                    OperationTimeout = TimeSpan.FromSeconds(15)
+                }).WaitAsync(cancellationToken);
+                logger.LogInformation(
+                    "Created topic {Topic} with {PartitionCount} partitions and retention {RetentionMs} ms",
+                    name, partitions, retention);
+            }
+            catch (CreateTopicsException exception) when (
+                exception.Results.All(result => result.Error.Code == ErrorCode.TopicAlreadyExists))
             {
-                RequestTimeout = TimeSpan.FromSeconds(15),
-                OperationTimeout = TimeSpan.FromSeconds(15)
-            }).WaitAsync(cancellationToken);
-            logger.LogInformation("Created topic {Topic} with {PartitionCount} partitions and retention {RetentionMs} ms", name, partitions, retention);
-        }
-        catch (CreateTopicsException exception) when (
-            exception.Results.All(result => result.Error.Code == ErrorCode.TopicAlreadyExists))
-        {
-            logger.LogInformation("Topic {Topic} already exists; keeping its configuration", name);
-        }
+                logger.LogInformation("Topic {Topic} already exists; keeping its configuration", name);
+            }
         }
     }
-
 }

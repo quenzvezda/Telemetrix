@@ -33,6 +33,7 @@ public sealed class EdgeBufferRecoveryTests : IDisposable
                    Microsoft.Extensions.Logging.Abstractions.NullLogger<TopicInitializer>.Instance))
         {
             await initializer.StartAsync(ct);
+            await initializer.Ready.WaitAsync(ct);
             await initializer.StopAsync(ct);
         }
         await kafka.PauseAsync(ct);
@@ -44,6 +45,7 @@ public sealed class EdgeBufferRecoveryTests : IDisposable
             using (var first = Host(bootstrap, [1, 2]))
             {
                 await first.StartAsync(ct);
+                Assert.False(first.Services.GetServices<IHostedService>().OfType<TopicInitializer>().Single().Ready.IsCompleted);
                 var buffer = first.Services.GetRequiredService<SqliteBuffer>();
                 await WaitAsync(() => buffer.Depth.Samples == 2, ct);
                 persisted = buffer.ReadOldest()!.Payload;
@@ -57,6 +59,7 @@ public sealed class EdgeBufferRecoveryTests : IDisposable
             await WaitAsync(() => recovered.Depth.Samples == 3, ct);
             Assert.Equal(4, recovered.Depth.Batches);
             await kafka.UnpauseAsync(ct);
+            await second.Services.GetServices<IHostedService>().OfType<TopicInitializer>().Single().Ready.WaitAsync(ct);
             await WaitAsync(() => recovered.Depth.Batches == 0, ct);
             await second.StopAsync(ct);
 
