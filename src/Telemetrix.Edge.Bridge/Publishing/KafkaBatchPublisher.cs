@@ -10,15 +10,7 @@ public sealed class KafkaBatchPublisher(IOptions<KafkaOptions> options,
 {
     public async Task RunAsync(ChannelReader<TelemetryBatch> batches, CancellationToken cancellationToken)
     {
-        using var producer = new ProducerBuilder<string, byte[]>(new ProducerConfig
-        {
-            BootstrapServers = options.Value.BootstrapServers,
-            ClientId = "telemetrix-bridge",
-            Acks = Acks.All,
-            EnableIdempotence = true,
-            AllowAutoCreateTopics = false,
-            MessageTimeoutMs = 10000
-        }).Build();
+        using var producer = new ProducerBuilder<string, byte[]>(CreateConfig(options.Value)).Build();
 
         await foreach (var batch in batches.ReadAllAsync(cancellationToken))
         {
@@ -33,4 +25,17 @@ public sealed class KafkaBatchPublisher(IOptions<KafkaOptions> options,
                 result.Partition.Value, result.Offset.Value);
         }
     }
+
+    public static ProducerConfig CreateConfig(KafkaOptions options) => new()
+    {
+        BootstrapServers = options.BootstrapServers,
+        ClientId = "telemetrix-bridge",
+        Acks = Acks.All,
+        EnableIdempotence = true,
+        MaxInFlight = 5,
+        LingerMs = 5,
+        CompressionType = CompressionType.Lz4,
+        AllowAutoCreateTopics = false,
+        MessageTimeoutMs = 10000
+    };
 }

@@ -2,7 +2,7 @@
 
 ## 1. Producer durability (bridge)
 
-- [ ] 1.1 Set `Acks=All`, `EnableIdempotence=true`, `MaxInFlight=5` in `Publishing` producer config; verify with a unit test in `Telemetrix.Edge.Bridge.Tests` asserting the built config (NFR-08)
+- [x] 1.1 Set `Acks=All`, `EnableIdempotence=true`, `MaxInFlight=5` in `Publishing` producer config; verify with a unit test in `Telemetrix.Edge.Bridge.Tests` asserting the built config (NFR-08)
 
 ## 2. Manual commits (transformer)
 
