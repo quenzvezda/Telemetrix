@@ -21,7 +21,7 @@ public class RawBatchProcessorTests
         var failure = new InvalidOperationException("storage failed");
         var handler = new TelemetryBatchHandler(resolver, new Writer(() => throw failure), new Publisher(),
             NullLogger<TelemetryBatchHandler>.Instance, ResiliencePipeline.Empty);
-        var processor = new RawBatchProcessor(handler);
+        var processor = new RawBatchProcessor(handler, new Publisher());
         var committed = false;
 
         Assert.Same(failure, Assert.Throws<InvalidOperationException>(() => processor.Process(
@@ -36,7 +36,7 @@ public class RawBatchProcessorTests
         var events = new List<string>();
         var handler = new TelemetryBatchHandler(resolver, new Writer(() => events.Add("write")),
             new Publisher(() => events.Add("dead-letter")), NullLogger<TelemetryBatchHandler>.Instance, ResiliencePipeline.Empty);
-        var processor = new RawBatchProcessor(handler);
+        var processor = new RawBatchProcessor(handler, new Publisher());
         var thread = Environment.CurrentManagedThreadId;
 
         processor.Process(Result(unknown: true), () =>
@@ -61,7 +61,7 @@ public class RawBatchProcessorTests
         {
             if (Interlocked.Increment(ref attempts) < 3) throw new IOException("database unavailable");
         }), new Publisher(), NullLogger<TelemetryBatchHandler>.Instance, StorageRetry.Create(time));
-        var processor = new RawBatchProcessor(handler);
+        var processor = new RawBatchProcessor(handler, new Publisher());
         var processing = Task.Run(() => processor.Process(Result(), () => commits++, deadline.Token), deadline.Token);
 
         while (!processing.IsCompleted)
@@ -87,7 +87,7 @@ public class RawBatchProcessorTests
         }), new Publisher(), NullLogger<TelemetryBatchHandler>.Instance, StorageRetry.Create(new FakeTimeProvider()));
         var committed = false;
 
-        Assert.ThrowsAny<OperationCanceledException>(() => new RawBatchProcessor(handler).Process(
+        Assert.ThrowsAny<OperationCanceledException>(() => new RawBatchProcessor(handler, new Publisher()).Process(
             Result(), () => committed = true, cancellation.Token));
 
         Assert.False(committed);
@@ -125,8 +125,10 @@ public class RawBatchProcessorTests
         }
     }
 
-    private sealed class Publisher(Action? publish = null) : IDeadLetterPublisher
+    private sealed class Publisher(Action? publish = null) : IDeadLetterPublisher, IInvalidBatchPublisher
     {
+        public Task PublishAsync(ConsumeResult<string, byte[]> result, string reason, string error, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("valid test batch must not be rejected");
         public Task PublishUnknownTagsAsync(TelemetryBatch batch, CancellationToken cancellationToken)
         {
             publish?.Invoke();

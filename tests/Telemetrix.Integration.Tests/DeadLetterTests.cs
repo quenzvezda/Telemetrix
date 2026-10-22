@@ -35,7 +35,7 @@ public class DeadLetterTests
         var timestamp = new DateTimeOffset(2026, 10, 18, 5, 0, 0, TimeSpan.Zero);
         var batch = new TelemetryBatch(1, Guid.NewGuid(), "opcua", "opc.tcp://test:50000", "Plant01", "Line01",
             "Pump01", timestamp, [new BatchSample("Torque", 42, timestamp, timestamp, 0)]);
-        using var publisher = new KafkaDeadLetterPublisher(options);
+        using var publisher = new KafkaDeadLetterPublisher(options, TimeProvider.System);
         await publisher.PublishUnknownTagsAsync(batch, ct);
         using var consumer = new ConsumerBuilder<string, byte[]>(new ConsumerConfig
         {
