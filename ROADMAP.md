@@ -16,7 +16,7 @@ Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.m
 | M2 | OPC UA client | `add-opcua-subscription` | FR-10, FR-11, FR-12 | Values print every second with source timestamp and status code; the client resumes after the OPC PLC container restarts | Done |
 | M3 | First end-to-end slice | `add-end-to-end-slice` | FR-13, FR-14, FR-22, FR-23, FR-30 | Rows appear in `measurement` and a `SELECT` shows the live trend | Done |
 | M4 | Delivery guarantees | `add-delivery-guarantees` | FR-20, FR-21, FR-24, NFR-01, NFR-03, NFR-05, NFR-08 | Transformer killed under load; row count still equals samples sent | Done |
-| M5 | Edge resilience | `add-edge-store-and-forward` | FR-15, FR-16, NFR-02, NFR-04 | Kafka down 30 min drains with zero loss; OPC UA restart reconnects < 30 s and logs the gap | Not started |
+| M5 | Edge resilience | `add-edge-store-and-forward` | FR-15, FR-16, NFR-02, NFR-04 | Kafka down 30 min drains with zero loss; OPC UA restart reconnects < 30 s and logs the gap | In progress |
 | M6 | Own OPC UA server | `add-plant-simulator` | FR-01, FR-02 | Bridge switches from OPC PLC to PlantSim by configuration only | Not started |
 | M7 | MQTT input | `add-mqtt-source` | FR-03, FR-17 | Same tags land in the database from MQTT with no transformer change | Not started |
 | M8 | Observability and load | `add-observability` | FR-31, FR-32, FR-40, FR-41, NFR-06, NFR-07, NFR-12 | Dashboard shows trends, pump state and gaps; p95 latency < 10 s; 5,000 samples/s without growing lag | Not started |
@@ -34,10 +34,11 @@ Decide before the milestone that needs it starts; record the outcome as an ADR i
 
 | # | Decision | Needed by | Leaning |
 | --- | --- | --- | --- |
-| D3 | Edge buffer limit: how many hours, and on overflow drop oldest or stop subscribing? | M5 | — |
 | D5 | Batch thresholds: keep 500 samples / 5 s, or tune after measuring latency? | M8 | Keep, re-measure under NFR-06 |
 
 ## Resolved decisions
+
+- D3 (needed by M5): configurable buffer sized for at least one hour at default load; pause collection on overflow, preserve accepted batches and report the collection gap. Accepted in [ADR-0013](docs/adr/0013-bound-edge-buffer-and-pause-collection.md). The reviewer authorized autonomous implementation across all M5 task groups on 2026-10-22.
 
 - D4 (needed by M4): defer `plant.telemetry.clean` (FR-25) to the separate-sink stretch goal. Accepted in [ADR-0012](docs/adr/0012-defer-clean-topic-to-separate-sink.md).
 

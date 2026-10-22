@@ -1,3 +1,7 @@
+## Purpose
+
+Reports source connection transitions and collection gaps per asset so downstream users can distinguish missing collection from an unchanged plant.
+
 ## ADDED Requirements
 
 ### Requirement: Plant events topic
@@ -24,6 +28,11 @@ After a connection is restored the bridge SHALL publish a gap event per affected
 - **WHEN** the connection is restored after an interruption
 - **THEN** a gap event SHALL be published whose start is the time of the last sample before the drop and whose end is the time of the first sample after reconnection
 - **AND** no measurement SHALL be stored for timestamps inside the gap
+
+#### Scenario: Collection paused at buffer capacity
+- **WHEN** collection is paused and later resumed because the edge buffer reached its capacity threshold
+- **THEN** lost, restored and gap events SHALL identify `buffer-capacity` as their reason
+- **AND** the gap bounds SHALL use the last collected and first resumed source timestamps
 
 ### Requirement: Events are not lost during a Kafka outage
 
