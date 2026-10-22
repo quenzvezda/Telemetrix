@@ -75,3 +75,103 @@ session with one subscription but fresh tags did not resume within 30 seconds.
 The Bridge now treats a replaced SDK session as a request to rebuild the source
 cycle and all monitored items from configuration before publishing restored.
 The 30-second acceptance deadline remains unchanged.
+
+## Repeatable review checks
+
+Run from the repository root with Docker running:
+
+```powershell
+dotnet build -c Release
+dotnet test --no-build -c Release
+npx -y @fission-ai/openspec@1.14.3 validate --all --strict
+```
+
+Expected: no build warnings/errors, all unit/integration cases pass, and all
+active changes and main specs pass strict validation.
+
+Run the complete NFR-02 check separately (allow at least 31 minutes plus build):
+
+```powershell
+./scripts/Test-M5EdgeOutage.ps1
+```
+
+The deterministic source runs the real Bridge pipeline at seven samples/s with
+default batching. The script measures at least 1,800 seconds with Kafka stopped,
+then waits for source completion, an empty SQLite buffer and zero Transformer
+lag. Expected: `M5_SOURCE_DONE: ticks=1840, sent=12880, buffer=0` and
+`M5_PASS: sent=12880, stored=12880, tags=7, lag=0`, followed by cleanup success.
+The extra 40 source seconds span startup and recovery. A 15-second smoke check
+uses `-OutageSeconds 15` and expects 385 measurements; CI runs that shorter check,
+which does not replace the full acceptance run. Each run creates a fresh named
+project and cleans up only its own containers, network, images and database/buffer
+volumes. No normal local database or `.env` credential is used.
+
+For a focused NFR-04 check:
+
+```powershell
+dotnet test tests/Telemetrix.Integration.Tests -c Release --filter FullyQualifiedName~PlantEventDeliveryTests
+```
+
+Expected: one passing production-host test. It consumes lost events for both
+assets, restarts OPC PLC, and requires all seven fresh tags plus restored/gap
+events on Kafka within 30 seconds of server readiness. Additional
+`OpcUaRecoveryTests` cases cover repeated restarts, browse, initial unavailability
+and actual subscription pause/resume at capacity.
+
+For interactive local inspection, start the normal stack and Bridge using the
+README instructions, then run this in another terminal:
+
+```powershell
+docker compose -f deploy/docker-compose.yml restart opc-plc
+```
+
+Inspect [plant events in Kafka UI](http://localhost:8080/ui/clusters/local/all-topics/plant.events/messages).
+Each affected asset has `ConnectionLost` → `ConnectionRestored` → `Gap`, with
+UTC bounds from collected source timestamps. Existing topics keep their settings.
+Grafana remains at <http://localhost:3000>; gap dashboards belong to M8.
+
+Read-only SQL equivalents of the acceptance verifier:
+
+```sql
+SELECT t.asset_id, t.name, count(*) AS measurements
+FROM measurement m JOIN tag t USING (tag_id)
+GROUP BY t.asset_id, t.name
+ORDER BY t.asset_id, t.name;
+
+SELECT count(*) AS measurements,
+       count(DISTINCT (tag_id, time)) AS distinct_measurements
+FROM measurement;
+```
+
+In the fresh full acceptance database, each of the seven tag counts is 1,840
+and both totals are 12,880. Normal local database counts depend on retained
+history; the script executes verification before removing its disposable database.
+
+## Acceptance evidence, 2026-10-22
+
+| Check | Recorded result |
+| --- | --- |
+| Release CI after explicit session-rebuild fix | 164 tests passed, zero failed/skipped; build and strict OpenSpec validation passed in [run 39781318110](https://github.com/quenzvezda/Telemetrix/actions/runs/39781318110) |
+| Production M4 SIGKILL regression | Exit 137 while source still active; 20,000 sent/stored, 2,000 batches, lag zero |
+| Short M5 Kafka outage | 385 sent/stored, seven tags, empty buffer and zero lag |
+| Full NFR-02 Kafka outage | Kafka stopped for 1,801.140 measured seconds; 12,880 sent/stored, seven tags, empty buffer and zero lag |
+| NFR-04 and capacity recovery | Five focused integration cases passed with the unchanged 30-second deadline |
+
+The full outage used disposable project `telemetrix-m5-b2a38c10ff39`. The source
+reported progress throughout the outage and finished all 1,840 ticks. Verification
+returned `M5_PASS: sent=12880, stored=12880, tags=7, lag=0`; cleanup succeeded.
+The source uses the real Bridge batching/publication/replay pipeline with a
+deterministic default-load adapter; the separate production-host test covers the
+real OPC UA adapter and plant events. Normal local Kafka/database volumes were
+not reset or used for the outage test.
+
+## Operational limits
+
+Keep the SQLite file on persistent writable storage, one file per Bridge
+instance. The quota counts serialized payloads, not SQLite/WAL filesystem usage.
+At capacity the Bridge preserves accepted batches and stops subscribing; source
+changes during that pause are unavailable and reported as a gap. Abrupt death
+before an in-memory delivery has spilled to SQLite still has an in-memory loss
+window; restart guarantees here cover persisted entries. Replay after ambiguous
+acknowledgement can duplicate Kafka delivery; measurement identity remains
+duplicate-safe through ADR-0003. See ADR-0013 before changing these settings.

@@ -68,7 +68,7 @@ dotnet build --no-restore -c Release
 dotnet test -c Release
 ```
 
-The suite covers contracts, batching, quality and tag resolution, plus OPC UA recovery, Kafka publishing/group assignment/DLQ and transactional TimescaleDB storage. Docker must be running for integration tests, which create disposable infrastructure with generated connection settings. They do not use the local Compose database or its password.
+The suite covers contracts, batching, buffer quota/FIFO/restart, source and capacity gaps, quality and tag resolution, plus OPC UA recovery, Kafka publishing/group assignment/DLQ and transactional TimescaleDB storage. Docker must be running for integration tests, which create disposable infrastructure with generated connection settings. They do not use the local Compose database or its password.
 
 ### Local environment
 
@@ -159,6 +159,32 @@ has spilled to disk still has an in-memory loss window.
 The Bridge logs buffering start, empty, and capacity transitions. Meter
 `Telemetrix.Edge.Bridge` exposes `bridge.buffer.batches` (queued entries, including
 plant events) and `bridge.buffer.samples`; exporters follow in M8.
+
+`plant.events` has three partitions and 30-day retention. Messages are keyed by
+asset and use the shared `PlantEvent` contract with `ConnectionLost`,
+`ConnectionRestored` or `Gap`. Gap bounds are the last collected and first resumed
+source timestamps; collection never invents values for the missing interval.
+OPC UA recovery handles server restarts, and initial server unavailability is
+retried without exiting. Inspect events in
+[Kafka UI](http://localhost:8080/ui/clusters/local/all-topics/plant.events/messages).
+
+To repeat the deterministic 30-minute Kafka outage check with Docker running:
+
+```powershell
+./scripts/Test-M5EdgeOutage.ps1
+```
+
+This uses the real Bridge pipeline and a deterministic seven-tag source at one
+sample per tag per second with the default 500-sample / five-second batching.
+It stops Kafka for at least 1,800 measured seconds, drains SQLite after recovery,
+and checks all seven tag counts and zero Transformer lag in a fresh TimescaleDB.
+Expected final verification: `M5_PASS: sent=12880, stored=12880, tags=7, lag=0`.
+The source includes 40 seconds beyond the outage for startup/recovery observation.
+Every invocation creates and removes only its uniquely named disposable project,
+database/buffer volumes and locally built review images. It uses no normal local
+database or `deploy/.env` credentials. A short harness check is available with
+`-OutageSeconds 15` (385 samples); CI runs this short check alongside the full
+integration suite. The short check does not replace the 30-minute NFR-02 test.
 
 #### Run the Transformer
 

@@ -27,6 +27,16 @@ jobs:
         shell: pwsh
         run: ./scripts/Test-M4Delivery.ps1
 
+  edge-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Buffer and drain a short Kafka outage
+        shell: pwsh
+        # The real 30-minute NFR-02 acceptance run is recorded separately.
+        run: ./scripts/Test-M5EdgeOutage.ps1 -OutageSeconds 15
+
   openspec:
     runs-on: ubuntu-latest
     steps:
