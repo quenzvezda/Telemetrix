@@ -28,4 +28,4 @@
 - [x] 5.1 Integration test (Testcontainers Kafka): pause Kafka, persist batches and plant events, restart the bridge host, unpause; verify all identities arrive in order, allowing replay only after an ambiguous acknowledgement (ADR-0003)
 - [x] 5.2 NFR-02: `docker compose stop kafka` for 30 minutes under default load, then start; verify measurement count equals samples sent
 - [x] 5.3 NFR-04: restart the simulator container; verify samples resume within 30 s and `plant.events` shows lost → restored → gap
-- [ ] 5.4 Update ROADMAP.md M5 status; verify CI is green
+- [x] 5.4 Update ROADMAP.md M5 status; verify CI is green

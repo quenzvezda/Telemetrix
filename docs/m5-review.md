@@ -30,6 +30,8 @@ at <http://localhost:3000>; M5 does not add dashboards.
 
 ## Group 3: OPC UA recovery
 
+Commits `8b1e8ce`, `c62699f`, `1f85342`.
+
 The repeated OPC PLC restart integration test passed for explicit and browsed
 tags (two cases). Cancellation during recovery also completed successfully.
 Backoff unit tests prove doubling delays, 20% jitter bounds, a 15-second cap and
@@ -37,6 +39,8 @@ injected-clock cancellation. Review `OpcUaSourceAdapter`, `OpcUaSessionRecovery`
 and `ReconnectBackoff`.
 
 ## Group 4: plant events
+
+Commits `18fe5ce`, `9652dda`, `dcab062`.
 
 The shared event JSON tests passed for lost, restored and gap types, including
 UTC normalization. Four disposable Kafka topic tests passed for raw/events
@@ -55,6 +59,9 @@ restart test also passed with event tracking enabled for both tag modes; every
 restart asserts all tags and ordered gaps resume within 30 seconds.
 
 ## Group 5: outage and restart verification
+
+Commits `fb50055`, `bd08f73`, `1eeb7d0`; queue/readiness refinements are in
+`f7764a8`, `ed360ac`, and test isolation in `68d09c6`.
 
 The disposable Kafka pause/restart integration test passed: two batches and a
 plant event were persisted, the Bridge host was stopped and recreated with the
@@ -151,7 +158,7 @@ history; the script executes verification before removing its disposable databas
 
 | Check | Recorded result |
 | --- | --- |
-| Release CI after explicit session-rebuild fix | 164 tests passed, zero failed/skipped; build and strict OpenSpec validation passed in [run 39781318110](https://github.com/quenzvezda/Telemetrix/actions/runs/39781318110) |
+| Release CI with the final outage harness | 164 tests passed, zero failed/skipped; build/test, strict OpenSpec, SIGKILL and edge-outage jobs all passed in [run 39782779905](https://github.com/quenzvezda/Telemetrix/actions/runs/39782779905) |
 | Production M4 SIGKILL regression | Exit 137 while source still active; 20,000 sent/stored, 2,000 batches, lag zero |
 | Short M5 Kafka outage | 385 sent/stored, seven tags, empty buffer and zero lag |
 | Full NFR-02 Kafka outage | Kafka stopped for 1,801.140 measured seconds; 12,880 sent/stored, seven tags, empty buffer and zero lag |
@@ -164,6 +171,10 @@ The source uses the real Bridge batching/publication/replay pipeline with a
 deterministic default-load adapter; the separate production-host test covers the
 real OPC UA adapter and plant events. Normal local Kafka/database volumes were
 not reset or used for the outage test.
+
+All 15 tracked M5 tasks are complete. The milestone remains **In review**, with
+[draft PR #2](https://github.com/quenzvezda/Telemetrix/pull/2) ready for reviewer
+acceptance. Archive and merge follow that acceptance; no open M5 decision remains.
 
 ## Operational limits
 
