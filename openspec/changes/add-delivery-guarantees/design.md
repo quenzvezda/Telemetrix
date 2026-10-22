@@ -53,6 +53,7 @@ Ordering comes from keying by `assetId` (ADR-0004) plus single-threaded processi
 
 - **NFR-01** — `Integration.Tests/ExactlyOnceTests`: Testcontainers Kafka + TimescaleDB (`timescale/timescaledb:2.30.2-pg17` with `deploy/sql/init.sql`); produce N known batches, deliver one of them twice, run the transformer host in-process, assert `count(*) == N samples`.
 - **NFR-03** — `Integration.Tests/KillMidBatchTests`: inject a fault hook in `Storage` that throws `OperationCanceledException` *after* the DB transaction commits but before the Kafka commit; stop the host abruptly, start a new host in the same group, assert no gaps and no duplicates. A manual check (`docker kill transformer` under load) is documented in tasks.
+- **Real process kill** — `scripts/Test-M4Delivery.ps1` builds the production Transformer and a deterministic test source into disposable Linux containers under a unique Compose project. It kills the Transformer with SIGKILL while publishing 2,000 ten-sample batches, checks exit code 137, restarts the same consumer group and verifies 20,000 measurements, complete per-batch counts and zero lag. Its network and database volume are isolated from the normal local stack; cleanup removes only that invocation's resources. The same harness runs in CI. It is a bounded crash check rather than the NFR-01 one-hour load observation.
 
 ## Risks / Trade-offs
 

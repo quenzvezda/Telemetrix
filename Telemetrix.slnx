@@ -11,4 +11,7 @@
     <Project Path="tests/Telemetrix.Integration.Tests/Telemetrix.Integration.Tests.csproj" />
     <Project Path="tests/Telemetrix.Transformer.Tests/Telemetrix.Transformer.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Telemetrix.DeliveryProbe/Telemetrix.DeliveryProbe.csproj" />
+  </Folder>
 </Solution>
