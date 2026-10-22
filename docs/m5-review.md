@@ -27,3 +27,22 @@ For manual inspection use a dedicated buffer file, keep the same path across
 restarts, and watch the `Edge buffering started` / `Edge buffer is empty` logs.
 Do not delete a nonempty file. Kafka UI is at <http://localhost:8080> and Grafana
 at <http://localhost:3000>; M5 does not add dashboards.
+
+## Group 3: OPC UA recovery
+
+The repeated OPC PLC restart integration test passed for explicit and browsed
+tags (two cases). Cancellation during recovery also completed successfully.
+Backoff unit tests prove doubling delays, 20% jitter bounds, a 15-second cap and
+injected-clock cancellation. Review `OpcUaSourceAdapter`, `OpcUaSessionRecovery`
+and `ReconnectBackoff`.
+
+## Group 4: plant events
+
+The shared event JSON tests passed for lost, restored and gap types, including
+UTC normalization. Four disposable Kafka topic tests passed for raw/events
+creation and preserving existing configurations. The agent also started only the
+previously stopped local Kafka/Kafka UI services, ran Bridge with a dedicated
+ignored buffer path, and inspected `plant.events` in Kafka UI: 3 partitions and
+`retention.ms=2592000000` (30 days). Those services were stopped afterwards;
+existing local topics and retained data were preserved. The new empty events
+topic remains as the Bridge-owned M5 topic.
