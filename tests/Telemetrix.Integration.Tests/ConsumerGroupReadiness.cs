@@ -28,7 +28,8 @@ internal static class ConsumerGroupReadiness
                 var codes = exception.Results.ConsumerGroupDescriptions.Select(group => group.Error.Code).ToArray();
                 Console.WriteLine("Consumer group readiness: {0}", string.Join(", ", codes));
                 if (codes.Length == 0 || !codes.All(code => code is ErrorCode.GroupIdNotFound
-                    or ErrorCode.GroupLoadInProgress or ErrorCode.GroupCoordinatorNotAvailable or ErrorCode.NotCoordinatorForGroup))
+                    or ErrorCode.GroupLoadInProgress or ErrorCode.GroupCoordinatorNotAvailable or ErrorCode.NotCoordinatorForGroup
+                    or ErrorCode.Local_TimedOut))
                     throw;
             }
             await Task.Delay(100, ct);

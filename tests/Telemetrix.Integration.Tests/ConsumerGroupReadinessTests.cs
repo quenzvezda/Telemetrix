@@ -5,13 +5,15 @@ namespace Telemetrix.Integration.Tests;
 
 public class ConsumerGroupReadinessTests
 {
-    [Fact]
-    public async Task CoordinatorStartupErrorsRemainPendingUntilCancellation()
+    [Theory]
+    [InlineData(ErrorCode.GroupLoadInProgress)]
+    [InlineData(ErrorCode.Local_TimedOut)]
+    public async Task CoordinatorStartupErrorsRemainPendingUntilCancellation(ErrorCode code)
     {
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         cancellation.CancelAfter(TimeSpan.FromSeconds(5));
         var attempts = 0;
-        var failure = Failure(ErrorCode.GroupLoadInProgress);
+        var failure = Failure(code);
         Task<DescribeConsumerGroupsResult> Describe()
         {
             if (++attempts == 2) cancellation.Cancel();
