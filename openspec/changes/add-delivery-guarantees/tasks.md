@@ -24,6 +24,6 @@
 ## 5. Delivery guarantees proven
 
 - [x] 5.1 `ExactlyOnceTests` in `Telemetrix.Integration.Tests` (Kafka + TimescaleDB containers), including a deliberately replayed batch; verify `dotnet test` passes and row count equals samples sent (NFR-01)
-- [ ] 5.2 `KillMidBatchTests`: crash after DB commit, before Kafka commit; restart; verify no gaps and no duplicates (NFR-03)
+- [x] 5.2 `KillMidBatchTests`: crash after DB commit, before Kafka commit; restart; verify no gaps and no duplicates (NFR-03)
 - [ ] 5.3 Manual check from the ROADMAP "Done when": run the stack under load, `docker kill` the transformer mid-stream, restart it, and verify `SELECT count(*) FROM measurement` equals samples sent by the simulator; record the result in the change's notes
 - [ ] 5.4 Update ROADMAP.md M4 status; verify CI is green
