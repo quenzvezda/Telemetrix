@@ -91,14 +91,7 @@ internal sealed class DeliveryTestEnvironment : IAsyncDisposable
     public async Task WaitForMembersAsync(int count, CancellationToken ct)
     {
         using var admin = Admin();
-        while (true)
-        {
-            var result = await admin.DescribeConsumerGroupsAsync([KafkaOptions.ConsumerGroup]).WaitAsync(ct);
-            var group = Assert.Single(result.ConsumerGroupDescriptions);
-            if (group.State == ConsumerGroupState.Stable && group.Members.Count == count
-                && group.Members.Sum(member => member.Assignment.TopicPartitions.Count) == 6) return;
-            await Task.Delay(50, ct);
-        }
+        await ConsumerGroupReadiness.WaitForMembersAsync(admin, count, ct);
     }
 
     public static TelemetryBatch Batch(int sequence, int samples = 10)

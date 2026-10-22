@@ -36,7 +36,7 @@ public class RawBatchConsumerTests
         {
             await first.StartAsync(ct);
             await second.StartAsync(ct);
-            var group = await WaitForMembersAsync(admin, 2, ct);
+            var group = await ConsumerGroupReadiness.WaitForMembersAsync(admin, 2, ct);
             Assert.Equal(KafkaOptions.ConsumerGroup, group.GroupId);
             Assert.All(group.Members, member => Assert.Equal(3, member.Assignment.TopicPartitions.Count));
             var assigned = group.Members.SelectMany(member => member.Assignment.TopicPartitions).ToArray();
@@ -76,7 +76,7 @@ public class RawBatchConsumerTests
 
             await first.StopAsync(ct);
             Assert.True(first.ExecuteTask!.IsCompletedSuccessfully);
-            Assert.Equal(6, Assert.Single((await WaitForMembersAsync(admin, 1, ct)).Members)
+            Assert.Equal(6, Assert.Single((await ConsumerGroupReadiness.WaitForMembersAsync(admin, 1, ct)).Members)
                 .Assignment.TopicPartitions.Count);
             var takeover = Batch(0, 99);
             await producer.ProduceAsync(new TopicPartition(KafkaOptions.RawTopic, new Partition(0)),
@@ -128,20 +128,6 @@ public class RawBatchConsumerTests
 
     private static Task CreateRawTopicAsync(IAdminClient admin, CancellationToken ct) => admin.CreateTopicsAsync(
         [new TopicSpecification { Name = KafkaOptions.RawTopic, NumPartitions = 6, ReplicationFactor = 1 }]).WaitAsync(ct);
-
-    private static async Task<ConsumerGroupDescription> WaitForMembersAsync(IAdminClient admin, int count, CancellationToken ct)
-    {
-        while (true)
-        {
-            var result = await admin.DescribeConsumerGroupsAsync([KafkaOptions.ConsumerGroup],
-                new DescribeConsumerGroupsOptions { RequestTimeout = TimeSpan.FromSeconds(10) }).WaitAsync(ct);
-            var group = Assert.Single(result.ConsumerGroupDescriptions);
-            if (group.State == ConsumerGroupState.Stable && group.Members.Count == count
-                && group.Members.Sum(member => member.Assignment.TopicPartitions.Count) == 6)
-                return group;
-            await Task.Delay(100, ct);
-        }
-    }
 
     private static async Task<List<RawBatchDelivery>> ReadAsync(ChannelReader<RawBatchDelivery> reader, int count, CancellationToken ct)
     {
