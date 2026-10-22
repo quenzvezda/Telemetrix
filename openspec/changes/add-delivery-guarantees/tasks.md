@@ -15,7 +15,7 @@
 
 - [x] 3.1 Create `plant.telemetry.dlq` (1 partition, 30 d retention) at transformer startup via AdminClient; verify the topic appears in Kafka UI with those settings
 - [x] 3.2 Validate envelope and `schemaVersion`; produce failures to the DLQ with the `dlq.*` headers from design.md, then commit; verify with unit tests for `invalid-json`, `schema-violation`, `unsupported-schema-version` (FR-21)
-- [ ] 3.3 Integration test: produce a malformed message between two valid batches; verify it lands in the DLQ with headers and both valid batches are stored
+- [x] 3.3 Integration test: produce a malformed message between two valid batches; verify it lands in the DLQ with headers and both valid batches are stored
 
 ## 4. Ordering
 
