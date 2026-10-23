@@ -1,0 +1,28 @@
+# Disposable M5 acceptance stack; scripts/Test-M5EdgeOutage.ps1 assigns its name.
+# Reuse pinned M4 infrastructure without normal local ports, credentials or volumes.
+services:
+  kafka:
+    extends:
+      file: docker-compose.m4.yml
+      service: kafka
+  timescaledb:
+    extends:
+      file: docker-compose.m4.yml
+      service: timescaledb
+  transformer:
+    extends:
+      file: docker-compose.m4.yml
+      service: transformer
+  probe:
+    extends:
+      file: docker-compose.m4.yml
+      service: probe
+    environment:
+      M5_TICKS: ${M5_TICKS:-1840}
+      Buffer__Path: /buffer/bridge.db
+    volumes:
+      - edgebuffer:/buffer
+
+volumes:
+  reviewdata:
+  edgebuffer:

@@ -9,9 +9,10 @@ using Telemetrix.Contracts;
 using Telemetrix.Edge.Bridge.Publishing;
 using BridgeKafka = Telemetrix.Edge.Bridge.Publishing.KafkaOptions;
 
-// A deterministic, test-only source for the M4 kill-under-load review.
+// Deterministic, test-only sources for the M4 crash and M5 outage reviews.
 // Run against the isolated review stack, never against the normal local database.
-using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+var command = args.Single();
+using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(command == "edge-send" ? 45 : 3));
 var ct = deadline.Token;
 var bootstrap = Environment.GetEnvironmentVariable("Kafka__BootstrapServers") ?? "kafka:9092";
 var runId = Guid.Parse(Environment.GetEnvironmentVariable("M4_RUN_ID") ?? throw new InvalidOperationException("M4_RUN_ID is required."));
@@ -21,12 +22,24 @@ var delay = int.Parse(Environment.GetEnvironmentVariable("M4_DELAY_MS") ?? "10")
 if (batches <= 0 || samples <= 0 || delay < 0) throw new InvalidOperationException("Invalid review load settings.");
 var ids = Enumerable.Range(0, batches).Select(i => new Guid(SHA256.HashData(
     Encoding.UTF8.GetBytes($"{runId:D}:{i}"))[..16])).ToArray();
-var command = args.Single();
+if (command == "edge-send")
+{
+    await EdgeOutageReview.SendAsync(bootstrap, runId, ct);
+    return;
+}
+if (command == "edge-verify")
+{
+    await EdgeOutageReview.VerifyAsync(bootstrap, ct);
+    return;
+}
 
 if (command is "prepare" or "send")
 {
-    await new TopicInitializer(Options.Create(new BridgeKafka { BootstrapServers = bootstrap }),
-        NullLogger<TopicInitializer>.Instance).StartAsync(ct);
+    using var initializer = new TopicInitializer(Options.Create(new BridgeKafka { BootstrapServers = bootstrap }),
+        NullLogger<TopicInitializer>.Instance);
+    await initializer.StartAsync(ct);
+    await initializer.Ready.WaitAsync(ct);
+    await initializer.StopAsync(ct);
     if (command == "prepare") return;
     using var producer = new ProducerBuilder<string, byte[]>(KafkaBatchPublisher.CreateConfig(
         new BridgeKafka { BootstrapServers = bootstrap })).Build();

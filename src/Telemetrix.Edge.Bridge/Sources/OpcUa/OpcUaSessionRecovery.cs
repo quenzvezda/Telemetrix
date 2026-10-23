@@ -9,21 +9,27 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
     private readonly TimeProvider timeProvider;
     private readonly ILogger logger;
     private readonly TaskCompletionSource failure = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource recreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly SessionReconnectHandler reconnect;
     private ISession session;
     private bool stopping;
+    private readonly Action<string>? interrupted;
+    private readonly Action? restored;
 
     public OpcUaSessionRecovery(ISession session, ITelemetryContext telemetry,
-        TimeProvider timeProvider, ILogger logger)
+        TimeProvider timeProvider, ILogger logger, Action<string>? interrupted = null, Action? restored = null)
     {
         this.session = session;
         this.timeProvider = timeProvider;
         this.logger = logger;
-        reconnect = new SessionReconnectHandler(telemetry, true, -1, timeProvider);
+        this.interrupted = interrupted;
+        this.restored = restored;
+        reconnect = new SessionReconnectHandler(telemetry, true, 15000, timeProvider);
         Attach(session);
     }
 
     public Task Failure => failure.Task;
+    public Task Recreated => recreated.Task;
 
     private void Attach(ISession active)
     {
@@ -49,6 +55,7 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
                 if (state == SessionReconnectHandler.ReconnectState.Triggered)
                 {
                     logger.LogWarning("OPC UA session interrupted with {StatusCode}; retrying connection", args.Status);
+                    interrupted?.Invoke(args.Status?.ToString() ?? "keepalive-failed");
                 }
 
                 args.CancelKeepAlive = true;
@@ -86,8 +93,15 @@ internal sealed class OpcUaSessionRecovery : IAsyncDisposable
                     previous.KeepAlive -= OnKeepAlive;
                     session = recovered;
                     Attach(session);
+                    // SDK session recreation can leave copied monitored items silent even
+                    // though SubscriptionCount is nonzero. Rebuild from configured tags
+                    // before announcing restoration or accepting the replacement as ready.
+                    logger.LogInformation("OPC UA session replaced; rebuilding monitored items from configuration");
+                    recreated.TrySetResult();
+                    return;
                 }
 
+                restored?.Invoke();
                 logger.LogInformation("OPC UA session restored; active session {SessionId}, subscriptions {SubscriptionCount}",
                     session.SessionId, session.SubscriptionCount);
             }

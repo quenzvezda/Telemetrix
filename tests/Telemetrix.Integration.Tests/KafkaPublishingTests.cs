@@ -14,8 +14,9 @@ using Testcontainers.Kafka;
 
 namespace Telemetrix.Integration.Tests;
 
-public class KafkaPublishingTests
+public class KafkaPublishingTests : IDisposable
 {
+    private readonly string directory = Path.Combine(Path.GetTempPath(), $"telemetrix-publishing-{Guid.NewGuid():N}");
     [Fact]
     public async Task HostDrainsSamplesToKeyedJsonBatchesOnGracefulShutdown()
     {
@@ -33,6 +34,7 @@ public class KafkaPublishingTests
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Kafka:BootstrapServers"] = kafka.GetBootstrapAddress(),
+            ["Buffer:Path"] = Path.Combine(directory, "bridge.db"),
             ["Batching:MaxSamples"] = "2"
         });
         builder.Services.AddSingleton(TimeProvider.System);
@@ -91,6 +93,11 @@ public class KafkaPublishingTests
         }
         Assert.Equal(10, received.Count(result => result.Message.Key == "Pump01"));
         Assert.Single(received, result => result.Message.Key == "Tank01");
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(directory)) Directory.Delete(directory, true);
     }
 
     private sealed class BurstSource : ISourceAdapter

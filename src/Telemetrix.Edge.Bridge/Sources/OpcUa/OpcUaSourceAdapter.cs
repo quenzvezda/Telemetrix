@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Opc.Ua;
 using Opc.Ua.Client;
 using Telemetrix.Contracts;
+using Telemetrix.Edge.Bridge.Buffer;
 
 namespace Telemetrix.Edge.Bridge.Sources.OpcUa;
 
@@ -10,9 +11,59 @@ public sealed class OpcUaSourceAdapter(
     IOptions<OpcUaOptions> options,
     ITelemetryContext telemetry,
     TimeProvider timeProvider,
-    ILogger<OpcUaSourceAdapter> logger) : ISourceAdapter
+    ILogger<OpcUaSourceAdapter> logger,
+    SqliteBuffer? buffer = null,
+    PlantEventTracker? eventTracker = null) : ISourceAdapter
 {
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
+    {
+        var attempt = 0;
+        var restoring = false;
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                while (buffer?.IsCollectionPaused == true)
+                    await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, cancellationToken);
+                using var sessionStop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                var capacity = PauseAtCapacityAsync(sessionStop);
+                var pausedForCapacity = false;
+                try
+                {
+                    await RunSessionAsync(writer, restoring, sessionStop.Token);
+                    attempt = 0;
+                    restoring = true;
+                }
+                catch (ServiceResultException exception)
+                {
+                    logger.LogWarning(exception, "OPC UA session creation failed; retrying connection");
+                    var delay = ReconnectBackoff.Delay(attempt, Random.Shared.NextDouble());
+                    attempt = Math.Min(attempt + 1, 4);
+                    await Task.Delay(delay, timeProvider, cancellationToken);
+                }
+                finally
+                {
+                    await sessionStop.CancelAsync();
+                    try { pausedForCapacity = await capacity; }
+                    catch (OperationCanceledException) when (sessionStop.IsCancellationRequested) { }
+                }
+                if (pausedForCapacity && eventTracker is not null)
+                    await eventTracker.LostAsync("buffer-capacity", cancellationToken);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
+    }
+
+    private async Task<bool> PauseAtCapacityAsync(CancellationTokenSource sessionStop)
+    {
+        while (buffer?.IsCollectionPaused != true)
+            await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, sessionStop.Token);
+        logger.LogWarning("OPC UA subscription stopping for buffer-capacity; replay remains active");
+        await sessionStop.CancelAsync();
+        return true;
+    }
+
+    private async Task RunSessionAsync(ChannelWriter<Sample> writer, bool restoring, CancellationToken cancellationToken)
     {
         var settings = options.Value;
         var pkiPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -47,7 +98,7 @@ public sealed class OpcUaSourceAdapter(
                 },
                 AutoAcceptUntrustedCertificates = true
             },
-            TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
+            TransportQuotas = new TransportQuotas { OperationTimeout = 5000 },
             ClientConfiguration = new ClientConfiguration { DefaultSessionTimeout = 60000 }
         };
         await configuration.ValidateAsync(ApplicationType.Client, cancellationToken);
@@ -73,7 +124,9 @@ public sealed class OpcUaSourceAdapter(
         var session = await new DefaultSessionFactory(telemetry).CreateAsync(
             configuration, endpoint, false, false, configuration.ApplicationName, 60000,
             new UserIdentity(), default, cancellationToken);
-        await using var recovery = new OpcUaSessionRecovery(session, telemetry, timeProvider, logger);
+        await using var recovery = new OpcUaSessionRecovery(session, telemetry, timeProvider, logger,
+            reason => eventTracker?.LostAsync(reason, cancellationToken).GetAwaiter().GetResult(),
+            () => eventTracker?.RestoredAsync(cancellationToken).GetAwaiter().GetResult());
         var failedNotification = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var handlers = new List<(MonitoredItem Item, OpcUaTagOptions Tag, MonitoredItemNotificationEventHandler Handler)>();
         try
@@ -85,6 +138,8 @@ public sealed class OpcUaSourceAdapter(
             {
                 throw new InvalidOperationException("OpcUa:BrowseStartNode contains no variables to monitor.");
             }
+
+            eventTracker?.TrackAssets(tags.Select(tag => tag.Asset));
 
             foreach (var tag in tags)
             {
@@ -105,6 +160,7 @@ public sealed class OpcUaSourceAdapter(
                         foreach (var notification in monitoredItem.DequeueValues())
                         {
                             var sample = OpcUaSampleMapper.Map(settings, tag, notification);
+                            eventTracker?.SampleAsync(sample, cancellationToken).GetAwaiter().GetResult();
                             // The SDK callback is synchronous. Waiting here applies channel back-pressure
                             // without async-void callbacks or untracked writes that could lose samples.
                             writer.WriteAsync(sample, cancellationToken).AsTask().GetAwaiter().GetResult();
@@ -125,6 +181,8 @@ public sealed class OpcUaSourceAdapter(
 
             session.AddSubscription(subscription);
             await subscription.CreateAsync(cancellationToken);
+            if (eventTracker is not null) await eventTracker.RestoredAsync(cancellationToken);
+            if (restoring) logger.LogInformation("OPC UA session restored; monitored items recreated from configuration");
             foreach (var (item, tag, _) in handlers)
             {
                 var error = item.Status.Error;
@@ -146,7 +204,7 @@ public sealed class OpcUaSourceAdapter(
                 settings.Endpoint, subscription.MonitoredItemCount, subscription.CurrentPublishingInterval);
 
             var stopped = Task.Delay(Timeout.InfiniteTimeSpan, timeProvider, cancellationToken);
-            await await Task.WhenAny(stopped, failedNotification.Task, recovery.Failure);
+            await await Task.WhenAny(stopped, failedNotification.Task, recovery.Failure, recovery.Recreated);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

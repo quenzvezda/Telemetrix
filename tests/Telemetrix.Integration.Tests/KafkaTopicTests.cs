@@ -10,9 +10,12 @@ namespace Telemetrix.Integration.Tests;
 public class KafkaTopicTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task StartupCreatesTheRawTopicAndPreservesExistingConfiguration(bool preExisting)
+    [InlineData(false, KafkaOptions.RawTopic, 6, "604800000")]
+    [InlineData(true, KafkaOptions.RawTopic, 6, "604800000")]
+    [InlineData(false, KafkaOptions.EventsTopic, 3, "2592000000")]
+    [InlineData(true, KafkaOptions.EventsTopic, 3, "2592000000")]
+    public async Task StartupCreatesOwnedTopicsAndPreservesExistingConfiguration(bool preExisting,
+        string topicName, int partitions, string retention)
     {
         using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(2));
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
@@ -30,7 +33,7 @@ public class KafkaTopicTests
         {
             await admin.CreateTopicsAsync([new TopicSpecification
             {
-                Name = KafkaOptions.RawTopic,
+                Name = topicName,
                 NumPartitions = 2,
                 ReplicationFactor = 1,
                 Configs = new Dictionary<string, string> { ["retention.ms"] = "60000" }
@@ -39,20 +42,21 @@ public class KafkaTopicTests
 
         for (var start = 0; start < 2; start++)
         {
-            var initializer = new TopicInitializer(options, NullLogger<TopicInitializer>.Instance);
+            using var initializer = new TopicInitializer(options, NullLogger<TopicInitializer>.Instance);
             await initializer.StartAsync(ct);
+            await initializer.Ready.WaitAsync(ct);
             await initializer.StopAsync(ct);
 
-            var metadata = admin.GetMetadata(KafkaOptions.RawTopic, TimeSpan.FromSeconds(10));
+            var metadata = admin.GetMetadata(topicName, TimeSpan.FromSeconds(10));
             var topic = Assert.Single(metadata.Topics);
             Assert.False(topic.Error.IsError);
-            Assert.Equal(preExisting ? 2 : 6, topic.Partitions.Count);
+            Assert.Equal(preExisting ? 2 : partitions, topic.Partitions.Count);
             var configs = await admin.DescribeConfigsAsync([new ConfigResource
             {
-                Name = KafkaOptions.RawTopic,
+                Name = topicName,
                 Type = ResourceType.Topic
             }]).WaitAsync(ct);
-            Assert.Equal(preExisting ? "60000" : "604800000",
+            Assert.Equal(preExisting ? "60000" : retention,
                 Assert.Single(configs).Entries["retention.ms"].Value);
         }
     }

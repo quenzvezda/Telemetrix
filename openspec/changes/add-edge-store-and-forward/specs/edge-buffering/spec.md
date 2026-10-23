@@ -1,13 +1,17 @@
+## Purpose
+
+Retains accepted batches across Kafka outages and bridge restarts, then replays them in order within a bounded edge storage capacity.
+
 ## ADDED Requirements
 
 ### Requirement: Spill batches when Kafka is unreachable
 
-The bridge SHALL write a batch to a local on-disk buffer instead of dropping it whenever the batch cannot be acknowledged by Kafka, and SHALL keep collecting samples while Kafka is unreachable (FR-15).
+The bridge SHALL write a batch to a local on-disk buffer instead of dropping it whenever the batch cannot be acknowledged by Kafka, and SHALL keep collecting samples while buffer capacity is available (FR-15, ADR-0013).
 
 #### Scenario: Kafka stopped
 - **WHEN** Kafka becomes unreachable while the bridge is collecting
 - **THEN** every subsequent batch SHALL be persisted to the local buffer
-- **AND** the OPC UA subscription SHALL keep delivering samples
+- **AND** the OPC UA subscription SHALL keep delivering samples while buffer capacity is available
 
 ### Requirement: Replay in original order
 
@@ -28,7 +32,8 @@ The buffered batches SHALL survive a bridge process restart and SHALL be replaye
 
 #### Scenario: Bridge restarted during outage
 - **WHEN** the bridge is restarted while batches are buffered and Kafka is still down
-- **THEN** after Kafka returns, all batches buffered before the restart SHALL be produced exactly once each to `plant.telemetry.raw`
+- **THEN** after Kafka returns, all batches buffered before the restart SHALL be delivered to `plant.telemetry.raw` in order
+- **AND** ambiguous acknowledgements MAY cause replay, while storage remains duplicate-safe (ADR-0003)
 
 ### Requirement: Zero loss over a 30 minute outage
 
@@ -45,3 +50,20 @@ The bridge SHALL expose the current number of buffered batches and samples as a 
 #### Scenario: Buffer depth reported
 - **WHEN** batches are buffered
 - **THEN** the buffer depth metric SHALL equal the number of batches waiting to be produced
+
+### Requirement: Bounded capacity without discarding accepted batches
+
+The bridge SHALL have a configurable payload-byte capacity, defaulting to enough space for at least one hour at the default load. It SHALL pause source collection before exhausting capacity, retain accepted batches without expiry, and resume collection after sufficient space is reclaimed (FR-15, ADR-0013).
+
+#### Scenario: Capacity reached
+- **WHEN** buffered payloads reach the collection pause threshold
+- **THEN** the bridge SHALL pause source subscription and retain every buffered batch
+- **AND** log the capacity reason and keep replay running
+
+#### Scenario: Space reclaimed
+- **WHEN** replay reduces occupancy to the resume threshold
+- **THEN** collection SHALL resume and the interrupted collection interval SHALL be reported as a gap
+
+#### Scenario: Default sizing
+- **WHEN** one hour of the default seven-tag load is serialized using default batch settings
+- **THEN** the payloads SHALL fit within the default buffer capacity

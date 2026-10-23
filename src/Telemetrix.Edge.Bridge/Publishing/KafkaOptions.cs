@@ -4,6 +4,7 @@ public sealed class KafkaOptions
 {
     public const string SectionName = "Kafka";
     public const string RawTopic = "plant.telemetry.raw";
+    public const string EventsTopic = "plant.events";
 
     public string BootstrapServers { get; set; } = "localhost:29092";
 }

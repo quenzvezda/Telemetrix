@@ -1,28 +1,22 @@
 using System.Threading.Channels;
 using Confluent.Kafka;
-using Microsoft.Extensions.Options;
 using Telemetrix.Contracts;
+using Telemetrix.Edge.Bridge.Buffer;
 
 namespace Telemetrix.Edge.Bridge.Publishing;
 
-public sealed class KafkaBatchPublisher(IOptions<KafkaOptions> options,
+public sealed class KafkaBatchPublisher(StoreAndForwardQueue queue,
     ILogger<KafkaBatchPublisher> logger) : IBatchPublisher
 {
     public async Task RunAsync(ChannelReader<TelemetryBatch> batches, CancellationToken cancellationToken)
     {
-        using var producer = new ProducerBuilder<string, byte[]>(CreateConfig(options.Value)).Build();
-
         await foreach (var batch in batches.ReadAllAsync(cancellationToken))
         {
-            var result = await producer.ProduceAsync(KafkaOptions.RawTopic, new Message<string, byte[]>
-            {
-                Key = batch.AssetId,
-                Value = TelemetryJson.Serialize(batch)
-            }, cancellationToken);
+            await queue.PublishAsync(new BufferedEntry(KafkaOptions.RawTopic, batch.AssetId,
+                TelemetryJson.Serialize(batch), batch.Samples.Count, batch.CreatedAt), cancellationToken);
             logger.LogInformation(
-                "Published batch {BatchId} for {AssetId}: samples={SampleCount}, topic={Topic}, partition={Partition}, offset={Offset}",
-                batch.BatchId, batch.AssetId, batch.Samples.Count, result.Topic,
-                result.Partition.Value, result.Offset.Value);
+                "Accepted batch {BatchId} for {AssetId}: samples={SampleCount}, topic={Topic}",
+                batch.BatchId, batch.AssetId, batch.Samples.Count, KafkaOptions.RawTopic);
         }
     }
 
