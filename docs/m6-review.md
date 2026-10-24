@@ -74,6 +74,31 @@ and empty while collection is paused, then requires every configured tag after
 resume within the same 30-second deadline. Server-restart cases still reject
 stale source timestamps. No production source-adapter behavior was changed.
 
+## Acceptance evidence, 2026-10-24
+
+| Check | Recorded result |
+| --- | --- |
+| Local Release build | Zero warnings and errors |
+| Complete local suite | 182 passed, zero failed/skipped |
+| Strict OpenSpec validation | All 12 active change/spec items passed |
+| Container pipeline | Seven stored tags, then seven fresh tags and six ordered plant events after RestartServer; 7.333 seconds from server readiness in the focused run |
+| Restart boundary cases | Delays 0 and 5 seconds both restored new connections within 10 seconds |
+| UaExpert | Reviewer screenshots confirmed seven typed Good tags and all five Simulation methods |
+| Release CI | All four jobs passed in [run 40097367673](https://github.com/quenzvezda/Telemetrix/actions/runs/40097367673), including build/test, strict OpenSpec, M4 SIGKILL and M5 outage regression |
+
+All 13 tracked tasks are complete. M6 remains **In review** for final reviewer
+acceptance; archive and merge have not been performed.
+
+Review the model and tag definitions first, then PlantNodeManager and
+SimulationMethods, the worker restart lifecycle, and finally the Bridge profile
+and PlantSimPipelineTests. Main task commits are:
+
+- Model/test project: `bedb0d0`, `5860b1b`.
+- Server/address space/timestamps: `8cc190d`, `4a0348a`, `79b3605`.
+- Fault methods, scheduler and guide: `7f48c34`, `6c3ef15`, `cd38a66`.
+- Deployment/profile and pipeline verification: `05ba757`, `0259bda`, `9d18abb`, `149af77`.
+- Deadline and test-harness refinements: `fbefbab`, `36d320e`, `d7cdfea`.
+
 ## Repeatable automated checks
 
 Run from the repository root with Docker running:
