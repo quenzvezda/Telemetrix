@@ -25,5 +25,5 @@
 ## 5. Milestone verification
 
 - [x] 5.1 Done-when check: switch the bridge from OPC PLC to PlantSim by configuration only; verify all 7 tags appear in `measurement` and `git diff` shows no change under `src/Telemetrix.Edge.Bridge/**/*.cs` or `src/Telemetrix.Transformer/**/*.cs`
-- [ ] 5.2 Trigger `RestartServer` while the bridge runs; verify the bridge reconnects (NFR-04) and a gap event appears on `plant.events`
+- [x] 5.2 Trigger `RestartServer` while the bridge runs; verify the bridge reconnects (NFR-04) and a gap event appears on `plant.events`
 - [ ] 5.3 Update ROADMAP.md M6 status; verify CI is green
