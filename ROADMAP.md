@@ -17,7 +17,7 @@ Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.m
 | M3 | First end-to-end slice | `add-end-to-end-slice` | FR-13, FR-14, FR-22, FR-23, FR-30 | Rows appear in `measurement` and a `SELECT` shows the live trend | Done |
 | M4 | Delivery guarantees | `add-delivery-guarantees` | FR-20, FR-21, FR-24, NFR-01, NFR-03, NFR-05, NFR-08 | Transformer killed under load; row count still equals samples sent | Done |
 | M5 | Edge resilience | `add-edge-store-and-forward` | FR-15, FR-16, NFR-02, NFR-04 | Kafka down 30 min drains with zero loss; OPC UA restart reconnects < 30 s and logs the gap | Done |
-| M6 | Own OPC UA server | `add-plant-simulator` | FR-01, FR-02 | Bridge switches from OPC PLC to PlantSim by configuration only | Not started |
+| M6 | Own OPC UA server | `add-plant-simulator` | FR-01, FR-02 | Bridge switches from OPC PLC to PlantSim by configuration only | In progress |
 | M7 | MQTT input | `add-mqtt-source` | FR-03, FR-17 | Same tags land in the database from MQTT with no transformer change | Not started |
 | M8 | Observability and load | `add-observability` | FR-31, FR-32, FR-40, FR-41, NFR-06, NFR-07, NFR-12 | Dashboard shows trends, pump state and gaps; p95 latency < 10 s; 5,000 samples/s without growing lag | Not started |
 | M9 | Security | `add-opcua-security` | NFR-09, NFR-10 | An untrusted client certificate is rejected; no secret in the repo | Not started |
@@ -27,6 +27,8 @@ M3 was accepted and archived on 2026-10-18 with all 14 tasks complete. Its four 
 M4 was accepted by the reviewer and archived on 2026-10-22 with all 13 tracked tasks complete. Release CI passed all 137 tests and strict OpenSpec validation; the production Transformer SIGKILL check stored all 20,000 samples with zero lag. Its requirements are in main specs; see the [archived change](openspec/changes/archive/2026-10-22-add-delivery-guarantees/) and [review package](docs/m4-review.md).
 
 M5 was accepted by the reviewer and merged through [PR #2](https://github.com/quenzvezda/Telemetrix/pull/2). Its OpenSpec change was archived on 2026-10-24 with all 15 tracked tasks complete and its requirements synced into main specs. D3 is resolved in ADR-0013. Release CI passed all 164 tests, strict OpenSpec validation, the M4 SIGKILL regression and the short M5 outage check. The full Kafka outage lasted 1,801.140 measured seconds and drained all 12,880 samples with an empty buffer and zero lag. Production OPC UA-to-Kafka recovery restored all seven fresh tags and ordered plant events within 30 seconds. See the [review package](docs/m5-review.md) and [archived change](openspec/changes/archive/2026-10-24-add-edge-store-and-forward/).
+
+M6 started on 2026-10-24. The reviewer authorized autonomous implementation across all task groups; final acceptance and archive follow the review package.
 
 NFR-13 (tests) is not a milestone: every change lands its own unit and integration tests, and CI (`.github/workflows/ci.yml`) stays green.
 

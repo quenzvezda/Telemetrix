@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <ProjectReference Include="../../src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj" />
+  </ItemGroup>
+</Project>

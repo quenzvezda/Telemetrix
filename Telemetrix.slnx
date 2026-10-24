@@ -9,6 +9,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Telemetrix.Edge.Bridge.Tests/Telemetrix.Edge.Bridge.Tests.csproj" />
     <Project Path="tests/Telemetrix.Integration.Tests/Telemetrix.Integration.Tests.csproj" />
+    <Project Path="tests/Telemetrix.PlantSim.Tests/Telemetrix.PlantSim.Tests.csproj" />
     <Project Path="tests/Telemetrix.Transformer.Tests/Telemetrix.Transformer.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

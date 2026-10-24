@@ -2,7 +2,7 @@
 
 ## 1. Value model
 
-- [ ] 1.1 Create `tests/Telemetrix.PlantSim.Tests` and add it to `Telemetrix.slnx`; verify `dotnet test` discovers it
+- [x] 1.1 Create `tests/Telemetrix.PlantSim.Tests` and add it to `Telemetrix.slnx`; verify `dotnet test` discovers it
 - [ ] 1.2 Implement `Model/PumpingLine` with the dynamics in design.md; verify seeded unit tests: 600 steps stay in normal ranges, flow is 0 within 2 steps of a stop, level rises while running and falls while stopped
 
 ## 2. OPC UA server
