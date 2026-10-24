@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Telemetrix.Edge.Bridge\Telemetrix.Edge.Bridge.csproj" />
     <ProjectReference Include="..\..\src\Telemetrix.Transformer\Telemetrix.Transformer.csproj" />
+    <ProjectReference Include="..\..\src\Telemetrix.PlantSim\Telemetrix.PlantSim.csproj" />
   </ItemGroup>
 
 </Project>
