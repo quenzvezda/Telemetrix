@@ -18,13 +18,13 @@ internal sealed class PlantSimFixture : IAsyncDisposable
     public ITelemetryContext Telemetry => host.Services.GetRequiredService<ITelemetryContext>();
     public Worker Worker => host.Services.GetRequiredService<Worker>();
 
-    public PlantSimFixture()
+    public PlantSimFixture(string? externalEndpoint = null)
     {
         var reservation = new TcpListener(IPAddress.Loopback, 0);
         reservation.Start();
         var port = ((IPEndPoint)reservation.LocalEndpoint).Port;
         reservation.Stop();
-        Endpoint = $"opc.tcp://localhost:{port}";
+        Endpoint = externalEndpoint ?? $"opc.tcp://localhost:{port}";
         var builder = Host.CreateApplicationBuilder();
         builder.Logging.ClearProviders();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
