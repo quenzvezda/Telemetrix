@@ -54,6 +54,9 @@ Compose database or its credentials.
 
 No C# production file under Edge.Bridge or Transformer changes in M6.
 
+The reviewer also reconnected UaExpert to the Compose container and confirmed
+the Simulation object with all five methods on 2026-10-24, supplying a screenshot.
+
 ## Repeatable automated checks
 
 Run from the repository root with Docker running:

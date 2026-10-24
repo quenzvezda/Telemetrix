@@ -49,7 +49,7 @@ public class KafkaTopicTests
 
             var metadata = admin.GetMetadata(topicName, TimeSpan.FromSeconds(10));
             var topic = Assert.Single(metadata.Topics);
-            Assert.False(topic.Error.IsError);
+            Assert.False(topic.Error.IsError, topic.Error.ToString());
             Assert.Equal(preExisting ? 2 : partitions, topic.Partitions.Count);
             var configs = await admin.DescribeConfigsAsync([new ConfigResource
             {

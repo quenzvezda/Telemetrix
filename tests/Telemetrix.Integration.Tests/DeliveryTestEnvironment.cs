@@ -17,6 +17,8 @@ namespace Telemetrix.Integration.Tests;
 internal sealed class DeliveryTestEnvironment : IAsyncDisposable
 {
     public KafkaContainer Kafka { get; } = new KafkaBuilder("apache/kafka:4.3.1")
+        // Interpret the copied script instead of exec'ing a file whose write handle may still be open.
+        .WithCommand("while [ ! -f /testcontainers.sh ]; do sleep 0.1; done; /bin/sh /testcontainers.sh")
         .WithEnvironment("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false").Build();
     public PostgreSqlContainer Database { get; } = new PostgreSqlBuilder("timescale/timescaledb:2.30.2-pg17").Build();
     public NpgsqlDataSource Source { get; private set; } = null!;

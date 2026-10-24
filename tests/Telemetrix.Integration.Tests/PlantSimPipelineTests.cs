@@ -15,6 +15,7 @@ using BridgeKafkaOptions = Telemetrix.Edge.Bridge.Publishing.KafkaOptions;
 
 namespace Telemetrix.Integration.Tests;
 
+[Collection(PlantSimPipelineCollection.Name)]
 public sealed class PlantSimPipelineTests(ITestOutputHelper output) : IDisposable
 {
     private readonly string directory = Path.Combine(Path.GetTempPath(), $"telemetrix-plantsim-pipeline-{Guid.NewGuid():N}");
