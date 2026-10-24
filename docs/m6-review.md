@@ -86,8 +86,12 @@ stale source timestamps. No production source-adapter behavior was changed.
 | UaExpert | Reviewer screenshots confirmed seven typed Good tags and all five Simulation methods |
 | Release CI | All four jobs passed in [run 40097367673](https://github.com/quenzvezda/Telemetrix/actions/runs/40097367673), including build/test, strict OpenSpec, M4 SIGKILL and M5 outage regression |
 
-All 13 tracked tasks are complete. M6 remains **In review** for final reviewer
-acceptance; archive and merge have not been performed.
+The reviewer accepted M6 on 2026-10-24 and authorized merging
+[PR #3](https://github.com/quenzvezda/Telemetrix/pull/3).
+All 13 tracked tasks are complete. The change is archived at
+[`2026-10-24-add-plant-simulator`](../openspec/changes/archive/2026-10-24-add-plant-simulator/),
+its seven requirements are synced into main specs, and M6 is **Done**.
+This closeout is included in PR #3.
 
 Review the model and tag definitions first, then PlantNodeManager and
 SimulationMethods, the worker restart lifecycle, and finally the Bridge profile

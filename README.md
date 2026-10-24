@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1–M5 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M5 review](docs/m5-review.md). M6 PlantSim is implemented and in review: seven correlated OPC UA tags, fault methods, seeded random faults, Docker deployment and a Bridge configuration profile. See the [M6 review package](docs/m6-review.md). The clean topic is deferred to the separate sink (ADR-0012).
+M1–M6 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M6 review](docs/m6-review.md). PlantSim provides seven correlated OPC UA tags, fault methods, seeded random faults, Docker deployment and a Bridge configuration profile. M7 adds MQTT input next. The clean topic is deferred to the separate sink (ADR-0012).
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
