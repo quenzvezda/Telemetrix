@@ -3,6 +3,7 @@ using Opc.Ua;
 using Opc.Ua.Configuration;
 using Telemetrix.PlantSim.Server;
 using Telemetrix.PlantSim.Model;
+using System.Threading.Channels;
 
 namespace Telemetrix.PlantSim;
 
@@ -10,6 +11,14 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
     TimeProvider timeProvider, PumpingLine line, ILogger<Worker> logger) : BackgroundService
 {
     public TaskCompletionSource Ready { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly Channel<uint> restarts = Channel.CreateBounded<uint>(1);
+    private int restartPending;
+
+    public bool TryRestart(uint delaySeconds)
+    {
+        if (delaySeconds > 5 || Interlocked.CompareExchange(ref restartPending, 1, 0) != 0) return false;
+        return restarts.Writer.TryWrite(delaySeconds);
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -21,13 +30,41 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
             application = new ApplicationInstance(configuration, telemetry);
             if (!await application.CheckApplicationInstanceCertificatesAsync(false, null, stoppingToken))
                 throw new InvalidOperationException("PlantSim could not create its application certificate.");
-            using var server = new PlantServer(telemetry, timeProvider, line, options.Value.Seed);
-            await application.StartAsync(server, stoppingToken);
-            logger.LogInformation("PlantSim OPC UA server started at {Endpoint}", options.Value.Endpoint);
-            Ready.TrySetResult();
-            using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1), timeProvider);
-            while (await timer.WaitForNextTickAsync(stoppingToken))
-                server.PlantNodes!.Update();
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                using var server = new PlantServer(telemetry, timeProvider, line, options.Value.Seed, TryRestart);
+                uint delaySeconds;
+                try
+                {
+                    await application.StartAsync(server, stoppingToken);
+                    Interlocked.Exchange(ref restartPending, 0);
+                    logger.LogInformation("PlantSim OPC UA server started at {Endpoint}", options.Value.Endpoint);
+                    Ready.TrySetResult();
+                    using var cycle = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+                    using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1), timeProvider);
+                    var requested = restarts.Reader.ReadAsync(cycle.Token).AsTask();
+                    try
+                    {
+                        while (true)
+                        {
+                            var tick = timer.WaitForNextTickAsync(cycle.Token).AsTask();
+                            if (await Task.WhenAny(tick, requested) == requested)
+                            {
+                                delaySeconds = await requested;
+                                // Let the Call response leave the server before dropping its sessions.
+                                await Task.Delay(TimeSpan.FromMilliseconds(200), timeProvider, stoppingToken);
+                                break;
+                            }
+                            if (!await tick) return;
+                            server.PlantNodes!.Update();
+                        }
+                    }
+                    finally { await cycle.CancelAsync(); }
+                }
+                finally { await application.StopAsync(CancellationToken.None); }
+                logger.LogInformation("PlantSim restarting after {DelaySeconds} seconds", delaySeconds);
+                await Task.Delay(TimeSpan.FromSeconds(delaySeconds), timeProvider, stoppingToken);
+            }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
         catch (Exception exception)
@@ -76,7 +113,8 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
                     { SecurityMode = MessageSecurityMode.None, SecurityPolicyUri = SecurityPolicies.None }
                 ],
                 UserTokenPolicies = [new UserTokenPolicy(UserTokenType.Anonymous)],
-                DiagnosticsEnabled = false
+                DiagnosticsEnabled = false,
+                MaxRegistrationInterval = 0
             }
         };
 }

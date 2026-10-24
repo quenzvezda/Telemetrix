@@ -4,7 +4,8 @@ using Telemetrix.PlantSim.Model;
 
 namespace Telemetrix.PlantSim.Server;
 
-public sealed class PlantServer(ITelemetryContext telemetry, TimeProvider timeProvider, PumpingLine line, int seed)
+public sealed class PlantServer(ITelemetryContext telemetry, TimeProvider timeProvider, PumpingLine line,
+    int seed, Func<uint, bool> restart)
     : StandardServer(telemetry, timeProvider)
 {
     private readonly TimeProvider clock = timeProvider;
@@ -13,7 +14,7 @@ public sealed class PlantServer(ITelemetryContext telemetry, TimeProvider timePr
     protected override MasterNodeManager CreateMasterNodeManager(IServerInternal server,
         ApplicationConfiguration configuration)
     {
-        PlantNodes = new PlantNodeManager(server, configuration, line, clock, seed);
+        PlantNodes = new PlantNodeManager(server, configuration, line, clock, seed, restart);
         return new MasterNodeManager(server, configuration, null, new INodeManager[] { PlantNodes });
     }
 }

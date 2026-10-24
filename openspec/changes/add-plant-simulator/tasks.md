@@ -13,7 +13,7 @@
 
 ## 3. Fault injection
 
-- [ ] 3.1 Add the `Simulation` object with `TripPump`, `StartPump`, `SetBadQuality`, `Spike`, `RestartServer` methods; verify an integration test calls each method through the client SDK and observes the specified effect
+- [x] 3.1 Add the `Simulation` object with `TripPump`, `StartPump`, `SetBadQuality`, `Spike`, `RestartServer` methods; verify an integration test calls each method through the client SDK and observes the specified effect
 - [ ] 3.2 Add `RandomFaultScheduler` with configurable rates and seed; verify a unit test with a fake clock that the expected faults occur over a simulated 6 hours and none occur when disabled
 - [ ] 3.3 Document the methods and `Faults:*` settings in `src/Telemetrix.PlantSim/README.md`; verify each documented method name matches the address space
 

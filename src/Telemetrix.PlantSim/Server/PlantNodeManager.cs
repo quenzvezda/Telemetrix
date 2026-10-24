@@ -10,15 +10,17 @@ public sealed class PlantNodeManager : CustomNodeManager2
     private readonly PumpingLine line;
     private readonly TimeProvider timeProvider;
     private readonly Random rng;
+    private readonly Func<uint, bool> restart;
     private readonly Dictionary<string, BaseDataVariableState> tags = [];
 
     public PlantNodeManager(IServerInternal server, ApplicationConfiguration configuration,
-        PumpingLine line, TimeProvider timeProvider, int seed)
+        PumpingLine line, TimeProvider timeProvider, int seed, Func<uint, bool> restart)
         : base(server, configuration, PlantNamespace)
     {
         this.line = line;
         this.timeProvider = timeProvider;
         rng = new Random(seed);
+        this.restart = restart;
     }
 
     public override void CreateAddressSpace(IDictionary<NodeId, IList<IReference>> externalReferences)
@@ -79,6 +81,8 @@ public sealed class PlantNodeManager : CustomNodeManager2
                     }
                 }
             }
+            var simulation = Object(productionLine, "Simulation", "Line01.Simulation", ObjectTypeIds.BaseObjectType);
+            SimulationMethods.Add(simulation, NamespaceIndex, line, restart);
             Update();
             AddPredefinedNode(SystemContext, plant);
         }

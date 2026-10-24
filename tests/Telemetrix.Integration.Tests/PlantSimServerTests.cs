@@ -44,7 +44,7 @@ public sealed class PlantSimServerTests
         Assert.Contains("Plant01", await BrowseNamesAsync(browser, ObjectIds.ObjectsFolder, ct));
         Assert.Contains("Line01", await BrowseNamesAsync(browser, new NodeId("Plant01", 2), ct));
         var assets = await BrowseNamesAsync(browser, new NodeId("Plant01.Line01", 2), ct);
-        Assert.Equal(new[] { "Pump01", "Tank01" }, assets.Order());
+        Assert.Equal(new[] { "Pump01", "Simulation", "Tank01" }, assets.Order());
         foreach (var tag in PlantTags.All)
         {
             var children = await BrowseNamesAsync(browser, new NodeId($"Line01.{tag.Asset}", 2), ct);
