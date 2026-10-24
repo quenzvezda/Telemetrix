@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY Directory.Build.props Directory.Packages.props global.json ./
+COPY src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj src/Telemetrix.PlantSim/
+RUN dotnet restore src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj
+COPY src/Telemetrix.PlantSim/ src/Telemetrix.PlantSim/
+RUN dotnet publish src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj -c Release --no-restore -o /app
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0
+WORKDIR /app
+COPY --from=build /app .
+RUN mkdir -p /app/pki && chown -R app:app /app/pki
+USER app
+ENV PlantSim__PkiPath=/app/pki
+EXPOSE 4840
+ENTRYPOINT ["dotnet", "Telemetrix.PlantSim.dll"]

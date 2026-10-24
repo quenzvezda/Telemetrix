@@ -9,6 +9,8 @@
   </ItemGroup>
   <ItemGroup Label="OPC UA">
     <PackageVersion Include="OPCFoundation.NetStandard.Opc.Ua.Client" Version="2.0.1" />
+    <PackageVersion Include="OPCFoundation.NetStandard.Opc.Ua.Server" Version="2.0.1" />
+    <PackageVersion Include="OPCFoundation.NetStandard.Opc.Ua.Configuration" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup Label="Kafka">
     <PackageVersion Include="Confluent.Kafka" Version="2.16.0" />

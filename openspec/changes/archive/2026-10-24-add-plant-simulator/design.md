@@ -23,22 +23,28 @@
 
 ### Value model separated from OPC UA
 
-`Model/PumpingLine` is a plain class: `Step(TimeSpan dt, Random rng) → IReadOnlyList<TagValue>` holding state (running, flow, temperature, level…). The node manager calls it once per second from a `PeriodicTimer` and writes values, status codes and source timestamps (`DateTime.UtcNow` truncated to the tick) into the nodes, then `ClearChangeMasks`. This makes the physics unit-testable without a server (seeded `Random`).
+`Model/PumpingLine` is a plain class: `Step(TimeSpan dt, Random rng) → IReadOnlyList<TagValue>` holding state (running, flow, temperature, level…). The worker calls the node manager once per second from a `PeriodicTimer` using injected `TimeProvider`. It writes values, status codes and UTC source timestamps (from the provider, truncated to the second) into the nodes, then `ClearChangeMasks`. This makes the physics and timed quality faults unit-testable without a server.
 
-Dynamics (first-order lags with Gaussian noise): flow → target 50 m³/h when running, 0 when stopped; pressure = 1.0 + 0.075·flow + noise; motor temperature approaches 45 + 0.6·flow °C with a time constant of ~10 min; level integrates (inflow when running − constant outflow) clamped 0–100; tank temperature 15–30 °C slow random walk.
+Dynamics (first-order lags with Gaussian noise): flow approaches 50 m³/h when running and is 0 when stopped; pressure = 1.0 + 0.075·flow + noise; motor temperature approaches 45 + 0.6·flow °C with a time constant of ~10 min; level integrates inflow minus outflow. Normal operation starts in range and clamps numeric values to the spec's normal ranges, including level 20–90 %. Stopped pressure is 1 bar. Vibration follows flow with noise; tank temperature is a 15–30 °C slow random walk. These bounds refine the initial design's wider 0–100 % level clamp to satisfy the unchanged normal-range requirement.
+
+Source timestamps are updated for all tags even if their values are unchanged.
+Default OPC UA StatusValue data-change filters suppress timestamp-only
+notifications. Clients checking the 1 Hz timestamp requirement use
+StatusValueTimestamp or read the attributes directly; the Bridge still switches
+source through configuration only.
 
 ### Fault injection: OPC UA methods + random scheduler
 
 A `Simulation` object under `Line01` exposes methods: `TripPump()`, `StartPump()`, `SetBadQuality(tag: String, seconds: UInt32)`, `Spike(tag: String)`, `RestartServer(delaySeconds: UInt32)`. Methods are callable from UaExpert and from integration tests via the client SDK.
 
 - Alternative: HTTP control endpoint. Rejected — methods keep the exercise inside OPC UA and are the same mechanism the "write-back" stretch goal needs.
-- `RestartServer` stops the `ApplicationInstance` (dropping all sessions), waits the delay, and starts it again in-process; the container keeps running.
+- `RestartServer` queues a worker-owned restart, lets its Call response leave, stops the `ApplicationInstance` (dropping all sessions), waits the delay, and starts a new server in-process; the container keeps running. Delays are bounded to 0–5 seconds and the SDK shutdown countdown is disabled to keep the complete restart within 10 seconds. Concurrent restarts are rejected. Model state and active quality faults remain in the shared model.
 
 `RandomFaultScheduler` (BackgroundService) draws Poisson-distributed events from `appsettings.json` (`Faults:Random:Enabled`, `PumpTripsPerHour=1`, `PumpRestartDelay=00:02:00`, `VibrationSpikesPerHour=6`, `BadQualityPerHour=2`, `Seed`).
 
 ### Deployment
 
-`src/Telemetrix.PlantSim/Dockerfile` (multi-stage, `mcr.microsoft.com/dotnet/runtime:10.0`), compose service `plantsim` on port 4840 with a named volume for its `pki/` store. A bridge config profile `appsettings.PlantSim.json` (or env vars) sets endpoint `opc.tcp://plantsim:4840` and the 7 NodeIds.
+`src/Telemetrix.PlantSim/Dockerfile` (multi-stage, `mcr.microsoft.com/dotnet/runtime:10.0`), compose service `plantsim` on port 4840 with a named volume for its `pki/` store and the non-root app user. The `appsettings.PlantSim.json` Bridge profile uses localhost:4840 for IDE/host runs and the seven NodeIds; a container-side endpoint is overridden to `opc.tcp://plantsim:4840`. Compose disables random faults for repeatable manual checks; `PLANTSIM_RANDOM_FAULTS=true` enables them.
 
 ## Risks / Trade-offs
 

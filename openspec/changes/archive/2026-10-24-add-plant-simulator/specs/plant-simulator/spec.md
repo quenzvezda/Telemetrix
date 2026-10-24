@@ -1,3 +1,7 @@
+## Purpose
+
+Provides a reproducible pumping-line OPC UA source with correlated telemetry and controllable faults for pipeline development and recovery verification.
+
 ## ADDED Requirements
 
 ### Requirement: Pumping line address space

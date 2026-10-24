@@ -177,9 +177,10 @@ deterministic default-load adapter; the separate production-host test covers the
 real OPC UA adapter and plant events. Normal local Kafka/database volumes were
 not reset or used for the outage test.
 
-All 15 tracked M5 tasks are complete. The milestone remains **In review**, with
-[draft PR #2](https://github.com/quenzvezda/Telemetrix/pull/2) ready for reviewer
-acceptance. Archive and merge follow that acceptance; no open M5 decision remains.
+All 15 tracked M5 tasks are complete. The reviewer accepted M5 and
+[PR #2](https://github.com/quenzvezda/Telemetrix/pull/2) was merged into main.
+The change was archived on 2026-10-24 and its requirements synced into main specs;
+the milestone is **Done** and no open M5 decision remains.
 
 ## Operational limits
 

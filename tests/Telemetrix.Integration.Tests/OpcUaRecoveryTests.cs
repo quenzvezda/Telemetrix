@@ -108,10 +108,14 @@ public class OpcUaRecoveryTests(ITestOutputHelper output) : IDisposable
                     container.GetMappedPublicPort(50000)).Uri.ToString());
                 var restartCompleted = TimeProvider.System.GetUtcNow();
 
-                // Source timestamps must be newer than the restart; queued old samples cannot pass.
+                // A server restart creates fresh source values, so queued old samples cannot pass.
+                // At capacity the server keeps running: an unchanged tag may legitimately retain
+                // its earlier source timestamp. The drained/empty channel above proves collection
+                // stopped; requiring every tag after resume proves the subscription was rebuilt.
                 using var recoveryDeadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 recoveryDeadline.CancelAfter(TimeSpan.FromSeconds(30));
-                await ObserveAllTagsAsync(channel.Reader, running, expectedTags, restartCompleted, recoveryDeadline.Token);
+                await ObserveAllTagsAsync(channel.Reader, running, expectedTags,
+                    capacityPause ? DateTimeOffset.MinValue : restartCompleted, recoveryDeadline.Token);
                 await logger.WaitForAsync(capacityPause ? "OPC UA subscription created" : "OPC UA session restored",
                     running, recoveryDeadline.Token);
                 while (events.Values.Count(value => value.Type == PlantEventType.Gap) <
