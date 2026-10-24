@@ -114,6 +114,7 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
                 ],
                 UserTokenPolicies = [new UserTokenPolicy(UserTokenType.Anonymous)],
                 DiagnosticsEnabled = false,
+                ShutdownDelay = 0,
                 MaxRegistrationInterval = 0
             }
         };

@@ -57,6 +57,10 @@ public sealed class PlantSimServerTests
             {
                 var units = await session.ReadValueAsync(new NodeId($"{tag.Identifier}.EngineeringUnits", 2), ct);
                 Assert.True(StatusCode.IsGood(units.StatusCode));
+                Assert.True(units.WrappedValue.TryGetStructure<EUInformation>(out EUInformation? information));
+                Assert.NotNull(information);
+                Assert.Equal(tag.Unit, information.DisplayName.Text);
+                if (tag.Name == "FlowRate") Assert.Equal(0x4D5148, information.UnitId);
             }
         }
     }

@@ -40,8 +40,10 @@ public sealed class PlantSimFaultTests
         Assert.Equal(StatusCodes.BadOutOfRange, delay.StatusCode);
     }
 
-    [Fact]
-    public async Task RestartDropsOldSessionAndAcceptsNewConnectionsWithinTenSeconds()
+    [Theory]
+    [InlineData(0u)]
+    [InlineData(5u)]
+    public async Task RestartDropsOldSessionAndAcceptsNewConnectionsWithinTenSeconds(uint delaySeconds)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         deadline.CancelAfter(TimeSpan.FromSeconds(30));
@@ -50,7 +52,7 @@ public sealed class PlantSimFaultTests
         await simulator.StartAsync(ct);
         using var session = await simulator.ConnectAsync(ct);
         var started = TimeProvider.System.GetTimestamp();
-        await CallAsync(session, "RestartServer", ct, new Variant(2u));
+        await CallAsync(session, "RestartServer", ct, new Variant(delaySeconds));
         var dropped = false;
         while (!dropped)
         {

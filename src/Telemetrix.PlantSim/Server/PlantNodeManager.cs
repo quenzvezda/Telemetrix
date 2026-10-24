@@ -126,7 +126,7 @@ public sealed class PlantNodeManager : CustomNodeManager2
 
     private static int UnitId(string unit) => unit switch
     {
-        "m³/h" => 0x4D3150, // M1P
+        "m³/h" => 0x4D5148, // MQH (UN/CEFACT Recommendation 20)
         "bar" => 0x424152, // BAR
         "°C" => 0x43454C, // CEL
         "mm/s" => 0x433136, // C16
