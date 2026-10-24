@@ -8,7 +8,7 @@
 ## 2. OPC UA server
 
 - [x] 2.1 Add OPCFoundation.NetStandard.Opc.Ua.Server to `Directory.Packages.props`; host `ApplicationInstance` in the worker on port 4840; verify UaExpert connects with SecurityMode None
-- [ ] 2.2 Implement `PlantNodeManager` building `Plant01/Line01/Pump01|Tank01` and the 7 variables with NodeIds, types and engineering units; verify by browsing in UaExpert and an integration test that reads each NodeId and asserts namespace index 2
+- [x] 2.2 Implement `PlantNodeManager` building `Plant01/Line01/Pump01|Tank01` and the 7 variables with NodeIds, types and engineering units; verify by browsing in UaExpert and an integration test that reads each NodeId and asserts namespace index 2
 - [ ] 2.3 Drive the nodes from the value model at 1 Hz with UTC source timestamps; verify UaExpert shows one update per second per tag
 
 ## 3. Fault injection
