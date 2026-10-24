@@ -48,7 +48,7 @@ Acceptance criteria and failure scenarios are tracked in [OpenSpec](openspec/) a
 | Edge buffer | SQLite |
 | Time-series storage | PostgreSQL 17 + TimescaleDB |
 | Visualization | Grafana |
-| Local infrastructure | Docker Compose, Mosquitto, Kafka UI, OPC PLC simulator |
+| Local infrastructure | Docker Compose, Mosquitto, Kafka UI, OPC PLC and PlantSim simulators |
 | Verification | GitHub Actions; pure unit tests and Testcontainers OPC UA, Kafka and TimescaleDB tests |
 
 ## Getting started
@@ -72,7 +72,7 @@ The suite covers contracts, batching, buffer quota/FIFO/restart, source and capa
 
 ### Local environment
 
-Compose runs six infrastructure services: OPC PLC, Mosquitto, Kafka, Kafka UI, TimescaleDB and Grafana. Run Bridge and Transformer on the host with the .NET SDK; they are not included as Compose services.
+Compose runs seven services: PlantSim, OPC PLC, Mosquitto, Kafka, Kafka UI, TimescaleDB and Grafana. Run Bridge and Transformer on the host with the .NET SDK; they are not included as Compose services.
 
 #### Start the stack
 
@@ -92,13 +92,14 @@ docker compose -f deploy/docker-compose.yml up -d
 docker compose -f deploy/docker-compose.yml ps -a
 ```
 
-Expected: all six services are `Up`, and `kafka` and `timescaledb` become `healthy`. The first start downloads the pinned images and initializes an empty database volume. If `POSTGRES_PASSWORD` is missing or empty, Compose stops with an error naming that variable. If a service exits or remains unhealthy, inspect its logs with `docker compose -f deploy/docker-compose.yml logs --tail 100 <service>`.
+Expected: all seven services are `Up`, and `kafka` and `timescaledb` become `healthy`. The first start builds PlantSim, downloads the pinned infrastructure images and initializes an empty database volume. If `POSTGRES_PASSWORD` is missing or empty, Compose stops with an error naming that variable. If a service exits or remains unhealthy, inspect its logs with `docker compose -f deploy/docker-compose.yml logs --tail 100 <service>`.
 
 #### Endpoints and accounts
 
 | Service | From the host | From another Compose service | Account / notes |
 | --- | --- | --- | --- |
 | OPC PLC | `opc.tcp://localhost:50000` | `opc.tcp://opc-plc:50000` | Security None, Anonymous |
+| PlantSim | `opc.tcp://localhost:4840` | `opc.tcp://plantsim:4840` | Security None, Anonymous; [tags and fault methods](src/Telemetrix.PlantSim/README.md) |
 | MQTT / Mosquitto | `localhost:1883` | `mosquitto:1883` | Anonymous |
 | Kafka | `localhost:29092` | `kafka:9092` | Create topics explicitly |
 | Kafka UI | <http://localhost:8080> | `http://kafka-ui:8080` | Cluster `local` |

@@ -75,7 +75,25 @@ the same clock steps; it does not eliminate OS scheduling variation.
 Random server restarts are not scheduled; use RestartServer explicitly.
 Disable random faults when checking normal ranges or a specific manual fault.
 
-## Verification
+## Docker and Bridge profile
+
+```powershell
+docker compose -f deploy/docker-compose.yml up -d --build plantsim
+dotnet run --no-launch-profile --project src/Telemetrix.Edge.Bridge -- --environment PlantSim
+```
+
+The PlantSim Bridge profile supplies the seven NodeIds and uses localhost:4840
+for an IDE/host process. For a Bridge running on the compose network, override
+`OpcUa__Endpoint=opc.tcp://plantsim:4840`. Kafka and the Transformer must also
+be running to store measurements. The profile changes configuration only.
+
+Compose disables random faults for predictable manual checks. Set
+`PLANTSIM_RANDOM_FAULTS=true` to enable them. The named `plantsim-pki` volume
+retains the certificate store. UaExpert uses localhost:4840 from the host;
+if discovery offers the container hostname, select the discovery URL as the
+connection address.
+
+## Automated verification
 
 ```powershell
 dotnet test tests/Telemetrix.PlantSim.Tests -c Release

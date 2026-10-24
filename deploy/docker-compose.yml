@@ -6,6 +6,19 @@
 name: telemetrix
 
 services:
+  plantsim:
+    build:
+      context: ..
+      dockerfile: src/Telemetrix.PlantSim/Dockerfile
+    hostname: plantsim
+    environment:
+      PlantSim__Endpoint: opc.tcp://plantsim:4840
+      PlantSim__PkiPath: /app/pki
+      Faults__Random__Enabled: "${PLANTSIM_RANDOM_FAULTS:-false}"
+    ports: ["4840:4840"]
+    volumes:
+      - plantsim-pki:/app/pki
+
   opc-plc:
     image: mcr.microsoft.com/iotedge/opc-plc:2.15.11
     # --ut allows SecurityMode None for development (NFR-09); add simulation flags from the OPC PLC README.
@@ -82,5 +95,6 @@ services:
         condition: service_healthy
 
 volumes:
+  plantsim-pki:
   kafkadata:
   tsdata:
