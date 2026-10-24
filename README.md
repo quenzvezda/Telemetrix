@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1–M4 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M4 review](docs/m4-review.md). M5 edge resilience is implemented and in final review: SQLite store-and-forward, capacity pauses, automatic OPC UA recovery and plant events. The full 30-minute Kafka outage retained all 12,880 samples; Release CI passed 164 tests. See the [M5 review package](docs/m5-review.md). The clean topic is deferred to the separate sink (ADR-0012).
+M1–M5 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M5 review](docs/m5-review.md). M6 PlantSim is implemented and in review: seven correlated OPC UA tags, fault methods, seeded random faults, Docker deployment and a Bridge configuration profile. See the [M6 review package](docs/m6-review.md). The clean topic is deferred to the separate sink (ADR-0012).
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 

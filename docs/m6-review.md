@@ -57,6 +57,23 @@ No C# production file under Edge.Bridge or Transformer changes in M6.
 The reviewer also reconnected UaExpert to the Compose container and confirmed
 the Simulation object with all five methods on 2026-10-24, supplying a screenshot.
 
+## Verification refinements
+
+The complete suite exposed a Testcontainers startup race: its generated Kafka
+script was executed while the Docker copy still held a write handle, producing
+exit 126 / Text file busy. The shared delivery-test environment now interprets
+that script through /bin/sh. The new production image build/acceptance case runs
+without concurrent integration collections so it does not compete with existing
+broker/source restart deadlines. Permanent metadata errors still fail and now
+report their actual code.
+
+The existing capacity-pause recovery test incorrectly required new source
+timestamps even though its OPC PLC server stays alive. Unchanged values can
+retain an older source timestamp. That case now proves the channel is drained
+and empty while collection is paused, then requires every configured tag after
+resume within the same 30-second deadline. Server-restart cases still reject
+stale source timestamps. No production source-adapter behavior was changed.
+
 ## Repeatable automated checks
 
 Run from the repository root with Docker running:
