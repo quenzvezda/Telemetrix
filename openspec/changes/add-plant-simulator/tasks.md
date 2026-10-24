@@ -20,7 +20,7 @@
 ## 4. Deployment
 
 - [x] 4.1 Add a Dockerfile and the `plantsim` service (port 4840, pki volume) to `deploy/docker-compose.yml`; verify `docker compose up plantsim` and connect from UaExpert to `opc.tcp://localhost:4840`
-- [ ] 4.2 Add a bridge configuration profile for PlantSim (endpoint + 7 NodeIds); verify it loads without code change
+- [x] 4.2 Add a bridge configuration profile for PlantSim (endpoint + 7 NodeIds); verify it loads without code change
 
 ## 5. Milestone verification
 
