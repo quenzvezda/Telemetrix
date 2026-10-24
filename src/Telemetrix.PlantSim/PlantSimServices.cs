@@ -1,5 +1,6 @@
 using Opc.Ua;
 using Telemetrix.PlantSim.Model;
+using Telemetrix.PlantSim.Faults;
 
 namespace Telemetrix.PlantSim;
 
@@ -17,6 +18,16 @@ public static class PlantSimServices
         services.AddSingleton<PumpingLine>();
         services.AddSingleton<Worker>();
         services.AddHostedService(provider => provider.GetRequiredService<Worker>());
+        services.AddOptions<RandomFaultOptions>().Bind(configuration.GetSection("Faults:Random"))
+            .Validate(options => new[] { options.PumpTripsPerHour, options.VibrationSpikesPerHour, options.BadQualityPerHour }
+                .All(rate => double.IsFinite(rate) && rate is >= 0 and <= 3600),
+                "Faults:Random rates must be finite and between 0 and 3600 per hour.")
+            .Validate(options => options.PumpRestartDelay > TimeSpan.Zero &&
+                options.PumpRestartDelay <= TimeSpan.FromDays(1), "Faults:Random:PumpRestartDelay must be within one day.")
+            .Validate(options => options.BadQualityDuration > TimeSpan.Zero &&
+                options.BadQualityDuration <= TimeSpan.FromDays(1), "Faults:Random:BadQualityDuration must be within one day.")
+            .ValidateOnStart();
+        services.AddHostedService<RandomFaultScheduler>();
         return services;
     }
 }
