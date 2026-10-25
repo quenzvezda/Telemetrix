@@ -21,7 +21,7 @@ On 2026-10-25 the reviewer approved M8 PR #5 and its archival, deferring manual 
 
 ## 4. Milestone verification
 
-- [ ] 4.1 With the `secure` profile, connect the bridge to PlantSim with Basic256Sha256 SignAndEncrypt; verify the session's security mode in the bridge log and rows still arriving in `measurement`
+- [x] 4.1 With the `secure` profile, connect the bridge to PlantSim with Basic256Sha256 SignAndEncrypt; verify the session's security mode in the bridge log and rows still arriving in `measurement`
 - [ ] 4.2 Connect with a client whose certificate is not trusted (e.g. a second bridge instance with a fresh PKI root or UaExpert); verify it is rejected (M9 "Done when", NFR-09)
 - [ ] 4.3 Run the fresh-clone check: clone, supply secrets only via `deploy/.env` and user-secrets, `docker compose up`; verify the stack runs and the CI secret scan is green (NFR-10)
 
