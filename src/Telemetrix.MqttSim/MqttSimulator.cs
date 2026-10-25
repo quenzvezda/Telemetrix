@@ -29,7 +29,8 @@ public static class MqttSimulatorServices
             .ValidateOnStart();
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<PumpingLine>();
-        services.AddHostedService<MqttSimulator>();
+        services.AddSingleton<MqttSimulator>();
+        services.AddHostedService(provider => provider.GetRequiredService<MqttSimulator>());
         return services;
     }
 }
@@ -37,10 +38,14 @@ public static class MqttSimulatorServices
 public sealed class MqttSimulator(IOptions<MqttSimOptions> options, PumpingLine model,
     TimeProvider timeProvider, ILogger<MqttSimulator> logger) : BackgroundService
 {
+    private int running;
+    public bool IsReady => Volatile.Read(ref running) != 0;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var settings = options.Value;
         using var client = new MqttClientFactory().CreateMqttClient();
+        client.DisconnectedAsync += _ => { Volatile.Write(ref running, 0); return Task.CompletedTask; };
         var connection = new MqttClientOptionsBuilder().WithTcpServer(settings.Host, settings.Port)
             .WithClientId(settings.ClientId).WithProtocolVersion(MqttProtocolVersion.V311).Build();
         var rng = new Random(settings.Seed);
@@ -76,6 +81,7 @@ public sealed class MqttSimulator(IOptions<MqttSimOptions> options, PumpingLine 
                             var result = await client.PublishAsync(message, stoppingToken);
                             if ((int)result.ReasonCode >= 128)
                                 throw new InvalidOperationException($"MQTT publish rejected: {result.ReasonCode}");
+                            Volatile.Write(ref running, 1);
                             break;
                         }
                         catch (MqttCommunicationException exception)
@@ -89,5 +95,6 @@ public sealed class MqttSimulator(IOptions<MqttSimOptions> options, PumpingLine 
             } while (await timer.WaitForNextTickAsync(stoppingToken));
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+        finally { Volatile.Write(ref running, 0); }
     }
 }

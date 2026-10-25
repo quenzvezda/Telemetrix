@@ -48,3 +48,12 @@ stored at 04:45:08.280 and committed at 04:45:08.301. Each entry's scope
 contains that `batchId` and `assetId=Pump01`. Reproduce with the HTTP hosting
 test and filter its logs by the new batch identifier (`rg batchId`); the
 JSON `Category` distinguishes Bridge, consumption and storage entries.
+
+## Simulator health
+
+`http://localhost:5103/health` reflects PlantSim's active OPC UA server and
+simulation loop. `http://localhost:5104/health` reflects MqttSim's broker and
+publishing loop. Both are Unhealthy before readiness and after worker shutdown.
+The simulator hosting integration test passed with a Mosquitto stop/restart:
+MqttSim returned 503 while disconnected, then 200 and fresh publications after
+reconnection. All seven OPC UA tags remained readable.

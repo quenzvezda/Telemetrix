@@ -45,6 +45,18 @@ public class SimulatorWebHostTests
             Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync(WebHostTests.Address(plant), ct)).StatusCode);
             Assert.Equal(HttpStatusCode.NotFound, (await http.GetAsync(WebHostTests.Address(simulator), ct)).StatusCode);
             while (topics.Count != 7 || topics.Values.Any(count => count < 2)) await Task.Delay(50, ct);
+            await WebHostTests.AssertHealthAsync(http, plant, HttpStatusCode.OK, "Healthy", ct);
+            await WebHostTests.AssertHealthAsync(http, simulator, HttpStatusCode.OK, "Healthy", ct);
+            await mqtt.Broker.StopAsync(ct);
+            while (simulator.Services.GetRequiredService<MqttSimulator>().IsReady) await Task.Delay(50, ct);
+            await WebHostTests.AssertHealthAsync(http, simulator, HttpStatusCode.ServiceUnavailable, "Unhealthy", ct, "broker");
+            var before = topics.Values.Sum();
+            await mqtt.Broker.StartAsync(ct);
+            await subscriber.ReconnectAsync(cancellationToken: ct);
+            await subscriber.SubscribeAsync(new MqttClientSubscribeOptionsBuilder().WithTopicFilter("plant/#").Build(), ct);
+            while (!simulator.Services.GetRequiredService<MqttSimulator>().IsReady || topics.Values.Sum() <= before)
+                await Task.Delay(50, ct);
+            await WebHostTests.AssertHealthAsync(http, simulator, HttpStatusCode.OK, "Healthy", ct);
             // A real OPC UA client verifies the server independently of the new HTTP listener.
             await using var client = new PlantSimFixture($"opc.tcp://localhost:{port}");
             using var session = await client.ConnectAsync(ct);
@@ -55,6 +67,8 @@ public class SimulatorWebHostTests
             }
             await simulator.StopAsync(ct);
             await plant.StopAsync(ct);
+            Assert.False(plant.Services.GetRequiredService<Worker>().IsReady);
+            Assert.False(simulator.Services.GetRequiredService<MqttSimulator>().IsReady);
         }
         finally { if (Directory.Exists(pki)) Directory.Delete(pki, true); }
     }
