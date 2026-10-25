@@ -275,6 +275,16 @@ The Grafana login is separate from the PostgreSQL account. `POSTGRES_PASSWORD` s
 
 #### Test MQTT
 
+M7's [MqttSim](src/Telemetrix.MqttSim/README.md) publishes the same seven pumping-line
+tags as PlantSim, using their shared simulation model. With Mosquitto running:
+
+```powershell
+dotnet run --project src/Telemetrix.MqttSim -c Release
+```
+
+Use a unique `--MqttSim:ClientId` if running more than one simulator. The simulator
+README lists all settings and the Docker alternative.
+
 In terminal A, start a subscriber that exits after one message or 30 seconds:
 
 ```powershell
