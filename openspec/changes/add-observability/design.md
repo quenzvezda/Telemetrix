@@ -52,6 +52,9 @@ Note: the rollups' 1-minute refresh lag must stay below the dashboard's "short r
 ### Dashboard
 `deploy/grafana/dashboards/telemetrix.json`, built in the Grafana UI and exported. Panels: per-tag time series (asset variable; query switches to `measurement_1m` when `$__interval >= 1m`), pump status (state timeline on the `Running` tag), gaps (table + annotations from a new `plant_event` table, which the transformer fills by consuming `plant.events`; M5 only produces the events). Trends use `connect nulls: never` so gaps stay visible.
 
+### Plant event storage
+The plant-event storage consumer uses its own `transformer-events` group and commits offsets only after an idempotent `event_id` insert (the same database-before-offset principle as ADR-0003). Bridge retains topic ownership (ADR-0007). Enable it with `PlantEvents:Enabled=true` after the reviewer applies the SQL migrations; it is opt-in so an existing M7 database can keep running before migration review. The dashboard review profile enables this consumer on a migrated disposable database.
+
 ### Load test
 - The reviewer approved 500 samples / 5 seconds per asset, whichever comes first, as the M8 baseline on 2026-10-25. Keep the defaults while implementing observability; this approval allows M8 to start with D5 still open.
 - Simulator side: OPC PLC flags `--fn`/`--fr` (fast nodes, rate) or PlantSim's line-clone count, sized to 5,000 samples/s (e.g. 715 lines × 7 tags at 1 Hz with PlantSim).

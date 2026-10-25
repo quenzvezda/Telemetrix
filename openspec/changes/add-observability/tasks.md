@@ -1,6 +1,6 @@
 # Tasks
 
-Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 seconds per asset, whichever comes first. D5 remains open until the load-test comparison in task 6.4. Stop for reviewer feedback after each task group; stop at task 6.4 for the final D5 choice before changing defaults or completing milestone acceptance.
+Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 seconds per asset, whichever comes first. The reviewer subsequently authorized autonomous implementation across all task groups and requested a PR before archival. D5 remains open until reviewer selection after the load-test comparison in task 6.4. Existing-volume migration checks and final manual acceptance remain reviewer actions; keep those tasks unchecked until their complete verification passes.
 
 ## 1. Dependencies and hosting
 
@@ -30,7 +30,7 @@ Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 second
 
 ## 5. Dashboard
 
-- [ ] 5.1 Add a `plant_event` table (reviewable migration) and a Transformer consumer of `plant.events` for the gaps panel; verify with Testcontainers that connection-lost, connection-restored and gap events are stored and replay does not duplicate events
+- [x] 5.1 Add a `plant_event` table (reviewable migration) and a Transformer consumer of `plant.events` for the gaps panel; verify with Testcontainers that connection-lost, connection-restored and gap events are stored and replay does not duplicate events
 - [ ] 5.2 Build the Telemetrix dashboard (asset variable, per-tag trends switching to rollups for long ranges, pump state timeline, gaps table and annotations) and export it to `deploy/grafana/dashboards/telemetrix.json`; after reviewer-applied migrations, verify it loads on a fresh Grafana and a 60 s PlantSim outage shows a gap with start/end time and a break in trends
 - [ ] 5.3 Verify pump status by tripping `Pump01` (PlantSim fault injection) and seeing it shown as stopped within one refresh
 

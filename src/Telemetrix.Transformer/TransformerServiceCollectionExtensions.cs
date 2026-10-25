@@ -22,6 +22,11 @@ public static class TransformerServiceCollectionExtensions
         services.AddHostedService<ConsumerLagSampler>();
         services.AddHostedService<TagCatalogInitializer>();
         services.AddHostedService<RawBatchConsumer>();
+        if (configuration.GetValue<bool>("PlantEvents:Enabled"))
+        {
+            services.AddSingleton<PlantEventWriter>();
+            services.AddHostedService<PlantEventConsumer>();
+        }
         return services;
     }
 

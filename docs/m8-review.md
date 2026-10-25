@@ -4,6 +4,9 @@ Change: `add-observability`. Implementation is in progress; OpenSpec remains ope
 The reviewer authorized all task groups on 2026-10-25. Final D5 selection and
 milestone acceptance remain reviewer checkpoints after measurements are available.
 
+The reviewer requested a PR before archival. The agent may implement all task
+groups without intermediate approval; the final PR collects the review checks.
+
 ## HTTP hosting
 
 Each service keeps its hosted pipeline and serves HTTP on `Http:Port`:
@@ -125,3 +128,14 @@ The jobs inspection test joined `timescaledb_information.jobs` to
 `timescaledb_information.continuous_aggregates` to resolve the rollup's internal
 hypertable. It returned exactly `measurement = 30 days` and
 `measurement_1m = 1 year`. All three rollup/migration tests passed.
+
+## Plant event storage
+
+Review `deploy/sql/migrations/002_plant_events.sql` together with migration 001.
+After applying them, enable `PlantEvents__Enabled=true` on Transformer and
+restart it. This opt-in keeps an existing M7 database running until SQL review.
+The consumer group `transformer-events` stores events with `event_id` uniqueness
+and commits Kafka offsets only after the insert succeeds. Bridge still creates
+`plant.events`. The storage integration test passed: ConnectionLost,
+ConnectionRestored and a 60-second Gap were stored, and replaying all three
+left exactly three stored events after all six Kafka deliveries were committed.
