@@ -6,7 +6,7 @@ namespace Telemetrix.Edge.Bridge.Sources.OpcUa;
 public static class OpcUaClientConfiguration
 {
     public static async Task<ApplicationConfiguration> CreateAsync(OpcUaOptions settings,
-        ITelemetryContext telemetry, CancellationToken cancellationToken)
+        ITelemetryContext telemetry, CancellationToken cancellationToken, ILogger? logger = null)
     {
         var pkiPath = Path.GetFullPath(settings.Security.PkiRoot);
         var configuration = new ApplicationConfiguration(telemetry)
@@ -40,6 +40,12 @@ public static class OpcUaClientConfiguration
         var application = new ApplicationInstance(configuration, telemetry);
         if (!await application.CheckApplicationInstanceCertificatesAsync(false, null, cancellationToken))
             throw new InvalidOperationException("Bridge could not create its application certificate.");
+        configuration.CertificateManager!.AcceptError = (certificate, error) =>
+        {
+            logger?.LogWarning("OPC UA rejected peer certificate: subject {Subject}, thumbprint {Thumbprint}, error {StatusCode}",
+                certificate.Subject, certificate.Thumbprint, error.StatusCode);
+            return false;
+        };
         return configuration;
     }
 }

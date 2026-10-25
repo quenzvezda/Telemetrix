@@ -36,6 +36,12 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
             application = new ApplicationInstance(configuration, telemetry);
             if (!await application.CheckApplicationInstanceCertificatesAsync(false, null, stoppingToken))
                 throw new InvalidOperationException("PlantSim could not create its application certificate.");
+            configuration.CertificateManager!.AcceptError = (certificate, error) =>
+            {
+                logger.LogWarning("OPC UA rejected peer certificate: subject {Subject}, thumbprint {Thumbprint}, error {StatusCode}",
+                    certificate.Subject, certificate.Thumbprint, error.StatusCode);
+                return false;
+            };
             while (!stoppingToken.IsCancellationRequested)
             {
                 using var server = new PlantServer(telemetry, timeProvider, line, options.Value.Seed, TryRestart);

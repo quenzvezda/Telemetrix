@@ -69,7 +69,7 @@ public sealed class OpcUaSourceAdapter(
     private async Task RunSessionAsync(ChannelWriter<Sample> writer, bool restoring, CancellationToken cancellationToken)
     {
         var settings = options.Value;
-        var configuration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, cancellationToken);
+        var configuration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, cancellationToken, logger);
         var description = await OpcUaEndpointSelector.SelectAsync(configuration, settings, telemetry, cancellationToken);
 
         var endpoint = new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(configuration));

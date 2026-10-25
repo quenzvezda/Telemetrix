@@ -1,5 +1,6 @@
 using DotNet.Testcontainers.Builders;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Opc.Ua;
 using Opc.Ua.Client;
 using System.Security.Cryptography.X509Certificates;
@@ -20,7 +21,8 @@ public class OpcUaSecurityTests
         var clientRoot = Path.Combine(server.PkiPath, "client", "pki");
         var options = new OpcUaOptions { Endpoint = server.Endpoint };
         options.Security.PkiRoot = clientRoot;
-        var configuration = await OpcUaClientConfiguration.CreateAsync(options, server.Telemetry, ct);
+        var log = new CertificateLog();
+        var configuration = await OpcUaClientConfiguration.CreateAsync(options, server.Telemetry, ct, log);
         var clientCertificate = Assert.Single(Directory.GetFiles(Path.Combine(clientRoot, "own", "certs")));
         var serverCertificate = Assert.Single(Directory.GetFiles(Path.Combine(server.PkiPath, "own", "certs")));
         using var certificate = X509CertificateLoader.LoadCertificateFromFile(serverCertificate);
@@ -38,8 +40,12 @@ public class OpcUaSecurityTests
             new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(configuration)),
             false, true, "Telemetrix.Security.Test", 60000, new UserIdentity(), default, ct);
 
+        Trust(clientCertificate, server.PkiPath);
         await Assert.ThrowsAsync<ServiceResultException>(Connect);
-        // Trust the server first, then prove the server still rejects this client.
+        Assert.Contains(log.Entries, entry => entry.Contains("CN=Telemetrix.PlantSim", StringComparison.Ordinal)
+            && entry.Contains(certificate.Thumbprint, StringComparison.Ordinal));
+        // Reverse the trust direction to prove the server rejects this client too.
+        File.Delete(Path.Combine(server.PkiPath, "trusted", "certs", Path.GetFileName(clientCertificate)));
         Trust(serverCertificate, clientRoot);
         await Assert.ThrowsAsync<ServiceResultException>(Connect);
         while (!Directory.Exists(Path.Combine(server.PkiPath, "rejected", "certs")) ||
@@ -55,6 +61,15 @@ public class OpcUaSecurityTests
     {
         var store = Directory.CreateDirectory(Path.Combine(root, "trusted", "certs"));
         File.Copy(certificate, Path.Combine(store.FullName, Path.GetFileName(certificate)), true);
+    }
+
+    private sealed class CertificateLog : ILogger
+    {
+        public System.Collections.Concurrent.ConcurrentQueue<string> Entries { get; } = new();
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) => Entries.Enqueue(formatter(state, exception));
     }
 
     [Fact]
