@@ -7,6 +7,20 @@ milestone acceptance remain reviewer checkpoints after measurements are availabl
 The reviewer requested a PR before archival. The agent may implement all task
 groups without intermediate approval; the final PR collects the review checks.
 
+## Review order
+
+1. Read the SQL migrations and explicit migration runner; verify the existing
+   M7 volume before enabling plant-event storage (task 4.2).
+2. Read the health and JSON scope changes, then the meters and separate Kafka
+   lag sampler. The telemetry and database write contracts keep their existing
+   sample identities and batching defaults.
+3. Inspect the Grafana JSON and its fresh-container end-to-end test. Follow the
+   dashboard outage and pump-trip steps below on the local stack.
+4. Read `docs/load-test.md` and its saved run evidence. Choose D5 after comparing
+   the baseline and alternative, then accept or request fixes in the PR.
+
+OpenSpec archival and final milestone acceptance wait for the reviewer.
+
 ## HTTP hosting
 
 Each service keeps its hosted pipeline and serves HTTP on `Http:Port`:
