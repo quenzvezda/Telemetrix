@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using MQTTnet;
 using MQTTnet.Formatter;
 using MQTTnet.Protocol;
+using MQTTnet.Exceptions;
 using Telemetrix.Contracts;
 using Telemetrix.Simulation;
 
@@ -62,12 +63,28 @@ public sealed class MqttSimulator(IOptions<MqttSimOptions> options, PumpingLine 
                         .WithTopic($"plant/{settings.Plant}/{settings.Line}/{value.Tag.Asset}/{value.Tag.Name}")
                         .WithPayload(TelemetryJson.Serialize(payload)).WithQualityOfServiceLevel(MqttQualityOfServiceLevel.AtLeastOnce)
                         .WithRetainFlag().Build();
-                    if (!client.IsConnected)
+                    var attempt = 0;
+                    while (true)
                     {
-                        await client.ConnectAsync(connection, stoppingToken);
-                        logger.LogInformation("MqttSim connected to {Host}:{Port}", settings.Host, settings.Port);
+                        try
+                        {
+                            if (!client.IsConnected)
+                            {
+                                await client.ConnectAsync(connection, stoppingToken);
+                                logger.LogInformation("MqttSim connected to {Host}:{Port}", settings.Host, settings.Port);
+                            }
+                            var result = await client.PublishAsync(message, stoppingToken);
+                            if ((int)result.ReasonCode >= 128)
+                                throw new InvalidOperationException($"MQTT publish rejected: {result.ReasonCode}");
+                            break;
+                        }
+                        catch (MqttCommunicationException exception)
+                        {
+                            logger.LogWarning(exception, "MqttSim broker unavailable; retrying the same sample");
+                            await Task.Delay(TimeSpan.FromSeconds(Math.Min(15, Math.Pow(2, Math.Min(attempt++, 4)))),
+                                timeProvider, stoppingToken);
+                        }
                     }
-                    await client.PublishAsync(message, stoppingToken);
                 }
             } while (await timer.WaitForNextTickAsync(stoppingToken));
         }
