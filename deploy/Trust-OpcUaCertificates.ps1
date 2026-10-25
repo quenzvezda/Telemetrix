@@ -1,5 +1,6 @@
 param(
     [ValidateSet('plantsim', 'opc-plc')][string]$Server = 'plantsim',
+    [string]$ProjectName = 'telemetrix',
     [string]$BridgeThumbprint,
     [string]$ServerThumbprint
 )
@@ -12,7 +13,7 @@ try {
         $target = Join-Path $scratch $service
         New-Item -ItemType Directory -Path $target | Out-Null
         # Public certificates only. Never copy own/private or the entire PKI root.
-        & docker compose -f $compose cp "${service}:/app/pki/own/certs/." $target
+        & docker compose -f $compose -p $ProjectName cp "${service}:/app/pki/own/certs/." $target
         if ($LASTEXITCODE -ne 0) { throw "Cannot copy $service public certificate." }
         $files = @(Get-ChildItem -LiteralPath $target -File -Filter '*.der')
         if ($files.Count -ne 1) { throw "Expected exactly one $service application certificate." }
@@ -31,9 +32,9 @@ try {
     foreach ($pair in @(@('bridge', $Server), @($Server, 'bridge'))) {
         $from = $pair[0]; $to = $pair[1]
         $file = Get-ChildItem -LiteralPath (Join-Path $scratch $from) -File -Filter '*.der'
-        & docker compose -f $compose exec -T $to mkdir -p /app/pki/trusted/certs
+        & docker compose -f $compose -p $ProjectName exec -T $to mkdir -p /app/pki/trusted/certs
         if ($LASTEXITCODE -ne 0) { throw "Cannot open $to trusted store." }
-        & docker compose -f $compose cp $file.FullName "${to}:/app/pki/trusted/certs/$($file.Name)"
+        & docker compose -f $compose -p $ProjectName cp $file.FullName "${to}:/app/pki/trusted/certs/$($file.Name)"
         if ($LASTEXITCODE -ne 0) { throw "Cannot trust $from certificate on $to." }
     }
     Write-Host 'Explicit mutual trust granted. Bridge retries automatically; neither service was restarted.'
