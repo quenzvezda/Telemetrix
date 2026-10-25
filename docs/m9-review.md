@@ -10,6 +10,8 @@ Verification: `dotnet test --project tests/Telemetrix.Edge.Bridge.Tests -c Relea
 
 ## Deferred M8 acceptance
 
+Secret scanning: Gitleaks 8.30.1 scanned all 168 reachable commits at this checkpoint with no leaks. `./scripts/Test-SecretScan.ps1 -Docker` creates an isolated `fake-private-key` branch, commits an invalid fixture and asserts scanner exit 1 (one finding). CI runs the same negative check, scans PR commits and all reachable history with redaction, and disables PR comments/artifact uploads. The only added allowlist combines the exact `deploy/.env.example` path with its exact `POSTGRES_PASSWORD=change-me` placeholder line. The action is pinned to the v3 commit because upstream retired Node 20/v2; see [upstream action documentation](https://github.com/gitleaks/gitleaks-action). Remote CI acceptance is recorded after PR creation.
+
 Secrets audit: `git grep -i password -- '*.json'` finds no matches. App projects already have `UserSecretsId`; no password migration was necessary. Compose supplies the database password only from ignored `deploy/.env` via environment variables. README now documents IDE user-secrets and PKI boundaries. The live secured stack starts with these providers.
 
 Trust workflow: the README documents rejected-to-trusted movement and the thumbprint-checked `deploy/Trust-OpcUaCertificates.ps1` helper. Running it first prints identities without changes; supplying the two observed thumbprints establishes mutual trust on the live secure Compose stack. Bridge logs SignAndEncrypt/Basic256Sha256, creates seven monitored tags and reports Healthy without restarting either application. `docker inspect --format '{{.State.StartedAt}}' telemetrix-bridge-1 telemetrix-plantsim-1` retains the original startup times.
