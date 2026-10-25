@@ -3,7 +3,7 @@
 ## 1. Contract and dependencies
 
 - [x] 1.1 Add `MQTTnet` to `Directory.Packages.props` and reference it from `Telemetrix.MqttSim` and `Telemetrix.Edge.Bridge`; verify `dotnet build` succeeds
-- [ ] 1.2 Add `MqttTagPayload` and the quality-string constants to `Telemetrix.Contracts`; verify a round-trip serialization test (numeric and boolean value) passes in `Telemetrix.Edge.Bridge.Tests`
+- [x] 1.2 Add `MqttTagPayload` and the quality-string constants to `Telemetrix.Contracts`; verify a round-trip serialization test (numeric and boolean value) passes in `Telemetrix.Edge.Bridge.Tests`
 
 ## 2. MQTT simulator
 

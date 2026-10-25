@@ -6,4 +6,5 @@ namespace Telemetrix.Contracts;
 [JsonSerializable(typeof(TelemetryBatch))]
 [JsonSerializable(typeof(BatchSample))]
 [JsonSerializable(typeof(PlantEvent))]
+[JsonSerializable(typeof(MqttTagPayload))]
 internal partial class TelemetryJsonContext : JsonSerializerContext;
