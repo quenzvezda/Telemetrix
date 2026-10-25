@@ -56,7 +56,9 @@ public class LoadProfileTests(ITestOutputHelper output)
         await RollupMigrationTests.MigrateAsync(environment.Source, ct);
         var lines = kind == "throughput" ? 143 : 1;
         if (lines > 1) await SeedCatalogAsync(environment, lines, ct);
-        await using var mqtt = new MqttFixture();
+        // Bound broker burst absorption independently of the application's batch queue.
+        const int brokerQueueCapacity = 100000;
+        await using var mqtt = new MqttFixture(maxQueuedMessages: brokerQueueCapacity);
         await using var plant = new PlantSimFixture();
         WebApplication? mqttSimulator = null;
         var arguments = new List<string>
@@ -160,6 +162,7 @@ public class LoadProfileTests(ITestOutputHelper output)
                 {
                     kind, maxSamples, batchAgeSeconds = age, lines, tickMilliseconds = kind == "throughput" ? 200 : 1000,
                     maxInFlight = kind == "throughput" ? 64 : 1, rawPartitions = 6, batchQueueCapacity,
+                    brokerQueueCapacity = kind == "throughput" ? brokerQueueCapacity : (int?)null,
                     startedAt = started, endedAt = ended, measuredSeconds, acceptanceDuration = fullDuration,
                     samplesReceived = accepted, measurementsWritten = stored, actualSamplesPerSecond = rate,
                     samplesPublished = published, finalPublishedSamples = publisher?.PublishedSamples,

@@ -90,3 +90,7 @@ The load tooling SHALL retain normal simulator defaults, scale uniquely identifi
 #### Scenario: Bounded batch queue tuning
 - **WHEN** a load profile configures `Ingestion:BatchQueueCapacity` between 1 and 4096
 - **THEN** Bridge uses that bounded capacity while the default remains 64, without changing edge disk capacity or overflow policy
+
+#### Scenario: Broker capacity is part of the evidence
+- **WHEN** the throughput comparison configures a larger bounded broker outgoing queue to absorb source bursts
+- **THEN** both threshold candidates use the same recorded broker capacity and acknowledged publications must still drain completely to storage

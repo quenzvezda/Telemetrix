@@ -100,6 +100,21 @@ Mosquitto's finite outgoing queue remains part of the source boundary described
 in ADR-0014; its limits are documented in the
 [official configuration reference](https://mosquitto.org/man/mosquitto-conf-5.html).
 
+The first full baseline run received 5,003.485 samples/s for 900.016 seconds,
+with stable Kafka lag and no dead letters, but **failed** the end-to-end drain
+check: 4,656,652 acknowledged publications versus 4,655,274 stored measurements.
+Mosquitto logged outgoing queue drops. Its default 1,000-message queue only
+absorbs about 0.2 seconds at the offered rate. A successful short smoke therefore
+did not establish loss-free sustained delivery.
+
+The repeated throughput comparison explicitly sets the disposable broker's
+`max_queued_messages` to 100,000 (about 20 seconds of offered traffic), keeping
+the same 1,024-batch Bridge queue and broker settings for both candidates.
+This is a bounded benchmark deployment setting, not a change to the default
+development broker or the batching decision. The report records the broker
+capacity; final source acknowledgement/storage equality remains mandatory.
+The low-rate latency runs use the ordinary broker-independent OPC UA source.
+
 ## Acceptance results
 
 The configured burst regression passed in 0.202 seconds after the worker used

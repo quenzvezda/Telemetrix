@@ -11,7 +11,7 @@ namespace Telemetrix.Integration.Tests;
 
 internal sealed class MqttFixture : IAsyncDisposable
 {
-    public MqttFixture(INetwork? network = null)
+    public MqttFixture(INetwork? network = null, int maxQueuedMessages = 1000)
     {
         // Keep the advertised host port stable across StopAsync/StartAsync on Docker Desktop.
         var reservation = new TcpListener(IPAddress.Loopback, 0);
@@ -20,7 +20,7 @@ internal sealed class MqttFixture : IAsyncDisposable
         reservation.Stop();
         var builder = new ContainerBuilder("eclipse-mosquitto:2.1.2-alpine")
         .WithPortBinding(port, 1883)
-        .WithResourceMapping(System.Text.Encoding.UTF8.GetBytes("listener 1883\nallow_anonymous true\npersistence false\n"),
+        .WithResourceMapping(System.Text.Encoding.UTF8.GetBytes($"listener 1883\nallow_anonymous true\npersistence false\nmax_queued_messages {maxQueuedMessages}\n"),
             "/mosquitto/config/mosquitto.conf")
         .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("mosquitto version .* running"));
         if (network is not null) builder = builder.WithNetwork(network).WithNetworkAliases("mqtt");
