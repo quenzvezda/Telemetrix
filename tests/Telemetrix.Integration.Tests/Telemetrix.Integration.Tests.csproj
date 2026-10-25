@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <None Include="..\..\deploy\sql\init.sql" Link="sql\init.sql" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\deploy\sql\migrations\*.sql" Link="sql\migrations\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\src\Telemetrix.Edge.Bridge\appsettings*.json"
           Link="config\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

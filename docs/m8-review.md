@@ -92,3 +92,12 @@ use `Telemetry__Console__Enabled=true` for the diagnostic console exporter.
 Dependencies are pinned to OpenTelemetry 1.18.0 and its matching Prometheus
 ASP.NET Core exporter 1.18.0-beta.1. The API usage follows the
 [upstream exporter documentation](https://github.com/open-telemetry/opentelemetry-dotnet/blob/coreunstable-1.18.0-beta.1/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md).
+
+## Rollups and retention SQL
+
+Review `deploy/sql/migrations/001_rollups_and_retention.sql`. It adds a
+one-minute Good-only rollup, one-minute refresh schedule, 30-day raw retention
+and one-year rollup retention. `RollupMigrationTests` passed on a fresh
+TimescaleDB 2.30.2/PostgreSQL 17 Testcontainer: applying the migration twice
+succeeded, retained a pre-existing measurement, and created one refresh policy
+and exactly two retention policies. Existing local volumes have not been migrated.
