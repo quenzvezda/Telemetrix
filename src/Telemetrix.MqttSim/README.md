@@ -30,6 +30,9 @@ then each topic receives one fresh value every second. Set
 | `Plant` / `Line` | `Plant01` / `Line01` |
 | `Seed` | `1729` |
 | `BadQualityTag` | unset; optional `Asset.Tag` from the shared catalog |
+| `LineCount` | 1; load profiles may use up to 1000 clones |
+| `TickInterval` | `00:00:01`; range 10 ms to one minute |
+| `MaxInFlight` | 1; bounded concurrent QoS 1 publications, maximum 256 |
 
 Use command-line keys as above, environment variables such as `MqttSim__Host`,
 or .NET configuration files. Stop with Ctrl+C or `docker compose ... stop mqttsim`.
@@ -40,3 +43,10 @@ for local development only.
 
 The HTTP listener uses port 5104, exposed by Compose. Override it with
 `--Http:Port=5104` or `Http__Port`; update the container port mapping to match.
+
+Scaled profiles preserve the original identities for the first line. Further
+lines use `Line01_0002` etc. and globally unique assets such as `Pump01_0002`.
+Seed their asset/tag metadata before collecting with the default dead-letter
+policy. All publications in a tick share one source timestamp; the next tick
+starts only after this tick is acknowledged. Normal single-line defaults remain
+seven tags at 1 Hz with one in-flight publication.

@@ -3,11 +3,12 @@ using Telemetrix.Contracts;
 using Telemetrix.Edge.Bridge.Batching;
 using Telemetrix.Edge.Bridge.Publishing;
 using Telemetrix.Edge.Bridge.Sources;
+using Microsoft.Extensions.Options;
 
 namespace Telemetrix.Edge.Bridge;
 
 public sealed class OpcUaIngestionWorker(ISourceAdapter source, AssetBatcher batcher,
-    IBatchPublisher publisher) : BackgroundService
+    IBatchPublisher publisher, IOptions<IngestionOptions>? ingestion = null) : BackgroundService
 {
     private readonly CancellationTokenSource forceStop = new();
 
@@ -18,7 +19,7 @@ public sealed class OpcUaIngestionWorker(ISourceAdapter source, AssetBatcher bat
             SingleReader = true,
             FullMode = BoundedChannelFullMode.Wait
         });
-        var batches = Channel.CreateBounded<TelemetryBatch>(new BoundedChannelOptions(64)
+        var batches = Channel.CreateBounded<TelemetryBatch>(new BoundedChannelOptions(ingestion?.Value.BatchQueueCapacity ?? 64)
         {
             SingleReader = true,
             SingleWriter = true,

@@ -191,3 +191,14 @@ call `StartPump` to recover. The final automated fresh-Grafana run reported
 Stopped through the actual panel query in 5.887 seconds, within one 10-second
 refresh interval. Its timeline data and the visual review included the state
 transition and recovery.
+
+## Load tooling
+
+See `docs/load-test.md` for hardware, commands and exact profile settings.
+`deploy/Test-M8Load.ps1` runs disposable infrastructure and writes a JSON report.
+Clone identity/completed-tick tests and the existing MqttSim health/reconnection
+test both pass. A short 1,024-batch-queue profile reached 5,014.484 received
+samples/s and drained all 152,152 publications with zero dead-letter batches.
+The bounded queue regression failed before using its configured capacity and
+passed afterward. Final duration measurements and D5 selection are tracked
+separately; a smoke run never marks the long-run acceptance tasks complete.

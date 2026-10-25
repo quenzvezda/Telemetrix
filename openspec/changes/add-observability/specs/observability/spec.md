@@ -65,6 +65,7 @@ The pipeline SHALL keep the 95th percentile of `ingested_at - time` under 10 sec
 - **THEN** consumer lag for group `transformer` shows no upward trend and no batch is dead-lettered
 
 ### Requirement: Evidence-based batch threshold decision
+
 D5 SHALL remain open until the baseline and at least one alternative are compared on the same machine and load profiles (NFR-06, NFR-07). The reviewer SHALL select final defaults from that evidence and the outcome SHALL be recorded in an ADR before M8 acceptance. Changed defaults SHALL be reflected in the batching requirement and verified by repeated acceptance runs.
 
 #### Scenario: D5 is decided after measurement
@@ -74,3 +75,18 @@ D5 SHALL remain open until the baseline and at least one alternative are compare
 #### Scenario: Selected defaults differ from the baseline
 - **WHEN** the reviewer selects thresholds other than 500 samples / 5 seconds
 - **THEN** the batching requirement and configuration are aligned with that decision and the selected defaults pass the NFR-06 / NFR-07 acceptance runs before M8 is accepted
+
+### Requirement: Reproducible load profile
+The load tooling SHALL retain normal simulator defaults, scale uniquely identified pumping lines for the throughput profile, and record the applied source, batching and queue settings (NFR-06, NFR-07). Throughput evidence SHALL compare source acknowledgments, received samples and final stored measurements, and SHALL fail if acknowledged samples do not drain to storage.
+
+#### Scenario: Default simulator remains compatible
+- **WHEN** MqttSim starts without load overrides
+- **THEN** it publishes the original seven tag topics at 1 Hz with one in-flight publication
+
+#### Scenario: Scaled source preserves identity and order
+- **WHEN** the throughput profile runs 143 pumping-line clones at 5 Hz
+- **THEN** every clone has distinct asset/tag identities, every source tick completes before the next starts, and the report includes actual publication and reception rates and a final drain count
+
+#### Scenario: Bounded batch queue tuning
+- **WHEN** a load profile configures `Ingestion:BatchQueueCapacity` between 1 and 4096
+- **THEN** Bridge uses that bounded capacity while the default remains 64, without changing edge disk capacity or overflow policy

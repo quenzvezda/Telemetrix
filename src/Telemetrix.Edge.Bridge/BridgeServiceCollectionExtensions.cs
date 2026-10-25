@@ -12,6 +12,9 @@ public static class BridgeServiceCollectionExtensions
     public static IServiceCollection AddBridgePipeline(this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddOptions<IngestionOptions>().Bind(configuration.GetSection("Ingestion"))
+            .Validate(options => options.BatchQueueCapacity is >= 1 and <= 4096,
+                "Ingestion:BatchQueueCapacity must be between 1 and 4096.").ValidateOnStart();
         services.AddOptions<BatchingOptions>().Bind(configuration.GetSection(BatchingOptions.SectionName))
             .Validate(options => options.MaxSamples > 0, "Batching:MaxSamples must be positive.")
             .Validate(options => options.MaxAge > TimeSpan.Zero, "Batching:MaxAge must be positive.")

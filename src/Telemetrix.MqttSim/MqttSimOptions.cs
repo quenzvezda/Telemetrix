@@ -9,4 +9,7 @@ public sealed class MqttSimOptions
     public string Line { get; set; } = "Line01";
     public int Seed { get; set; } = 1729;
     public string? BadQualityTag { get; set; }
+    public int LineCount { get; set; } = 1;
+    public TimeSpan TickInterval { get; set; } = TimeSpan.FromSeconds(1);
+    public int MaxInFlight { get; set; } = 1;
 }
