@@ -121,6 +121,17 @@ The migration runner stops on the first SQL error. Default Compose startup
 does not run `db-migrate`. Task 4.2 remains pending the reviewer's existing-volume
 verification; automated checks only mutate disposable databases.
 
+The SQL shell runner is additionally tested using the actual `psql` executable
+inside a disposable TimescaleDB container. Applying both scripts twice preserves
+the original measurement, backfills its historical rollup and creates the event
+table. The runner also fails if no migration files are mounted, rather than
+reporting a successful no-op.
+
+A subsequent injected failing SQL file returns non-zero and prevents the next
+fixture migration from creating its sentinel table. All four migration/rollup
+tests passed with the real shell runner. Simulator health tests also explicitly
+check readiness before startup as well as after shutdown.
+
 The Good-only rollup test passed after refreshing a completed minute containing
 10/20/30 Good and 999 Bad: min 10, max 30, average 20, count 3.
 

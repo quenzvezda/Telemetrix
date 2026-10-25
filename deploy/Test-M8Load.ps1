@@ -4,7 +4,8 @@ param(
     [ValidateRange(1, 60)][int] $BatchSeconds = 5,
     [ValidateRange(1, 4096)][int] $BatchQueueCapacity,
     [ValidateRange(10, 7200)][int] $Seconds,
-    [string] $Report
+    [string] $Report,
+    [string] $Runner
 )
 $ErrorActionPreference = 'Stop'
 $taskRoot = Split-Path $PSScriptRoot -Parent
@@ -35,7 +36,11 @@ try {
     $env:M8_LOAD_REPORT = [IO.Path]::GetFullPath($Report)
     Push-Location $taskRoot
     try {
-        dotnet run --project tests/Telemetrix.Integration.Tests -c Release -- -class Telemetrix.Integration.Tests.LoadProfileTests -explicit only -showLiveOutput
+        if ($Runner) {
+            dotnet $Runner -class Telemetrix.Integration.Tests.LoadProfileTests -explicit only -showLiveOutput
+        } else {
+            dotnet run --project tests/Telemetrix.Integration.Tests -c Release -- -class Telemetrix.Integration.Tests.LoadProfileTests -explicit only -showLiveOutput
+        }
         if ($LASTEXITCODE -ne 0) { throw "M8 load profile failed. Inspect $Report" }
     } finally { Pop-Location }
 } finally {

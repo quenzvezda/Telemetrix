@@ -73,6 +73,15 @@ Use `-Seconds 60` for a smoke run. It is always labelled `acceptanceDuration=fal
 in its JSON report. Reports default to ignored `artifacts/m8-*.json`; pass
 `-Report` to select a different output file. No report contains connection strings.
 
+To run multiple isolated profiles from one prebuilt Release output without
+Windows DLL-copy locks, build once with
+`dotnet build tests/Telemetrix.Integration.Tests -c Release --artifacts-path artifacts/m8-runner`,
+then pass `-Runner artifacts/m8-runner/bin/Telemetrix.Integration.Tests/release/Telemetrix.Integration.Tests.dll`.
+The acceptance session runs both low-rate latency profiles side by side on
+separate disposable stacks while throughput profiles run sequentially. This
+records latency under additional host load, rather than claiming an idle-machine
+benchmark. Each latency profile keeps the same default seven-tag input rate.
+
 ## Diagnostic findings
 
 The initial 60-second throughput smoke received 3,187.976 samples/s with nearly
