@@ -73,7 +73,7 @@ public class RollupMigrationTests
         await using var connection = await source.OpenConnectionAsync(ct);
         await connection.ExecuteAsync(new CommandDefinition("""
             INSERT INTO measurement(time,tag_id,value,quality,batch_id)
-            VALUES (now(),1,1,0,'00000000-0000-0000-0000-000000000001')
+            VALUES (now()-interval '2 days',1,1,0,'00000000-0000-0000-0000-000000000001')
             """, cancellationToken: ct));
         await MigrateAsync(source, ct);
         await MigrateAsync(source, ct);
@@ -81,6 +81,8 @@ public class RollupMigrationTests
             "SELECT count(*) FROM measurement", cancellationToken: ct)));
         Assert.True(await connection.ExecuteScalarAsync<bool>(new CommandDefinition(
             "SELECT to_regclass('measurement_1m') IS NOT NULL", cancellationToken: ct)));
+        Assert.Equal(1, await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT sample_count FROM measurement_1m", cancellationToken: ct)));
         Assert.Equal(1, await connection.ExecuteScalarAsync<long>(new CommandDefinition("""
             SELECT count(*) FROM timescaledb_information.jobs
             WHERE proc_name = 'policy_refresh_continuous_aggregate'
@@ -89,6 +91,15 @@ public class RollupMigrationTests
             SELECT count(*) FROM timescaledb_information.jobs WHERE proc_name='policy_retention'
             AND (config->>'drop_after')::interval IN (interval '30 days', interval '1 year')
             """, cancellationToken: ct)));
+        // Simulate retained rollups whose underlying raw history has expired.
+        await connection.ExecuteAsync(new CommandDefinition("""
+            DELETE FROM measurement;
+            INSERT INTO measurement(time,tag_id,value,quality,batch_id)
+            VALUES (now()-interval '5 minutes',1,1,0,'00000000-0000-0000-0000-000000000002')
+            """, cancellationToken: ct));
+        await MigrateAsync(source, ct);
+        Assert.Equal(2, await connection.ExecuteScalarAsync<long>(new CommandDefinition(
+            "SELECT count(*) FROM measurement_1m", cancellationToken: ct)));
     }
 
     internal static async Task InitializeAsync(NpgsqlDataSource source, CancellationToken ct)
@@ -99,8 +110,15 @@ public class RollupMigrationTests
 
     internal static async Task MigrateAsync(NpgsqlDataSource source, CancellationToken ct)
     {
-        await using var command = source.CreateCommand(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory,
-            "sql", "migrations", "001_rollups_and_retention.sql"), ct));
-        await command.ExecuteNonQueryAsync(ct);
+        var script = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory,
+            "sql", "migrations", "001_rollups_and_retention.sql"), ct);
+        var backfill = script.IndexOf("-- Populate retained history", StringComparison.Ordinal);
+        // Match psql -f's separate command execution: the refresh procedure must
+        // not run in Npgsql's multi-command pipeline with the preceding DDL.
+        foreach (var statement in new[] { script[..backfill], script[backfill..] })
+        {
+            await using var command = source.CreateCommand(statement);
+            await command.ExecuteNonQueryAsync(ct);
+        }
     }
 }

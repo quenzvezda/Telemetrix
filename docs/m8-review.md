@@ -129,6 +129,14 @@ The jobs inspection test joined `timescaledb_information.jobs` to
 hypertable. It returned exactly `measurement = 30 days` and
 `measurement_1m = 1 year`. All three rollup/migration tests passed.
 
+Migration 001 also backfills completed historical buckets from the oldest raw
+bucket still present. The refresh policy alone only covers its rolling one-hour
+window. The regression test now includes a measurement from two days earlier,
+then removes that raw history, inserts newer raw data and reruns the migration;
+both the older retained rollup and the new one remain. All three tests pass with
+this history coverage. The test driver executes backfill separately from DDL,
+matching `psql -f` rather than putting the refresh procedure in an Npgsql pipeline.
+
 ## Plant event storage
 
 Review `deploy/sql/migrations/002_plant_events.sql` together with migration 001.

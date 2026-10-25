@@ -11,6 +11,17 @@ The database SHALL maintain, per tag and per 1-minute bucket, the minimum, maxim
 - **WHEN** live data has been flowing for 10 minutes
 - **THEN** rollups exist for every completed minute older than the refresh lag
 
+### Requirement: Historical rollup backfill
+The rollup migration SHALL populate completed historical buckets from retained raw measurements, including data from earlier milestones, and reruns SHALL preserve older rollups after their raw history has expired (FR-31, FR-32).
+
+#### Scenario: Existing historical measurements
+- **WHEN** the migration runs on a database containing Good measurements from two days earlier
+- **THEN** the corresponding completed one-minute buckets contain rollups without waiting for the rolling refresh policy
+
+#### Scenario: Rerun after raw retention
+- **WHEN** older rollups remain after their raw measurements expire and the migration is rerun with newer raw data present
+- **THEN** the older rollups remain and completed buckets in the retained raw window are refreshed
+
 ### Requirement: Retention
 The database SHALL drop raw measurements older than 30 days and rollups older than 1 year automatically (FR-32).
 
