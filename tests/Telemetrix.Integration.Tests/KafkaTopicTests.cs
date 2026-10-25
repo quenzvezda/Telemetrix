@@ -51,13 +51,27 @@ public class KafkaTopicTests
             var topic = Assert.Single(metadata.Topics);
             Assert.False(topic.Error.IsError, topic.Error.ToString());
             Assert.Equal(preExisting ? 2 : partitions, topic.Partitions.Count);
-            var configs = await admin.DescribeConfigsAsync([new ConfigResource
+            while (true)
             {
-                Name = topicName,
-                Type = ResourceType.Topic
-            }]).WaitAsync(ct);
-            Assert.Equal(preExisting ? "60000" : retention,
-                Assert.Single(configs).Entries["retention.ms"].Value);
+                try
+                {
+                    var configs = await admin.DescribeConfigsAsync([new ConfigResource
+                    {
+                        Name = topicName,
+                        Type = ResourceType.Topic
+                    }]).WaitAsync(ct);
+                    Assert.Equal(preExisting ? "60000" : retention,
+                        Assert.Single(configs).Entries["retention.ms"].Value);
+                    break;
+                }
+                catch (DescribeConfigsException exception) when (exception.Results.All(result =>
+                    result.Error.Code == ErrorCode.UnknownTopicOrPart))
+                {
+                    // Topic creation can precede configuration visibility at the controller.
+                    // Keep the original deadline and exact configuration assertion.
+                    await Task.Delay(100, ct);
+                }
+            }
         }
     }
 }

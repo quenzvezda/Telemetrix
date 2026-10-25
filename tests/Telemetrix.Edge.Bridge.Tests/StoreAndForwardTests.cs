@@ -40,7 +40,7 @@ public sealed class StoreAndForwardTests : IDisposable
         var replay = queue.ReplayAsync(stop.Token);
         await WaitAsync(() => buffer.Depth.Batches == 0);
         await stop.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);
+        await ObserveStoppedReplayAsync(replay, stop.Token);
         Assert.Equal(new byte[] { 1, 2 }, transport.Delivered.Select(entry => entry.Payload[0]));
     }
 
@@ -62,7 +62,7 @@ public sealed class StoreAndForwardTests : IDisposable
             var replay = queue.ReplayAsync(stop.Token);
             await attempted.Task.WaitAsync(Ct);
             await stop.CancelAsync();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);
+            await ObserveStoppedReplayAsync(replay, stop.Token);
         }
         Assert.Equal(2, buffer.Depth.Batches);
         Assert.Equal(new byte[] { 1 }, buffer.ReadOldest()!.Payload);
@@ -71,7 +71,7 @@ public sealed class StoreAndForwardTests : IDisposable
         var resumed = queue.ReplayAsync(resume.Token);
         await WaitAsync(() => buffer.Depth.Batches == 0);
         await resume.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => resumed);
+        await ObserveStoppedReplayAsync(resumed, resume.Token);
         Assert.Equal(new byte[] { 1, 2 }, transport.Delivered.Select(entry => entry.Payload[0]));
     }
 
@@ -91,7 +91,7 @@ public sealed class StoreAndForwardTests : IDisposable
         await WaitAsync(() => buffer.Depth.Batches == 0);
         await queue.PublishAsync(Entry(3), Ct);
         await stop.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);
+        await ObserveStoppedReplayAsync(replay, stop.Token);
         Assert.Equal(new byte[] { 1, 2, 3 }, transport.Delivered.Select(entry => entry.Payload[0]));
         Assert.Equal(0, buffer.Depth.Bytes);
     }
@@ -113,7 +113,7 @@ public sealed class StoreAndForwardTests : IDisposable
         await pending.WaitAsync(TimeSpan.FromSeconds(5), Ct);
         await WaitAsync(() => transport.Delivered.Count == 3);
         await stop.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);
+        await ObserveStoppedReplayAsync(replay, stop.Token);
         Assert.Equal(new byte[] { 1, 2, 3 }, transport.Delivered.Select(entry => entry.Payload[0]));
     }
 
@@ -129,8 +129,16 @@ public sealed class StoreAndForwardTests : IDisposable
         var replay = queue.ReplayAsync(stop.Token);
         await WaitAsync(() => buffer.Depth.Batches == 0);
         await stop.CancelAsync();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => replay);
+        await ObserveStoppedReplayAsync(replay, stop.Token);
         Assert.Equal(new byte[] { 1, 2 }, transport.Delivered.Select(entry => entry.Payload[0]));
+    }
+
+    private static async Task ObserveStoppedReplayAsync(Task replay, CancellationToken stopToken)
+    {
+        // Cancellation between loop iterations returns normally; cancellation inside an await throws.
+        // Both must stop promptly, and the tests still assert every delivery and retained entry.
+        try { await replay.WaitAsync(TimeSpan.FromSeconds(5)); }
+        catch (OperationCanceledException) when (stopToken.IsCancellationRequested) { }
     }
 
     private SqliteBuffer Open(long maxBytes = 1024) => new(Options.Create(new BufferOptions
