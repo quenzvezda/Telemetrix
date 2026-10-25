@@ -37,3 +37,6 @@ Startup and network failures retry with capped exponential backoff. A pending
 sample keeps its original timestamp until acknowledged; source history is not
 persisted across simulator process termination. Anonymous, unencrypted MQTT is
 for local development only.
+
+The HTTP listener uses port 5104, exposed by Compose. Override it with
+`--Http:Port=5104` or `Http__Port`; update the container port mapping to match.

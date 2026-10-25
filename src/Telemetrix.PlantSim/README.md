@@ -61,6 +61,7 @@ underscores, for example `Faults__Random__Enabled=false`.
 | `PlantSim:Endpoint` | `opc.tcp://localhost:4840` | Listening endpoint |
 | `PlantSim:PkiPath` | Local application data / Telemetrix / plantsim / pki | Persistent certificate directory |
 | `PlantSim:Seed` | 42 | Normal dynamics/noise seed |
+| `Http:Port` | 5103 | HTTP listener port (container exposes 5103; override with `Http__Port`) |
 | `Faults:Random:Enabled` | true | Enable optional random faults |
 | `Faults:Random:Seed` | 123 | Independent random scheduling seed |
 | `Faults:Random:PumpTripsPerHour` | 1 | Exponential pump-trip rate |

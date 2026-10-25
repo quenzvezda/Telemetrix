@@ -6,7 +6,7 @@ Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 second
 
 - [x] 1.1 Add OpenTelemetry (`OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Exporter.Console`, `OpenTelemetry.Exporter.Prometheus.AspNetCore`) to `Directory.Packages.props`; verify `dotnet build` succeeds
 - [x] 1.2 Move bridge and transformer to a slim web host with a configurable HTTP port, keeping the existing workers; verify both start and serve `GET /` 404 on their port
-- [ ] 1.3 Move PlantSim and MqttSim to slim web hosts with configurable HTTP ports; update container port/configuration documentation and verify both start, serve `GET /` 404 and still expose seven OPC UA tags / publish seven MQTT tags at the default rate
+- [x] 1.3 Move PlantSim and MqttSim to slim web hosts with configurable HTTP ports; update container port/configuration documentation and verify both start, serve `GET /` 404 and still expose seven OPC UA tags / publish seven MQTT tags at the default rate
 
 ## 2. Health and logging
 

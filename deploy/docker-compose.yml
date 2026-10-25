@@ -13,6 +13,7 @@ services:
       dockerfile: src/Telemetrix.MqttSim/Dockerfile
     environment:
       MqttSim__Host: mosquitto
+    ports: ["5104:5104"]
     depends_on: [mosquitto]
 
   plantsim:
@@ -24,7 +25,7 @@ services:
       PlantSim__Endpoint: opc.tcp://plantsim:4840
       PlantSim__PkiPath: /app/pki
       Faults__Random__Enabled: "${PLANTSIM_RANDOM_FAULTS:-false}"
-    ports: ["4840:4840"]
+    ports: ["4840:4840", "5103:5103"]
     volumes:
       - plantsim-pki:/app/pki
 

@@ -1,12 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <UserSecretsId>dotnet-Telemetrix.PlantSim-32313eae-b81c-4827-b6e5-5f20718bde3c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <Using Remove="Microsoft.AspNetCore.Http" />
     <ProjectReference Include="..\Telemetrix.Simulation\Telemetrix.Simulation.csproj" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Configuration" />
   </ItemGroup>
