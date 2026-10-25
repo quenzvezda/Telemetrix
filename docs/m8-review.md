@@ -105,8 +105,8 @@ TimescaleDB 2.30.2/PostgreSQL 17 Testcontainer: applying the migration twice
 succeeded, retained a pre-existing measurement, and created one refresh policy
 and exactly two retention policies. Existing local volumes have not been migrated.
 
-For the existing M7 volume, the reviewer should stop Bridge while comparing
-counts, record `SELECT count(*) FROM measurement`, review each migration SQL,
+For the existing M7 volume, stop Bridge, wait for Transformer lag to reach zero,
+then stop Transformer before comparing counts. Record `SELECT count(*) FROM measurement`, review each migration SQL,
 and explicitly run:
 
 ```powershell
@@ -139,3 +139,39 @@ and commits Kafka offsets only after the insert succeeds. Bridge still creates
 `plant.events`. The storage integration test passed: ConnectionLost,
 ConnectionRestored and a 60-second Gap were stored, and replaying all three
 left exactly three stored events after all six Kafka deliveries were committed.
+
+## Grafana dashboard
+
+After migration review/application, set `PLANT_EVENTS_ENABLED=true` in
+`deploy/.env` and restart the container pipeline:
+
+```powershell
+docker compose -f deploy/docker-compose.yml --profile metrics up -d --build
+```
+
+Open `http://localhost:3000/d/telemetrix`. Select `Pump01` and all tags. Expect
+individual tag trends with units, a Running/Stopped state timeline, current
+state with last-change/sample timestamps, and a gap table with UTC bounds.
+Refresh is ten seconds. A seven-day range uses one-minute rollups; ranges
+below six hours use raw Good measurements. Lines contain explicit nulls at
+source gaps. Select `Tank01` to see its two tags.
+
+For an outage check, stop PlantSim for at least 60 seconds, start it again,
+then wait for Bridge recovery and its next batch:
+
+```powershell
+docker compose -f deploy/docker-compose.yml stop plantsim
+Start-Sleep -Seconds 60
+docker compose -f deploy/docker-compose.yml up -d plantsim
+```
+
+The gap table must show both bounds, the trends must break over the gap, and
+the state timeline must resume after recovery. `DashboardTests` passed on a
+fresh Grafana/Testcontainers pipeline: the automated outage produced an 80-second
+source gap including reconnection; raw trend responses contained null markers
+and the seven-day rollup query returned data. Visual review of a separate run
+confirmed repeated tag panels, pump state and a 65.0-second gap in the table;
+the dashboard's export view recognized `telemetrix` as the dashboard resource.
+The first visual run exposed a Windows SQLite cleanup ordering issue in the
+test harness; hosts are now disposed before their temporary buffer is removed,
+and the complete subsequent run passed.

@@ -52,6 +52,7 @@ services:
     environment:
       Kafka__BootstrapServers: kafka:9092
       ConnectionStrings__Telemetry: Host=timescaledb;Database=telemetry;Username=telemetry;Password=${POSTGRES_PASSWORD}
+      PlantEvents__Enabled: "${PLANT_EVENTS_ENABLED:-false}"
       Telemetry__Prometheus__Enabled: "true"
     ports: ["5102:5102"]
     depends_on:
