@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Opc.Ua;
 using Opc.Ua.Configuration;
+using Opc.Ua.Security.Certificates;
 using Telemetrix.PlantSim.Server;
 using Telemetrix.Simulation;
 using System.Threading.Channels;
@@ -28,7 +29,10 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
         try
         {
             var configuration = CreateConfiguration(options.Value, telemetry);
+            if (options.Value.SecurityMode == "None")
+                logger.LogWarning("PlantSim OPC UA connection is unsecured; Development only");
             await configuration.ValidateAsync(ApplicationType.Server, stoppingToken);
+            await EnsureCertificateAsync(configuration, stoppingToken);
             application = new ApplicationInstance(configuration, telemetry);
             if (!await application.CheckApplicationInstanceCertificatesAsync(false, null, stoppingToken))
                 throw new InvalidOperationException("PlantSim could not create its application certificate.");
@@ -86,6 +90,22 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
         }
     }
 
+    private async Task EnsureCertificateAsync(ApplicationConfiguration configuration, CancellationToken ct)
+    {
+        var identifier = configuration.SecurityConfiguration.ApplicationCertificates[0];
+        using var existing = await CertificateIdentifierResolver.LoadPrivateKeyAsync(identifier, null,
+            configuration.ApplicationUri, telemetry, ct);
+        if (existing is not null) return;
+        // The SDK normalizes localhost to the machine name for opc.tcp. Preserve
+        // both public connection names explicitly in the certificate SAN.
+        using var certificate = DefaultCertificateFactory.Instance.CreateApplicationCertificate(configuration.ApplicationUri!,
+            "Telemetrix.PlantSim", "CN=Telemetrix.PlantSim",
+            ["localhost", "plantsim", Environment.MachineName, new Uri(options.Value.Endpoint).Host]).CreateForRSA();
+        using var store = CertificateIdentifierResolver.OpenStore(identifier, telemetry)
+            ?? throw new InvalidOperationException("PlantSim could not open its application certificate store.");
+        await store.AddAsync(certificate, null, ct);
+    }
+
     private static ApplicationConfiguration CreateConfiguration(PlantSimOptions settings, ITelemetryContext telemetry) =>
         new(telemetry)
         {
@@ -109,16 +129,25 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
                 { StoreType = "Directory", StorePath = Path.Combine(settings.PkiPath, "issuers") },
                 RejectedCertificateStore = new CertificateStoreIdentifier
                 { StoreType = "Directory", StorePath = Path.Combine(settings.PkiPath, "rejected") },
-                AutoAcceptUntrustedCertificates = true
+                AutoAcceptUntrustedCertificates = false,
+                AddAppCertToTrustedStore = false
             },
             TransportQuotas = new TransportQuotas { OperationTimeout = 5000 },
             ServerConfiguration = new ServerConfiguration
             {
                 BaseAddresses = [settings.Endpoint],
+                AlternateBaseAddresses =
+                [
+                    new UriBuilder(settings.Endpoint) { Host = "localhost" }.Uri.ToString(),
+                    new UriBuilder(settings.Endpoint) { Host = "plantsim" }.Uri.ToString()
+                ],
                 SecurityPolicies =
                 [
                     new ServerSecurityPolicy
-                    { SecurityMode = MessageSecurityMode.None, SecurityPolicyUri = SecurityPolicies.None }
+                    {
+                        SecurityMode = settings.SecurityMode == "None" ? MessageSecurityMode.None : MessageSecurityMode.SignAndEncrypt,
+                        SecurityPolicyUri = settings.SecurityMode == "None" ? SecurityPolicies.None : SecurityPolicies.Basic256Sha256
+                    }
                 ],
                 UserTokenPolicies = [new UserTokenPolicy(UserTokenType.Anonymous)],
                 DiagnosticsEnabled = false,

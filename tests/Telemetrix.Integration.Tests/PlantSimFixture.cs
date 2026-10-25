@@ -15,22 +15,24 @@ internal sealed class PlantSimFixture : IAsyncDisposable
     private readonly string directory = Path.Combine(Path.GetTempPath(), $"telemetrix-plantsim-{Guid.NewGuid():N}");
     private readonly IHost host;
     public string Endpoint { get; }
+    public string PkiPath => directory;
     public ITelemetryContext Telemetry => host.Services.GetRequiredService<ITelemetryContext>();
     public Worker Worker => host.Services.GetRequiredService<Worker>();
 
-    public PlantSimFixture(string? externalEndpoint = null)
+    public PlantSimFixture(string? externalEndpoint = null, bool secure = false)
     {
         var reservation = new TcpListener(IPAddress.Loopback, 0);
         reservation.Start();
         var port = ((IPEndPoint)reservation.LocalEndpoint).Port;
         reservation.Stop();
         Endpoint = externalEndpoint ?? $"opc.tcp://localhost:{port}";
-        var builder = Host.CreateApplicationBuilder();
+        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = Environments.Development });
         builder.Logging.ClearProviders();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["PlantSim:Endpoint"] = Endpoint,
             ["PlantSim:PkiPath"] = directory,
+            ["PlantSim:SecurityMode"] = secure ? "SignAndEncrypt" : "None",
             ["Faults:Random:Enabled"] = "false"
         });
         builder.Services.AddPlantSimulator(builder.Configuration);

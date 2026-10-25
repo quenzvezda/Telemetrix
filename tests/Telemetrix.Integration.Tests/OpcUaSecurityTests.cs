@@ -1,12 +1,62 @@
 using DotNet.Testcontainers.Builders;
 using Microsoft.Extensions.DependencyInjection;
 using Opc.Ua;
+using Opc.Ua.Client;
+using System.Security.Cryptography.X509Certificates;
 using Telemetrix.Edge.Bridge.Sources.OpcUa;
 
 namespace Telemetrix.Integration.Tests;
 
 public class OpcUaSecurityTests
 {
+    [Fact]
+    public async Task CertificatesPersistAndSecureTrustCanBeGrantedWithoutRestart()
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        deadline.CancelAfter(TimeSpan.FromMinutes(1));
+        var ct = deadline.Token;
+        await using var server = new PlantSimFixture(secure: true);
+        await server.StartAsync(ct);
+        var clientRoot = Path.Combine(server.PkiPath, "client", "pki");
+        var options = new OpcUaOptions { Endpoint = server.Endpoint };
+        options.Security.PkiRoot = clientRoot;
+        var configuration = await OpcUaClientConfiguration.CreateAsync(options, server.Telemetry, ct);
+        var clientCertificate = Assert.Single(Directory.GetFiles(Path.Combine(clientRoot, "own", "certs")));
+        var serverCertificate = Assert.Single(Directory.GetFiles(Path.Combine(server.PkiPath, "own", "certs")));
+        using var certificate = X509CertificateLoader.LoadCertificateFromFile(serverCertificate);
+        var names = certificate.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single().EnumerateDnsNames().ToArray();
+        Assert.Contains("localhost", names);
+        Assert.Contains("plantsim", names);
+        var ownBytes = await File.ReadAllBytesAsync(clientCertificate, ct);
+        await OpcUaClientConfiguration.CreateAsync(options, server.Telemetry, ct);
+        Assert.Equal(ownBytes, await File.ReadAllBytesAsync(clientCertificate, ct));
+        var description = await OpcUaEndpointSelector.SelectAsync(configuration, options, server.Telemetry, ct);
+        Assert.Equal(MessageSecurityMode.SignAndEncrypt, description.SecurityMode);
+        Assert.Equal(SecurityPolicies.Basic256Sha256, description.SecurityPolicyUri);
+
+        Task<ISession> Connect() => new DefaultSessionFactory(server.Telemetry).CreateAsync(configuration,
+            new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(configuration)),
+            false, true, "Telemetrix.Security.Test", 60000, new UserIdentity(), default, ct);
+
+        await Assert.ThrowsAsync<ServiceResultException>(Connect);
+        // Trust the server first, then prove the server still rejects this client.
+        Trust(serverCertificate, clientRoot);
+        await Assert.ThrowsAsync<ServiceResultException>(Connect);
+        while (!Directory.Exists(Path.Combine(server.PkiPath, "rejected", "certs")) ||
+               Directory.GetFiles(Path.Combine(server.PkiPath, "rejected", "certs")).Length == 0)
+            await Task.Delay(50, ct);
+        Trust(clientCertificate, server.PkiPath);
+        using var session = await Connect();
+        var value = await session.ReadValueAsync(new NodeId("Line01.Pump01.Running", 2), ct);
+        Assert.True(StatusCode.IsGood(value.StatusCode));
+    }
+
+    private static void Trust(string certificate, string root)
+    {
+        var store = Directory.CreateDirectory(Path.Combine(root, "trusted", "certs"));
+        File.Copy(certificate, Path.Combine(store.FullName, Path.GetFileName(certificate)), true);
+    }
+
     [Fact]
     public async Task EndpointSelectionNeverFallsBackToNone()
     {

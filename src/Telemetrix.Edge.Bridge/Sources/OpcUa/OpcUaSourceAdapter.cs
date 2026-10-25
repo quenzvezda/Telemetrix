@@ -69,42 +69,7 @@ public sealed class OpcUaSourceAdapter(
     private async Task RunSessionAsync(ChannelWriter<Sample> writer, bool restoring, CancellationToken cancellationToken)
     {
         var settings = options.Value;
-        var pkiPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Telemetrix", "pki");
-        var configuration = new ApplicationConfiguration(telemetry)
-        {
-            ApplicationName = "Telemetrix.Edge.Bridge",
-            ApplicationUri = $"urn:{Environment.MachineName}:Telemetrix.Edge.Bridge",
-            ApplicationType = ApplicationType.Client,
-            SecurityConfiguration = new SecurityConfiguration
-            {
-                ApplicationCertificates =
-                [
-                    new CertificateIdentifier
-                    {
-                        StoreType = "Directory",
-                        StorePath = Path.Combine(pkiPath, "own"),
-                        SubjectName = "CN=Telemetrix.Edge.Bridge"
-                    }
-                ],
-                TrustedPeerCertificates = new CertificateTrustList
-                {
-                    StoreType = "Directory", StorePath = Path.Combine(pkiPath, "trusted")
-                },
-                TrustedIssuerCertificates = new CertificateTrustList
-                {
-                    StoreType = "Directory", StorePath = Path.Combine(pkiPath, "issuers")
-                },
-                RejectedCertificateStore = new CertificateStoreIdentifier
-                {
-                    StoreType = "Directory", StorePath = Path.Combine(pkiPath, "rejected")
-                },
-                AutoAcceptUntrustedCertificates = true
-            },
-            TransportQuotas = new TransportQuotas { OperationTimeout = 5000 },
-            ClientConfiguration = new ClientConfiguration { DefaultSessionTimeout = 60000 }
-        };
-        await configuration.ValidateAsync(ApplicationType.Client, cancellationToken);
+        var configuration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, cancellationToken);
         var description = await OpcUaEndpointSelector.SelectAsync(configuration, settings, telemetry, cancellationToken);
 
         var endpoint = new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(configuration));
@@ -119,8 +84,10 @@ public sealed class OpcUaSourceAdapter(
             TimestampsToReturn = TimestampsToReturn.Both
         });
         var session = await new DefaultSessionFactory(telemetry).CreateAsync(
-            configuration, endpoint, false, false, configuration.ApplicationName, 60000,
+            configuration, endpoint, false, settings.Security.Mode != "None", "Telemetrix.Edge.Bridge", 60000,
             new UserIdentity(), default, cancellationToken);
+        logger.LogInformation("OPC UA session established with {SecurityMode} {SecurityPolicy}",
+            description.SecurityMode, description.SecurityPolicyUri);
         await using var recovery = new OpcUaSessionRecovery(session, telemetry, timeProvider, logger,
             reason =>
             {

@@ -12,6 +12,7 @@
     <PackageReference Include="Confluent.Kafka" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client" />
+    <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Configuration" />
   </ItemGroup>
 
   <ItemGroup>
