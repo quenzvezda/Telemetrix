@@ -19,7 +19,7 @@ Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.m
 | M5 | Edge resilience | `add-edge-store-and-forward` | FR-15, FR-16, NFR-02, NFR-04 | Kafka down 30 min drains with zero loss; OPC UA restart reconnects < 30 s and logs the gap | Done |
 | M6 | Own OPC UA server | `add-plant-simulator` | FR-01, FR-02 | Bridge switches from OPC PLC to PlantSim by configuration only | Done |
 | M7 | MQTT input | `add-mqtt-source` | FR-03, FR-17 | Same tags land in the database from MQTT with no transformer change | Done |
-| M8 | Observability and load | `add-observability` | FR-31, FR-32, FR-40, FR-41, NFR-06, NFR-07, NFR-12 | Dashboard shows trends, pump state and gaps; p95 latency < 10 s; 5,000 samples/s without growing lag | Not started |
+| M8 | Observability and load | `add-observability` | FR-31, FR-32, FR-40, FR-41, NFR-06, NFR-07, NFR-12 | Dashboard shows trends, pump state and gaps; p95 latency < 10 s; 5,000 samples/s without growing lag | In progress |
 | M9 | Security | `add-opcua-security` | NFR-09, NFR-10 | An untrusted client certificate is rejected; no secret in the repo | Not started |
 
 M3 was accepted and archived on 2026-10-18 with all 14 tasks complete. Its four capabilities are in main specs; see the [archived change](openspec/changes/archive/2026-10-18-add-end-to-end-slice/) and [review evidence](docs/m3-group6-review.md). The observed stopped-consumer backlog remains documented; zero lag and M4 delivery guarantees are not claimed.
@@ -32,15 +32,17 @@ M6 was accepted by the reviewer and archived on 2026-10-24 with all 13 tracked t
 
 M7 was accepted by the reviewer through [PR #4](https://github.com/quenzvezda/Telemetrix/pull/4) and archived on 2026-10-25 with all 13 tracked tasks complete. Its six requirements are synced into main specs. MqttSim and PlantSim share the pumping-line model; Bridge selects MQTT or OPC UA by configuration, preserving the Transformer and database schema. All 208 tests passed across the 207-test regression suite and the full 600-second protocol comparison. Both protocols stored exactly 600 measurements per tag (4,200 each) over the same source-time window. Production-container verification covered seven tags and ordered recovery events after a broker restart. CI build/test, strict OpenSpec, M4 SIGKILL and M5 edge-outage jobs passed. See the [review package](docs/m7-review.md) and [archived change](openspec/changes/archive/2026-10-25-add-mqtt-source/).
 
+M8 planning started on 2026-10-25. The reviewer approved 500 samples / 5 seconds per asset, whichever comes first, as the baseline and explicitly deferred the final D5 choice until the load-test comparison. Implementation tasks remain unchecked; review checkpoints still apply after each task group.
+
 NFR-13 (tests) is not a milestone: every change lands its own unit and integration tests, and CI (`.github/workflows/ci.yml`) stays green.
 
 ## Open decisions
 
-Decide before the milestone that needs it starts; record the outcome as an ADR in `docs/adr/` and update the change's specs.
+Decide before the milestone that needs it starts unless the reviewer explicitly approves a baseline and a later measurement checkpoint. D5 has that approval for M8: compare the baseline and at least one alternative, then obtain the reviewer's final choice before accepting M8. Record final outcomes as ADRs in `docs/adr/` and align the affected specs.
 
 | # | Decision | Needed by | Leaning |
 | --- | --- | --- | --- |
-| D5 | Batch thresholds: keep 500 samples / 5 s, or tune after measuring latency? | M8 | Keep, re-measure under NFR-06 |
+| D5 | Final batch thresholds after measured latency and throughput comparison | M8 acceptance, after load tests | Approved baseline: 500 samples / 5 s per asset; final choice remains open until reviewer selection and ADR |
 
 ## Resolved decisions
 

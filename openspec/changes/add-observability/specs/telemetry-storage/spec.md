@@ -23,7 +23,7 @@ The database SHALL drop raw measurements older than 30 days and rollups older th
 - **THEN** those buckets are removed
 
 ### Requirement: Schema changes apply to existing databases
-Schema changes after the initial schema SHALL be applied as ordered, idempotent migrations that work on both a fresh and an already-initialised database without losing stored measurements (FR-31, FR-32).
+Schema changes after the initial schema SHALL be provided as reviewable SQL files under `deploy/sql/migrations/` and applied in order, idempotently, to both a fresh and an already-initialised database without losing stored measurements (FR-31, FR-32). Applying migrations to the local database SHALL be an explicit reviewer action after SQL review; default stack startup SHALL NOT apply migrations. Automated migration checks SHALL use disposable test databases.
 
 #### Scenario: Existing volume
 - **WHEN** the migration runs against a database created by an earlier milestone
@@ -32,3 +32,7 @@ Schema changes after the initial schema SHALL be applied as ordered, idempotent 
 #### Scenario: Re-run
 - **WHEN** the same migration runs twice
 - **THEN** the second run succeeds and changes nothing
+
+#### Scenario: Default startup preserves review boundary
+- **WHEN** the stack starts with its default Compose profiles
+- **THEN** the migration service does not run; the reviewer can apply the reviewed SQL using the explicit migration command
