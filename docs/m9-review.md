@@ -10,6 +10,8 @@ Verification: `dotnet test --project tests/Telemetrix.Edge.Bridge.Tests -c Relea
 
 ## Deferred M8 acceptance
 
+Untrusted production client (task 4.2): a second production Bridge used `/tmp/rogue-pki`, `/tmp/rogue.db` and an ephemeral HTTP port, without sharing the active Bridge's identity/buffer. PlantSim repeatedly rejected its new thumbprint `B550E07916D45A33E9DC39E333975916AF6150D6` with `BadCertificateUntrusted`; the client never established a session. The trusted pipeline continued storing measurements (121,485 at source time `08:57:30 UTC`). The rogue container was removed; no trust was granted to it.
+
 Secure production pipeline (task 4.1): the live Compose Bridge establishes Basic256Sha256 SignAndEncrypt and subscribes to all seven configured tags. After the migration pause, the measurement count rises from 121,100 to 121,317 with latest source time `2026-10-25 08:57:06+00`. This uses the production images, existing Kafka/TimescaleDB and default 500/5 s batching.
 
 Secret scanning: Gitleaks 8.30.1 scanned all 168 reachable commits at this checkpoint with no leaks. `./scripts/Test-SecretScan.ps1 -Docker` creates an isolated `fake-private-key` branch, commits an invalid fixture and asserts scanner exit 1 (one finding). CI runs the same negative check, scans PR commits and all reachable history with redaction, and disables PR comments/artifact uploads. The only added allowlist combines the exact `deploy/.env.example` path with its exact `POSTGRES_PASSWORD=change-me` placeholder line. The action is pinned to the v3 commit because upstream retired Node 20/v2; see [upstream action documentation](https://github.com/gitleaks/gitleaks-action). Remote CI acceptance is recorded after PR creation.
