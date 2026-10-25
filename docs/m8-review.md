@@ -40,3 +40,11 @@ carry `batchId` and `assetId` scopes. Nested storage logs inherit them.
 `CorrelatedLoggingTests` checks a nested writer after an asynchronous boundary
 using both a scope-capturing provider and the actual host's serialized JSON.
 The five store-and-forward unit tests also pass with replay correlation enabled.
+
+Live host verification on 2026-10-25 found the same `batchId`
+`01a17160-6f93-7cf6-8511-83818e6f71e5` in parsed JSON logs:
+Bridge accepted at 04:45:07.920 UTC, Transformer consumed at 04:45:08.202,
+stored at 04:45:08.280 and committed at 04:45:08.301. Each entry's scope
+contains that `batchId` and `assetId=Pump01`. Reproduce with the HTTP hosting
+test and filter its logs by the new batch identifier (`rg batchId`); the
+JSON `Category` distinguishes Bridge, consumption and storage entries.
