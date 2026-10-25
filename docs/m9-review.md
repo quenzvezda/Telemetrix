@@ -134,10 +134,14 @@ Record any regression before accepting these tasks and archiving M9.
 
 ## Repeatable isolated checks
 
-The focused secured dashboard run passes. The final full-solution regression and
-remote PR checks are recorded below when complete. The one explicit long load
-profile remains excluded from the ordinary suite; its accepted full-duration
-M8 evidence remains in `docs/load-test.md`.
+The focused secured dashboard run passes. Final Release build has zero warnings
+and errors. The full local regression passes **236 tests** (237 total, one
+explicit long load profile excluded) in 5 minutes 57.964 seconds. Strict OpenSpec
+validation passes all 13 items and `git diff --check` is clean. Remote secrets,
+OpenSpec, M4 delivery and short M5 outage jobs pass; the current complete CI
+status is visible on [PR #6](https://github.com/quenzvezda/Telemetrix/pull/6).
+The long profile's accepted full-duration M8 evidence remains in
+`docs/load-test.md`.
 
 ```powershell
 dotnet build -c Release
