@@ -98,8 +98,8 @@ Expected: all seven services are `Up`, and `kafka` and `timescaledb` become `hea
 
 | Service | From the host | From another Compose service | Account / notes |
 | --- | --- | --- | --- |
-| OPC PLC | `opc.tcp://localhost:50000` | `opc.tcp://opc-plc:50000` | Security None, Anonymous |
-| PlantSim | `opc.tcp://localhost:4840` | `opc.tcp://plantsim:4840` | Security None, Anonymous; [tags and fault methods](src/Telemetrix.PlantSim/README.md) |
+| OPC PLC | `opc.tcp://localhost:50000` | `opc.tcp://opc-plc:50000` | SignAndEncrypt, explicit certificate trust, Anonymous |
+| PlantSim | `opc.tcp://localhost:4840` | `opc.tcp://plantsim:4840` | SignAndEncrypt, explicit certificate trust, Anonymous; [tags and fault methods](src/Telemetrix.PlantSim/README.md) |
 | MQTT / Mosquitto | `localhost:1883` | `mosquitto:1883` | Anonymous |
 | Kafka | `localhost:29092` | `kafka:9092` | Create topics explicitly |
 | Kafka UI | <http://localhost:8080> | `http://kafka-ui:8080` | Cluster `local` |
@@ -111,14 +111,71 @@ Expected: all seven services are `Up`, and `kafka` and `timescaledb` become `hea
 | MqttSim HTTP | <http://localhost:5104/health> | `http://mqttsim:5104/health` | `mqtt` profile; broker/publication readiness |
 | Prometheus | <http://localhost:9090> | `http://prometheus:9090` | `metrics` profile |
 
-The stack uses local development settings, including unsecured OPC UA and plaintext Kafka listeners. Production security is tracked in M9.
+Compose uses secured OPC UA with persistent certificates. Kafka, Postgres and MQTT transport security remain outside M9's scope.
+
+#### OPC UA security and explicit trust (M9)
+
+Start the secure pipeline (the `pipeline` and `metrics` profiles use the same secure OPC UA settings):
+
+```powershell
+docker compose -f deploy/docker-compose.yml --profile secure up -d --build
+./deploy/Trust-OpcUaCertificates.ps1
+```
+
+Initially the Bridge cannot establish a session. PlantSim rejects the untrusted
+Bridge certificate, logging its subject and thumbprint. The helper above only
+displays both public identities; it grants no trust. Compare the thumbprints with
+the applications' certificates/logs, then explicitly approve those identities:
+
+```powershell
+./deploy/Trust-OpcUaCertificates.ps1 -BridgeThumbprint '<observed bridge thumbprint>' -ServerThumbprint '<observed plantsim thumbprint>'
+docker compose -f deploy/docker-compose.yml logs --since 1m bridge
+```
+
+Expected: `OPC UA session established with SignAndEncrypt` and policy
+`http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256`, followed by samples
+and batches. Neither service is restarted. A mismatched thumbprint stops the
+helper before either trust list is changed. It copies only public `.der` files;
+private keys remain in `own/private` in persistent PKI volumes.
+
+Alternatively inspect `/app/pki/rejected/certs` inside the rejecting container,
+then move only the peer certificate you verified into
+`/app/pki/trusted/certs`. With both peers initially untrusted, the server can
+reject the client before the client sees the server certificate: grant the first
+direction of trust, allow a retry, then inspect and trust the other peer.
+The helper bootstraps this exchange from both `own/certs` stores instead.
+Repeat with `-Server opc-plc` when using OPC PLC; configure the Bridge endpoint
+and OPC PLC tag mapping separately. Secure endpoint selection matches mode and
+policy exactly and never falls back to None.
+
+Bridge settings: `OpcUa:Security:Mode` (`None`, `Sign`, `SignAndEncrypt`),
+`Policy` (`Basic256Sha256`), `PkiRoot` (default `pki`), and
+`AutoAcceptUntrusted` (default `false`). Environment variables use double
+underscores, e.g. `OpcUa__Security__PkiRoot`. The former
+`OpcUa:SecurityMode` setting has been replaced. None and auto-accept are refused
+outside **Development**, including the named **PlantSim** environment.
+The Development launch profile explicitly selects None and logs an insecure
+connection warning. To connect a host Bridge to the secure Compose OPC PLC,
+override `--OpcUa:Security:Mode=SignAndEncrypt` and manually exchange its public
+certificate with OPC PLC. Host PKI stores are relative to the working directory;
+each application/instance must use its own root. PlantSim uses
+`PlantSim:PkiPath` (default `pki/plantsim`) and `PlantSim:SecurityMode`.
+
+PlantSim certificates include `localhost` and `plantsim` SANs. Compose fixes
+application hostnames and keeps certificates in named volumes across recreation.
+M9 provisions a new `plantsim-secure-pki` volume, preserving the old M8 PKI.
+When rotating certificates, review and replace the peer's trusted public
+certificate explicitly. Check host/container clocks if validity checks fail;
+never bypass certificate validation to resolve a clock or hostname mismatch.
+
+Acceptance commands and outstanding manual checks are in [M9 review](docs/m9-review.md).
 
 #### Run the OPC UA Bridge
 
 With OPC PLC and Kafka running, launch the Bridge from the repository root:
 
 ```powershell
-dotnet run --project src/Telemetrix.Edge.Bridge
+dotnet run --project src/Telemetrix.Edge.Bridge -- --OpcUa:Security:Mode=SignAndEncrypt
 ```
 
 The Development launch profile maps seven domain tags to the OPC PLC nodes verified in M1. The Bridge creates its owned topics if absent, then logs accepted batches with asset and sample count. An accepted batch has either been acknowledged by Kafka or persisted in the edge buffer. Samples retain UTC source/server timestamps and raw status codes. To exercise recovery, keep the Bridge running and restart OPC PLC from another terminal:
@@ -130,7 +187,7 @@ docker compose -f deploy/docker-compose.yml restart opc-plc
 Samples resume after the session is restored. Stop the Bridge with Ctrl+C. To discover all variables under OPC PLC's telemetry folder using server browse names, run:
 
 ```powershell
-dotnet run --project src/Telemetrix.Edge.Bridge -- --OpcUa:BrowseStartNode=Objects/OpcPlc/Telemetry
+dotnet run --project src/Telemetrix.Edge.Bridge -- --OpcUa:Security:Mode=SignAndEncrypt --OpcUa:BrowseStartNode=Objects/OpcPlc/Telemetry
 ```
 
 See the [accepted OPC UA spec](openspec/specs/opcua-ingestion/spec.md) and [M2 recovery review](docs/m2-group3-review.md) for behavior and verification details.
@@ -283,7 +340,7 @@ Install [UaExpert](https://www.unified-automation.com/downloads/opc-ua-clients/u
 
 1. Choose **Server > Add**, add `opc.tcp://localhost:50000` under **Custom Discovery**, and expand the OPC PLC server to see its endpoints.
 2. If **Replace Hostname** appears, choose **Yes** to use `localhost` instead of the container hostname returned by discovery.
-3. Select an endpoint with security policy **None** and security mode **None**, keep **Anonymous**, and confirm with **OK**.
+3. Select policy **Basic256Sha256** and mode **SignAndEncrypt**, keep **Anonymous**, and confirm with **OK**. Explicitly trust UaExpert's public certificate in OPC PLC's `/app/pki/trusted/certs` before retrying.
 4. Select the server and choose **Server > Connect**. For the local OPC PLC certificate, use **Trust Server Certificate**, or accept it temporarily for the session, then continue.
 5. Expand **Objects > OpcPlc > Telemetry** in Address Space and drag variables such as `FastUInt1` and `AlternatingBoolean` into Data Access View.
 6. Verify that values change and that source timestamps, data types and status codes are visible. Nodes intended to simulate poor quality can show non-Good status codes.
@@ -365,7 +422,7 @@ docker compose -f deploy/docker-compose.yml stop
 docker compose -f deploy/docker-compose.yml start
 ```
 
-`docker compose -f deploy/docker-compose.yml down` removes the containers and network while keeping the named Kafka and database volumes. Grafana's local accounts and dashboards, and the OPC PLC certificate, are not backed by named volumes in this Compose file; use `stop` / `start` to keep their current containers.
+`docker compose -f deploy/docker-compose.yml down` removes containers and the network while keeping the named Kafka, database, buffer and OPC UA PKI volumes. Grafana's local accounts are not backed by a named volume; use `stop` / `start` to keep its current container.
 
 To deliberately reset the local environment, remove the containers **and Kafka/database data**, then start again:
 
