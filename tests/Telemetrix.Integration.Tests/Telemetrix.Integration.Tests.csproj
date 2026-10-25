@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Telemetrix.MqttSim\Telemetrix.MqttSim.csproj" />
     <ProjectReference Include="..\..\src\Telemetrix.Edge.Bridge\Telemetrix.Edge.Bridge.csproj" />
     <ProjectReference Include="..\..\src\Telemetrix.Transformer\Telemetrix.Transformer.csproj" />
     <ProjectReference Include="..\..\src\Telemetrix.PlantSim\Telemetrix.PlantSim.csproj" />

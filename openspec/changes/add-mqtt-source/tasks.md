@@ -15,7 +15,7 @@
 ## 3. Bridge MQTT source
 
 - [x] 3.1 Implement topic parsing and quality → status-code mapping; verify unit tests cover good/uncertain/bad/unknown quality and malformed topics
-- [ ] 3.2 Implement `MqttSourceAdapter` (subscribe, persistent session, emit samples to the batching channel, `source` = `mqtt`); verify integration tests with a Mosquitto Testcontainer produce samples with the right identity, numeric/boolean value and UTC timestamps, preserve queued QoS 1 messages across normal reconnects, and honor buffer-capacity pause/resume with durable events and cleared pause history
+- [x] 3.2 Implement `MqttSourceAdapter` (subscribe, persistent session, emit samples to the batching channel, `source` = `mqtt`); verify integration tests with a Mosquitto Testcontainer produce samples with the right identity, numeric/boolean value and UTC timestamps, preserve queued QoS 1 messages across normal reconnects, and honor buffer-capacity pause/resume with durable events and cleared pause history
 - [ ] 3.3 Select the source via `Source:Kind` configuration; verify the bridge starts with `Source__Kind=Mqtt` and logs the MQTT endpoint
 - [ ] 3.4 Reconnect with backoff and publish connection-lost / restored plant events; verify by restarting the `mosquitto` container and reading both events in `plant.events` via Kafka UI
 - [ ] 3.5 Count and rate-limit-log malformed messages; verify a unit test feeding a bad payload increments the rejected counter and the adapter keeps running
