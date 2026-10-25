@@ -120,3 +120,8 @@ verification; automated checks only mutate disposable databases.
 
 The Good-only rollup test passed after refreshing a completed minute containing
 10/20/30 Good and 999 Bad: min 10, max 30, average 20, count 3.
+
+The jobs inspection test joined `timescaledb_information.jobs` to
+`timescaledb_information.continuous_aggregates` to resolve the rollup's internal
+hypertable. It returned exactly `measurement = 30 days` and
+`measurement_1m = 1 year`. All three rollup/migration tests passed.

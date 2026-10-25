@@ -7,6 +7,33 @@ namespace Telemetrix.Integration.Tests;
 public class RollupMigrationTests
 {
     [Fact]
+    public async Task RetentionJobsTargetRawMeasurementsAndRollups()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var database = new PostgreSqlBuilder("timescale/timescaledb:2.30.2-pg17").Build();
+        await database.StartAsync(ct);
+        await using var source = NpgsqlDataSource.Create(database.GetConnectionString());
+        await InitializeAsync(source, ct);
+        await MigrateAsync(source, ct);
+        await using var command = source.CreateCommand("""
+            SELECT coalesce(c.view_name,j.hypertable_name),j.config->>'drop_after'
+            FROM timescaledb_information.jobs j
+            LEFT JOIN timescaledb_information.continuous_aggregates c
+              ON c.materialization_hypertable_schema=j.hypertable_schema
+             AND c.materialization_hypertable_name=j.hypertable_name
+            WHERE j.proc_name='policy_retention'
+            ORDER BY 1
+            """);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        var policies = new List<(string Relation, string Retention)>();
+        while (await reader.ReadAsync(ct)) policies.Add((reader.GetString(0), reader.GetString(1)));
+        Assert.Equal(2, policies.Count);
+        Assert.Contains(("measurement", "30 days"), policies);
+        Assert.Contains(("measurement_1m", "1 year"), policies);
+        foreach (var policy in policies) Console.WriteLine("Retention policy: {0} = {1}", policy.Relation, policy.Retention);
+    }
+
+    [Fact]
     public async Task RollupIncludesOnlyGoodMeasurements()
     {
         var ct = TestContext.Current.CancellationToken;
