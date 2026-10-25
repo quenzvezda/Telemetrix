@@ -1,6 +1,7 @@
 # M8 review package
 
-Change: `add-observability`. Implementation is in progress; OpenSpec remains open.
+Change: `add-observability`. Implementation and agent-run verification are complete;
+M8 is in review and OpenSpec remains open.
 The reviewer authorized all task groups on 2026-10-25. Final D5 selection and
 milestone acceptance remain reviewer checkpoints after measurements are available.
 
@@ -238,7 +239,22 @@ Both 15-minute throughput profiles also pass at 5,250.343/s and 5,242.643/s,
 respectively, with complete drain and zero dead letters. The baseline's high-rate
 p95 is 7,644.455 ms versus 21,240.268 ms for the alternative. The recommendation
 in proposed ADR-0015 is to retain 500/5 s; reviewer selection remains pending.
-Whole-suite/container regression results will be added after those runs finish.
+The full Release regression suite passes 221 tests in 6 minutes 24.700 seconds,
+with one explicit load-profile test excluded from the normal suite. All four
+full-duration load profiles were executed separately and pass. Strict OpenSpec
+validation passes all 12 items, and `git diff --check` reports no whitespace errors.
+
+Production-container regressions also pass. M4 killed Transformer after 820
+measurements while the source was still active, confirmed exit 137, then stored
+all 20,000 samples (2,000 batches) with zero lag after restart. The isolated
+15.020-second M5 Kafka outage stored all 385 samples across seven tags with an
+empty buffer and zero lag. Both harnesses cleaned up their disposable resources;
+the existing Compose database was not migrated or reset.
+
+The checklist is 19/22 verified. Task 4.2 awaits the reviewer's existing-M7-volume
+SQL checks, 6.4 awaits D5 selection/ADR acceptance, and 6.5 awaits the manual
+dashboard/milestone acceptance. These are the review checkpoints for the PR;
+archival and merge wait for approval.
 
 ## Load tooling
 

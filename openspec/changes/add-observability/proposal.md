@@ -27,7 +27,7 @@ Milestone: M8 — Observability and load.
 ## Impact
 
 - Code: `Telemetrix.Edge.Bridge`, `Telemetrix.Transformer`, `Telemetrix.PlantSim` and `Telemetrix.MqttSim` — HTTP hosting, health checks and JSON logging; pipeline metrics in Bridge and Transformer.
-- Database: new migration under `deploy/sql/` for the continuous aggregate and policies.
+- Database: reviewable migrations under `deploy/sql/` for the continuous aggregate, policies and durable plant-event history.
 - Infrastructure: dashboard JSON in `deploy/grafana/dashboards/`; optional Prometheus service and an explicitly invoked migration service in `deploy/docker-compose.yml`. The reviewer reviews SQL before running migrations against the local database.
 - Dependencies: OpenTelemetry .NET packages, ASP.NET Core health checks.
 - Docs: new ADR for batch thresholds (D5); ROADMAP open-decision table updated.

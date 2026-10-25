@@ -2,6 +2,8 @@
 
 Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 seconds per asset, whichever comes first. The reviewer subsequently authorized autonomous implementation across all task groups and requested a PR before archival. D5 remains open until reviewer selection after the load-test comparison in task 6.4. Existing-volume migration checks and final manual acceptance remain reviewer actions; keep those tasks unchecked until their complete verification passes.
 
+Review status on 2026-10-25: implementation and agent-run verification are complete. All four full-duration load profiles pass; results and the proposed D5 ADR are linked from `docs/load-test.md`. Release regression: 221 passed, one explicit load profile excluded; M4 SIGKILL and M5 short-outage regressions pass. Tasks 4.2, 6.4 and 6.5 remain unchecked for their reviewer-owned verification/decision steps. Do not archive before review approval.
+
 ## 1. Dependencies and hosting
 
 - [x] 1.1 Add OpenTelemetry (`OpenTelemetry.Extensions.Hosting`, `OpenTelemetry.Exporter.Console`, `OpenTelemetry.Exporter.Prometheus.AspNetCore`) to `Directory.Packages.props`; verify `dotnet build` succeeds
