@@ -5,12 +5,15 @@ using Telemetrix.Transformer.Pipeline;
 
 namespace Telemetrix.Transformer.Storage;
 
-public sealed class MeasurementWriter(NpgsqlDataSource dataSource, ILogger<MeasurementWriter> logger) : IMeasurementWriter
+public sealed class MeasurementWriter(NpgsqlDataSource dataSource, ILogger<MeasurementWriter> logger,
+    TransformerMetrics? metrics = null, TimeProvider? timeProvider = null) : IMeasurementWriter
 {
     public async Task<int> WriteAsync(Guid batchId, IReadOnlyList<ValidatedSample> samples,
         CancellationToken cancellationToken)
     {
         if (samples.Count == 0) return 0;
+        var clock = timeProvider ?? TimeProvider.System;
+        var started = clock.GetTimestamp();
 
         await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
@@ -48,6 +51,7 @@ public sealed class MeasurementWriter(NpgsqlDataSource dataSource, ILogger<Measu
             ON CONFLICT (tag_id, time) DO NOTHING
             """, transaction: transaction, cancellationToken: cancellationToken));
         await transaction.CommitAsync(cancellationToken);
+        metrics?.WriteCompleted(inserted, clock.GetElapsedTime(started));
         logger.LogInformation("Stored batch {BatchId}: staged={StagedCount}, inserted={InsertedCount}, duplicates={DuplicateCount}",
             batchId, samples.Count, inserted, samples.Count - inserted);
         return inserted;

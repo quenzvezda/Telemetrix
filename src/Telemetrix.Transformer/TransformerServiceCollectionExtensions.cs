@@ -18,8 +18,15 @@ public static class TransformerServiceCollectionExtensions
         services.AddSingleton<ResiliencePipeline>(provider => StorageRetry.Create(provider.GetRequiredService<TimeProvider>()));
         services.AddSingleton<IRawBatchHandler, TelemetryBatchHandler>();
         services.AddSingleton<RawBatchProcessor>();
+        services.AddSingleton<ConsumerAssignments>();
+        services.AddHostedService<ConsumerLagSampler>();
         services.AddHostedService<TagCatalogInitializer>();
         services.AddHostedService<RawBatchConsumer>();
+        if (configuration.GetValue<bool>("PlantEvents:Enabled"))
+        {
+            services.AddSingleton<PlantEventWriter>();
+            services.AddHostedService<PlantEventConsumer>();
+        }
         return services;
     }
 
@@ -42,6 +49,7 @@ public static class TransformerServiceCollectionExtensions
         services.AddSingleton<ITagCatalog, PostgresTagCatalog>();
         services.AddSingleton<TagResolver>();
         services.TryAddSingleton<TimeProvider>(TimeProvider.System);
+        services.AddSingleton<TransformerMetrics>();
         services.AddSingleton<KafkaDeadLetterPublisher>();
         services.AddSingleton<IDeadLetterPublisher>(provider => provider.GetRequiredService<KafkaDeadLetterPublisher>());
         services.AddSingleton<IInvalidBatchPublisher>(provider => provider.GetRequiredService<KafkaDeadLetterPublisher>());

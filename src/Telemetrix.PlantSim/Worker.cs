@@ -13,6 +13,8 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
     public TaskCompletionSource Ready { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Channel<uint> restarts = Channel.CreateBounded<uint>(1);
     private int restartPending;
+    private int running;
+    public bool IsReady => Volatile.Read(ref running) != 0;
 
     public bool TryRestart(uint delaySeconds)
     {
@@ -37,6 +39,7 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
                 try
                 {
                     await application.StartAsync(server, stoppingToken);
+                    Volatile.Write(ref running, 1);
                     Interlocked.Exchange(ref restartPending, 0);
                     logger.LogInformation("PlantSim OPC UA server started at {Endpoint}", options.Value.Endpoint);
                     Ready.TrySetResult();
@@ -61,7 +64,11 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
                     }
                     finally { await cycle.CancelAsync(); }
                 }
-                finally { await application.StopAsync(CancellationToken.None); }
+                finally
+                {
+                    Volatile.Write(ref running, 0);
+                    await application.StopAsync(CancellationToken.None);
+                }
                 logger.LogInformation("PlantSim restarting after {DelaySeconds} seconds", delaySeconds);
                 await Task.Delay(TimeSpan.FromSeconds(delaySeconds), timeProvider, stoppingToken);
             }
@@ -74,6 +81,7 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
         }
         finally
         {
+            Volatile.Write(ref running, 0);
             if (application is not null) await application.StopAsync(CancellationToken.None);
         }
     }

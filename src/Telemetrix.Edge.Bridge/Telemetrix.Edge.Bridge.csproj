@@ -1,14 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <UserSecretsId>dotnet-Telemetrix.Edge.Bridge-30594feb-56bb-4ee7-b9b2-eb26cddad75e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
     <PackageReference Include="MQTTnet" />
     <PackageReference Include="Confluent.Kafka" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Client" />
   </ItemGroup>
 
@@ -17,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Using Remove="Microsoft.AspNetCore.Http" />
     <InternalsVisibleTo Include="Telemetrix.Edge.Bridge.Tests" />
   </ItemGroup>
 

@@ -12,6 +12,9 @@ public static class BridgeServiceCollectionExtensions
     public static IServiceCollection AddBridgePipeline(this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.AddOptions<IngestionOptions>().Bind(configuration.GetSection("Ingestion"))
+            .Validate(options => options.BatchQueueCapacity is >= 1 and <= 4096,
+                "Ingestion:BatchQueueCapacity must be between 1 and 4096.").ValidateOnStart();
         services.AddOptions<BatchingOptions>().Bind(configuration.GetSection(BatchingOptions.SectionName))
             .Validate(options => options.MaxSamples > 0, "Batching:MaxSamples must be positive.")
             .Validate(options => options.MaxAge > TimeSpan.Zero, "Batching:MaxAge must be positive.")
@@ -25,6 +28,7 @@ public static class BridgeServiceCollectionExtensions
             .Validate(options => !string.IsNullOrWhiteSpace(options.Path), "Buffer:Path is required.")
             .ValidateOnStart();
         services.AddSingleton<SqliteBuffer>();
+        services.AddSingleton<BridgeMetrics>();
         services.AddSingleton<IKafkaTransport, KafkaTransport>();
         services.AddSingleton<StoreAndForwardQueue>();
         services.AddSingleton<IPlantEventPublisher, PlantEventPublisher>();
@@ -34,7 +38,8 @@ public static class BridgeServiceCollectionExtensions
             provider.GetRequiredService<IOptions<BatchingOptions>>().Value,
             provider.GetRequiredService<TimeProvider>(), mqtt ? "mqtt" : "opcua",
             mqtt ? provider.GetRequiredService<IOptions<MqttOptions>>().Value.Endpoint
-                : provider.GetRequiredService<IOptions<OpcUaOptions>>().Value.Endpoint));
+                : provider.GetRequiredService<IOptions<OpcUaOptions>>().Value.Endpoint,
+            provider.GetRequiredService<BridgeMetrics>()));
         services.AddSingleton<IBatchPublisher, KafkaBatchPublisher>();
         // Hosted services start in registration order: topic readiness precedes source ingestion.
         services.AddHostedService<TopicInitializer>();

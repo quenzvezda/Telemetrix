@@ -5,5 +5,6 @@ namespace Telemetrix.Edge.Bridge.Sources;
 
 public interface ISourceAdapter
 {
+    bool IsConnected => false;
     Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken);
 }

@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1–M6 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M6 review](docs/m6-review.md). PlantSim provides seven correlated OPC UA tags, fault methods, seeded random faults, Docker deployment and a Bridge configuration profile. M7 adds MQTT input next. The clean topic is deferred to the separate sink (ADR-0012).
+M1–M8 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M8 review](docs/m8-review.md). PlantSim and MqttSim share the seven-tag pumping-line model; Bridge selects OPC UA or MQTT by configuration. M8 adds health endpoints, correlated JSON logs, OpenTelemetry metrics, SQL rollups/retention, a Grafana dashboard and measured load profiles. The reviewer deferred two M8 manual checks until M9 is complete; they remain unverified and are tracked in the [M9 checklist](openspec/changes/add-opcua-security/tasks.md). The clean topic is deferred to the separate sink (ADR-0012).
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
@@ -42,7 +42,7 @@ Acceptance criteria and failure scenarios are tracked in [OpenSpec](openspec/) a
 
 | Area | Stack |
 | --- | --- |
-| Services | C# / .NET 10 Worker Services |
+| Services | C# / .NET 10 hosted workers with slim HTTP hosts |
 | Industrial connectivity | OPC UA, MQTT |
 | Event streaming | Apache Kafka |
 | Edge buffer | SQLite |
@@ -72,7 +72,7 @@ The suite covers contracts, batching, buffer quota/FIFO/restart, source and capa
 
 ### Local environment
 
-Compose runs seven services: PlantSim, OPC PLC, Mosquitto, Kafka, Kafka UI, TimescaleDB and Grafana. Run Bridge and Transformer on the host with the .NET SDK; they are not included as Compose services.
+Default Compose runs PlantSim, OPC PLC, Mosquitto, Kafka, Kafka UI, TimescaleDB and Grafana. Run Bridge and Transformer on the host, or select the `pipeline` profile for their containers. The `metrics` profile adds the pipeline and Prometheus; `mqtt` adds MqttSim. The separate `migrations` profile provides an explicitly invoked SQL runner.
 
 #### Start the stack
 
@@ -104,7 +104,12 @@ Expected: all seven services are `Up`, and `kafka` and `timescaledb` become `hea
 | Kafka | `localhost:29092` | `kafka:9092` | Create topics explicitly |
 | Kafka UI | <http://localhost:8080> | `http://kafka-ui:8080` | Cluster `local` |
 | TimescaleDB | `localhost:5432` | `timescaledb:5432` | Database and user `telemetry`; password from `deploy/.env` |
-| Grafana | <http://localhost:3000> | `http://grafana:3000` | Initial login `admin` / `admin` |
+| Grafana | <http://localhost:3000> | `http://grafana:3000` | Initial login `admin` / `admin`; dashboard `/d/telemetrix` after migration |
+| Bridge HTTP | <http://localhost:5101/health> | `http://bridge:5101/health` | `pipeline` or `metrics` profile; `/metrics` when enabled |
+| Transformer HTTP | <http://localhost:5102/health> | `http://transformer:5102/health` | `pipeline` or `metrics` profile; `/metrics` when enabled |
+| PlantSim HTTP | <http://localhost:5103/health> | `http://plantsim:5103/health` | Server/simulation readiness |
+| MqttSim HTTP | <http://localhost:5104/health> | `http://mqttsim:5104/health` | `mqtt` profile; broker/publication readiness |
+| Prometheus | <http://localhost:9090> | `http://prometheus:9090` | `metrics` profile |
 
 The stack uses local development settings, including unsecured OPC UA and plaintext Kafka listeners. Production security is tracked in M9.
 
@@ -159,7 +164,8 @@ has spilled to disk still has an in-memory loss window.
 
 The Bridge logs buffering start, empty, and capacity transitions. Meter
 `Telemetrix.Edge.Bridge` exposes `bridge.buffer.batches` (queued entries, including
-plant events) and `bridge.buffer.samples`; exporters follow in M8.
+plant events) and `bridge.buffer.samples`. The M8 `Telemetrix.Bridge` meter also
+exports `telemetrix.buffer.depth`, received samples and acknowledged batches.
 
 `plant.events` has three partitions and 30-day retention. Messages are keyed by
 asset and use the shared `PlantEvent` contract with `ConnectionLost`,
@@ -186,6 +192,42 @@ database/buffer volumes and locally built review images. It uses no normal local
 database or `deploy/.env` credentials. A short harness check is available with
 `-OutageSeconds 15` (385 samples); CI runs this short check alongside the full
 integration suite. The short check does not replace the 30-minute NFR-02 test.
+
+#### Observability and dashboard
+
+Every application serves `/health`; configure `Http:Port` (`Http__Port`) to
+change its listener. Healthy/Degraded returns 200, failed critical dependencies
+return 503 with named checks. JSON console logs carry UTC timestamps and scoped
+`batchId`/`assetId` properties through Bridge and Transformer.
+
+Enable the optional pipeline/Prometheus containers:
+
+```powershell
+docker compose -f deploy/docker-compose.yml --profile metrics up -d --build
+```
+
+Do not run host and container instances on the same HTTP ports or against the
+same SQLite buffer. Prometheus at <http://localhost:9090> scrapes the pipeline
+every five seconds. Query `telemetrix_samples_received_total`,
+`telemetrix_rows_written_total`, `telemetrix_buffer_depth` and
+`telemetrix_consumer_lag`. `/metrics` is enabled by
+`Telemetry__Prometheus__Enabled=true`; the console exporter can be selected with
+`Telemetry__Console__Enabled=true`. The pipeline profile uses PlantSim by default.
+
+Review the SQL under `deploy/sql/migrations/` before applying it. Then explicitly
+run `docker compose -f deploy/docker-compose.yml --profile migrations run --rm db-migrate`.
+Default stack startup does not apply migrations. The scripts add one-minute
+Good-only rollups, 30-day raw and one-year rollup retention, and stored plant
+events; they also backfill retained historical measurements.
+Set `PLANT_EVENTS_ENABLED=true` in `deploy/.env` only after migration, then restart
+Transformer with the selected profile. Open <http://localhost:3000/d/telemetrix>
+for asset/tag trends, pump state and gaps. Six-hour ranges and longer use rollups;
+shorter ranges use raw Good measurements. Refresh is ten seconds.
+
+The [M8 review package](docs/m8-review.md) supplies exact checks, SQL and expected
+results. [Load profiles](docs/load-test.md) record hardware, source settings,
+latency and throughput evidence. Long load tests run explicitly through
+`deploy/Test-M8Load.ps1`; ordinary CI runs their smaller regression tests.
 
 #### Run the Transformer
 

@@ -1,7 +1,4 @@
 using Telemetrix.Transformer;
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddTransformerPipeline(builder.Configuration);
-
-var host = builder.Build();
-host.Run();
+await using var app = TransformerApplication.Build(args);
+await app.RunAsync();

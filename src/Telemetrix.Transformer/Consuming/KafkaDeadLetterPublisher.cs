@@ -11,10 +11,12 @@ public sealed class KafkaDeadLetterPublisher : IDeadLetterPublisher, IInvalidBat
 {
     private readonly IProducer<string, byte[]> producer;
     private readonly TimeProvider timeProvider;
+    private readonly TransformerMetrics? metrics;
 
-    public KafkaDeadLetterPublisher(IOptions<KafkaOptions> options, TimeProvider timeProvider)
+    public KafkaDeadLetterPublisher(IOptions<KafkaOptions> options, TimeProvider timeProvider, TransformerMetrics? metrics = null)
     {
         this.timeProvider = timeProvider;
+        this.metrics = metrics;
         producer = new ProducerBuilder<string, byte[]>(new ProducerConfig
         {
             BootstrapServers = options.Value.BootstrapServers,
@@ -30,6 +32,7 @@ public sealed class KafkaDeadLetterPublisher : IDeadLetterPublisher, IInvalidBat
     {
         await producer.ProduceAsync(KafkaOptions.DeadLetterTopic,
             CreateInvalidMessage(result, reason, error, timeProvider.GetUtcNow()), cancellationToken);
+        metrics?.DeadLetterAcknowledged(reason);
     }
 
     public static Message<string, byte[]> CreateInvalidMessage(ConsumeResult<string, byte[]> result,
@@ -66,6 +69,7 @@ public sealed class KafkaDeadLetterPublisher : IDeadLetterPublisher, IInvalidBat
             Value = TelemetryJson.Serialize(batch),
             Headers = new Headers { { "dlq.reason", Encoding.UTF8.GetBytes("unknown-tag") } }
         }, cancellationToken);
+        metrics?.DeadLetterAcknowledged("unknown-tag");
     }
 
     public void Dispose() => producer.Dispose();

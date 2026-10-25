@@ -6,6 +6,12 @@ Until now the bridge talks to the OPC UA server with SecurityMode None and any c
 
 Milestone: M9 — Security.
 
+Acceptance follow-up: on 2026-10-25 the reviewer approved M8 PR #5 and archival
+while deferring manual testing until M9 is complete. Before M9 acceptance,
+tasks 5.1 and 5.2 must verify the existing M7 volume migration and the final
+dashboard trends, pump state and source gaps using `docs/m8-review.md`.
+This carries verification forward without claiming those checks passed in M8.
+
 ## What Changes
 
 - NFR-09: the bridge and PlantSim support Basic256Sha256 Sign & Encrypt with application certificates and trusted-certificate lists; untrusted certificates are rejected in both directions.

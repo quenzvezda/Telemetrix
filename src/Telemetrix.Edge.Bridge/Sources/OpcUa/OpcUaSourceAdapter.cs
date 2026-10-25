@@ -15,6 +15,9 @@ public sealed class OpcUaSourceAdapter(
     SqliteBuffer? buffer = null,
     PlantEventTracker? eventTracker = null) : ISourceAdapter
 {
+    private int connected;
+    public bool IsConnected => Volatile.Read(ref connected) != 0;
+
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
     {
         var attempt = 0;
@@ -125,8 +128,16 @@ public sealed class OpcUaSourceAdapter(
             configuration, endpoint, false, false, configuration.ApplicationName, 60000,
             new UserIdentity(), default, cancellationToken);
         await using var recovery = new OpcUaSessionRecovery(session, telemetry, timeProvider, logger,
-            reason => eventTracker?.LostAsync(reason, cancellationToken).GetAwaiter().GetResult(),
-            () => eventTracker?.RestoredAsync(cancellationToken).GetAwaiter().GetResult());
+            reason =>
+            {
+                Volatile.Write(ref connected, 0);
+                eventTracker?.LostAsync(reason, cancellationToken).GetAwaiter().GetResult();
+            },
+            () =>
+            {
+                Volatile.Write(ref connected, 1);
+                eventTracker?.RestoredAsync(cancellationToken).GetAwaiter().GetResult();
+            });
         var failedNotification = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var handlers = new List<(MonitoredItem Item, OpcUaTagOptions Tag, MonitoredItemNotificationEventHandler Handler)>();
         try
@@ -182,6 +193,7 @@ public sealed class OpcUaSourceAdapter(
 
             session.AddSubscription(subscription);
             await subscription.CreateAsync(cancellationToken);
+            Volatile.Write(ref connected, 1);
             if (eventTracker is not null) await eventTracker.RestoredAsync(cancellationToken);
             if (restoring) logger.LogInformation("OPC UA session restored; monitored items recreated from configuration");
             foreach (var (item, tag, _) in handlers)
@@ -212,6 +224,7 @@ public sealed class OpcUaSourceAdapter(
         }
         finally
         {
+            Volatile.Write(ref connected, 0);
             foreach (var (item, _, handler) in handlers)
             {
                 item.Notification -= handler;

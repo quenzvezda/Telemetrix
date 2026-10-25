@@ -2,6 +2,5 @@
 using Microsoft.Extensions.Hosting;
 using Telemetrix.MqttSim;
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddMqttSimulator(builder.Configuration);
-await builder.Build().RunAsync();
+await using var app = MqttSimApplication.Build(args);
+await app.RunAsync();

@@ -11,16 +11,30 @@ using Telemetrix.Transformer;
 using Telemetrix.Transformer.Consuming;
 using Testcontainers.Kafka;
 using Testcontainers.PostgreSql;
+using DotNet.Testcontainers.Networks;
 
 namespace Telemetrix.Integration.Tests;
 
 internal sealed class DeliveryTestEnvironment : IAsyncDisposable
 {
-    public KafkaContainer Kafka { get; } = new KafkaBuilder("apache/kafka:4.3.1")
+    public KafkaContainer Kafka { get; }
+    public PostgreSqlContainer Database { get; }
+
+    public DeliveryTestEnvironment(INetwork? network = null)
+    {
+        var kafka = new KafkaBuilder("apache/kafka:4.3.1")
         // Interpret the copied script instead of exec'ing a file whose write handle may still be open.
         .WithCommand("while [ ! -f /testcontainers.sh ]; do sleep 0.1; done; /bin/sh /testcontainers.sh")
-        .WithEnvironment("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false").Build();
-    public PostgreSqlContainer Database { get; } = new PostgreSqlBuilder("timescale/timescaledb:2.30.2-pg17").Build();
+            .WithEnvironment("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false");
+        var database = new PostgreSqlBuilder("timescale/timescaledb:2.30.2-pg17");
+        if (network is not null)
+        {
+            kafka = kafka.WithNetwork(network).WithNetworkAliases("kafka");
+            database = database.WithNetwork(network).WithNetworkAliases("timescaledb");
+        }
+        Kafka = kafka.Build();
+        Database = database.Build();
+    }
     public NpgsqlDataSource Source { get; private set; } = null!;
     public IProducer<string, byte[]> Producer { get; private set; } = null!;
 

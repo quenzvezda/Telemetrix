@@ -6,6 +6,69 @@
 name: telemetrix
 
 services:
+  db-migrate:
+    profiles: [migrations]
+    image: postgres:17
+    environment:
+      PGHOST: timescaledb
+      PGDATABASE: telemetry
+      PGUSER: telemetry
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./sql/migrations:/migrations:ro
+      - ./sql/migrate.sh:/migrate.sh:ro
+    entrypoint: [/bin/sh, /migrate.sh]
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
+  bridge:
+    profiles: [pipeline, metrics]
+    build:
+      context: ..
+      dockerfile: deploy/DeliveryReview.Dockerfile
+      target: bridge
+    environment:
+      ASPNETCORE_ENVIRONMENT: PlantSim
+      OpcUa__Endpoint: opc.tcp://plantsim:4840
+      Kafka__BootstrapServers: kafka:9092
+      Buffer__Path: /buffer/bridge.db
+      Telemetry__Prometheus__Enabled: "true"
+    ports: ["5101:5101"]
+    volumes:
+      - edgebuffer:/buffer
+    depends_on:
+      kafka:
+        condition: service_healthy
+      plantsim:
+        condition: service_started
+
+  transformer:
+    profiles: [pipeline, metrics]
+    build:
+      context: ..
+      dockerfile: deploy/DeliveryReview.Dockerfile
+      target: transformer
+    environment:
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Telemetry: Host=timescaledb;Database=telemetry;Username=telemetry;Password=${POSTGRES_PASSWORD}
+      PlantEvents__Enabled: "${PLANT_EVENTS_ENABLED:-false}"
+      Telemetry__Prometheus__Enabled: "true"
+    ports: ["5102:5102"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
+  prometheus:
+    profiles: [metrics]
+    image: prom/prometheus:v3.5.0
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on: [bridge, transformer]
+
   mqttsim:
     profiles: [mqtt]
     build:
@@ -13,6 +76,7 @@ services:
       dockerfile: src/Telemetrix.MqttSim/Dockerfile
     environment:
       MqttSim__Host: mosquitto
+    ports: ["5104:5104"]
     depends_on: [mosquitto]
 
   plantsim:
@@ -24,7 +88,7 @@ services:
       PlantSim__Endpoint: opc.tcp://plantsim:4840
       PlantSim__PkiPath: /app/pki
       Faults__Random__Enabled: "${PLANTSIM_RANDOM_FAULTS:-false}"
-    ports: ["4840:4840"]
+    ports: ["4840:4840", "5103:5103"]
     volumes:
       - plantsim-pki:/app/pki
 
@@ -104,6 +168,7 @@ services:
         condition: service_healthy
 
 volumes:
+  edgebuffer:
   plantsim-pki:
   kafkadata:
   tsdata:

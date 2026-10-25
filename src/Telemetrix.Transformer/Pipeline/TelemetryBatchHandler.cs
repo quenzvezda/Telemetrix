@@ -11,6 +11,8 @@ public sealed class TelemetryBatchHandler(TagResolver resolver, IMeasurementWrit
     public async Task HandleAsync(RawBatchDelivery delivery, CancellationToken cancellationToken)
     {
         var batch = delivery.Batch;
+        using var scope = logger.BeginScope(new Dictionary<string, object?>
+            { ["batchId"] = batch.BatchId, ["assetId"] = batch.AssetId });
         var resolution = await resolver.ResolveAsync(batch, cancellationToken);
         var validated = resolution.KnownSamples.Select(resolved => new ValidatedSample(resolved.Tag.TagId,
             resolved.Sample.SourceTimestamp, resolved.Sample.Value,
