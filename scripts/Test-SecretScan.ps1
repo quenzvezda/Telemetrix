@@ -15,9 +15,9 @@ try {
     & git -C $scratch -c user.name=Telemetrix -c user.email=fixture@telemetrix.invalid commit --quiet -m 'test: commit deliberately invalid key fixture'
     if ($LASTEXITCODE -ne 0) { throw 'Cannot commit isolated key fixture.' }
     if ($Docker) {
-        & docker run --rm -v "${scratch}:/repo:ro" zricethezav/gitleaks:v8.30.1 git --redact --config /repo/.gitleaks.toml /repo
+        & docker run --rm -v "${scratch}:/repo:ro" zricethezav/gitleaks:v8.30.1 git --redact --verbose --config /repo/.gitleaks.toml /repo
     } else {
-        & gitleaks git --redact --config (Join-Path $scratch '.gitleaks.toml') $scratch
+        & gitleaks git --redact --verbose --config (Join-Path $scratch '.gitleaks.toml') $scratch
     }
     if ($LASTEXITCODE -ne 1) { throw "Expected secret scanner exit 1; received $LASTEXITCODE." }
     Write-Host 'M9_SECRET_NEGATIVE_PASS: committed fake private key rejected on isolated fixture branch.'
@@ -28,3 +28,6 @@ try {
         !(Split-Path $resolved -Leaf).StartsWith('telemetrix-secret-scan-')) { throw 'Unexpected cleanup path.' }
     Remove-Item -LiteralPath $resolved -Recurse -Force
 }
+# GitHub's pwsh wrapper exits with LASTEXITCODE; the expected child failure
+# above proves the guard works and must not fail the self-test step itself.
+exit 0

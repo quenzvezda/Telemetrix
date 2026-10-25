@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Dapper;
@@ -71,11 +72,20 @@ public class DashboardTests(ITestOutputHelper output)
         var bridgePki = Path.Combine(directory, "bridge", "pki");
         Directory.CreateDirectory(serverPki);
         await using var plant = new ContainerBuilder(image).WithPortBinding(port, 4840)
+            // The SDK resolves loopback URLs to the client's real machine name.
+            // A host-facing certificate must cover that name across Docker NAT.
+            .WithHostname(Environment.MachineName)
             .WithBindMount(serverPki, "/app/pki")
-            .WithEnvironment("PlantSim__Endpoint", "opc.tcp://0.0.0.0:4840")
+            .WithEnvironment("PlantSim__Endpoint", $"opc.tcp://{Environment.MachineName}:4840")
             .WithEnvironment("Faults__Random__Enabled", "false")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("PlantSim OPC UA server started")).Build();
         await plant.StartAsync(ct);
+        using var serverCertificate = X509CertificateLoader.LoadCertificateFromFile(
+            Assert.Single(Directory.GetFiles(Path.Combine(serverPki, "own", "certs"), "*.der")));
+        var domains = serverCertificate.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single().EnumerateDnsNames().ToArray();
+        Assert.Contains("localhost", domains);
+        Assert.Contains("plantsim", domains);
+        output.WriteLine($"Server certificate: {serverCertificate.Thumbprint}; DNS: {string.Join(", ", domains)}");
         // Use the explicit SAN covered by PlantSim's host-facing certificate.
         var endpoint = $"opc.tcp://localhost:{port}";
         {
@@ -93,6 +103,9 @@ public class DashboardTests(ITestOutputHelper output)
             TrustPublicCertificate(serverPki, bridgePki);
             TrustPublicCertificate(bridgePki, serverPki);
             var description = await OpcUaEndpointSelector.SelectAsync(clientConfiguration, settings, telemetry, ct);
+            using var advertised = X509CertificateLoader.LoadCertificate(description.ServerCertificate.ToArray()!);
+            output.WriteLine($"Advertised certificate: {advertised.Thumbprint}; {advertised.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single().Format(false)}");
+            Assert.Equal(serverCertificate.Thumbprint, advertised.Thumbprint);
             Assert.Equal(MessageSecurityMode.SignAndEncrypt, description.SecurityMode);
             Task<ISession> Connect() => new DefaultSessionFactory(telemetry).CreateAsync(clientConfiguration,
                 new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(clientConfiguration)),

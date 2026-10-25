@@ -168,6 +168,17 @@ When rotating certificates, review and replace the peer's trusted public
 certificate explicitly. Check host/container clocks if validity checks fail;
 never bypass certificate validation to resolve a clock or hostname mismatch.
 
+The .NET OPC UA SDK treats loopback endpoints as the client's real machine
+name during domain validation. For a host .NET Bridge connecting to Docker
+PlantSim, set `OPCUA_HOST_NAME` in ignored `deploy/.env` to your computer's DNS
+name **before creating the server certificate**. Compose uses that hostname,
+so the generated certificate covers it alongside `localhost` and `plantsim`.
+For OPC PLC, add the host computer name to its `--cdn` list instead. If an
+existing identity lacks the required name, explicitly rotate and re-trust it;
+changing configuration does not silently replace a private key. The SDK's
+[domain matching implementation](https://github.com/OPCFoundation/UA-.NETStandard/blob/master/src/Opc.Ua.Core/Security/Certificates/CertificateManager/CertificateValidationHelpers.cs)
+explains this loopback handling.
+
 Acceptance commands and outstanding manual checks are in [M9 review](docs/m9-review.md).
 
 #### Run the OPC UA Bridge

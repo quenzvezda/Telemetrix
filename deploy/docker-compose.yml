@@ -88,7 +88,7 @@ services:
     build:
       context: ..
       dockerfile: src/Telemetrix.PlantSim/Dockerfile
-    hostname: plantsim
+    hostname: ${OPCUA_HOST_NAME:-plantsim}
     environment:
       PlantSim__Endpoint: opc.tcp://plantsim:4840
       PlantSim__PkiPath: /app/pki

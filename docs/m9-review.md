@@ -38,6 +38,18 @@ container case rather than only an in-process localhost listener. It passes with
 hostname validation enabled. Dashboard preflight now reports certificate errors
 immediately instead of waiting for the measurement deadline.
 
+The SDK also maps loopback URLs to the host computer's real DNS name during
+validation. The Docker dashboard fixture now provisions that host-facing name
+while preserving the required `localhost`/`plantsim` SANs, and compares the
+advertised certificate with the public certificate on disk before connecting.
+Compose exposes optional `OPCUA_HOST_NAME` for the same host/NAT workflow; the
+README documents setting it before certificate provisioning. Hostname checks
+and mutual trust remain enabled. The M9 certificate generated earlier in this
+session was backed up inside its PKI volume and explicitly replaced/re-trusted;
+its former public trust entry was moved outside the trusted store. The current
+PlantSim thumbprint is `182991672B1001E68494AC4122F96D44899910F2`, with both
+required SANs verified, and the current production Bridge is Healthy.
+
 Endpoint verification: `dotnet test --project tests/Telemetrix.Integration.Tests -c Release -- --filter-class '*OpcUaSecurityTests'` passes. OPC PLC discovery selects None exactly; a real None-only PlantSim rejects secure selection with `No matching endpoint` / `BadSecurityPolicyRejected`. OPC PLC advertises secure endpoints even with `--ut`, so the None-only negative case uses PlantSim rather than claiming OPC PLC is None-only.
 
 Tasks 5.1 and 5.2 require the reviewer's observed results. They must remain unchecked until those results are supplied. Preserve the existing TimescaleDB volume; do not run `down -v`. See `docs/m8-review.md` for the migration and dashboard procedure.

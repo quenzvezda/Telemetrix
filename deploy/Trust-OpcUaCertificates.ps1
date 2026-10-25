@@ -20,6 +20,8 @@ try {
         $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new($files[0].FullName)
         try {
             Write-Host "$service subject=$($certificate.Subject) thumbprint=$($certificate.Thumbprint)"
+            $san = $certificate.Extensions | Where-Object { $_.Oid.Value -eq '2.5.29.17' }
+            Write-Host "$service subjectAlternativeNames=$($san.Format($false))"
             $expected = if ($service -eq 'bridge') { $BridgeThumbprint } else { $ServerThumbprint }
             if (!$expected) { continue }
             if ($certificate.Thumbprint -ne $expected.Replace(' ', '')) { throw "$service thumbprint mismatch; no trust granted." }
