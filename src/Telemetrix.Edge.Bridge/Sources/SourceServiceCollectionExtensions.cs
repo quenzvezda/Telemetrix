@@ -15,7 +15,7 @@ public static class SourceServiceCollectionExtensions
                 .Validate(o => !string.IsNullOrWhiteSpace(o.Host) && o.Port is > 0 and <= 65535,
                     "Source:Mqtt requires a host and valid port.")
                 .Validate(o => !string.IsNullOrWhiteSpace(o.ClientId), "Source:Mqtt:ClientId is required.")
-                .Validate(o => ValidFilter(o.TopicFilter), "Source:Mqtt:TopicFilter must match plant/{plant}/{line}/{asset}/{tag}; '+' is allowed per identity segment.")
+                .Validate(o => ValidFilter(o.TopicFilter), "Source:Mqtt:TopicFilter must be a valid MQTT topic filter.")
                 .ValidateOnStart();
             services.AddSingleton<ISourceAdapter, MqttSourceAdapter>();
         }
@@ -31,8 +31,10 @@ public static class SourceServiceCollectionExtensions
 
     private static bool ValidFilter(string filter)
     {
+        if (string.IsNullOrWhiteSpace(filter) || filter.Contains('\0') || System.Text.Encoding.UTF8.GetByteCount(filter) > ushort.MaxValue)
+            return false;
         var parts = filter.Split('/');
-        return parts.Length == 5 && parts[0] == "plant" && parts.Skip(1).All(p =>
-            !string.IsNullOrWhiteSpace(p) && (p == "+" || p.IndexOfAny(['+', '#', '\0']) < 0));
+        return parts.Select((part, i) => part == "+" || (part == "#" && i == parts.Length - 1)
+            || part.IndexOfAny(['+', '#']) < 0).All(valid => valid);
     }
 }

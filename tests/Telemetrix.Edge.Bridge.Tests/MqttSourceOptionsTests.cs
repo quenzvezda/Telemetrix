@@ -35,7 +35,7 @@ public sealed class MqttSourceOptionsTests
     [Theory]
     [InlineData("Source:Mqtt:Port", "0")]
     [InlineData("Source:Mqtt:ClientId", "")]
-    [InlineData("Source:Mqtt:TopicFilter", "plant/#")]
+    [InlineData("Source:Mqtt:TopicFilter", "plant/#/invalid")]
     public async Task InvalidMqttSettingsFailAtStartup(string key, string value)
     {
         var builder = Host.CreateApplicationBuilder();

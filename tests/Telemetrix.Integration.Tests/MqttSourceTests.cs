@@ -35,13 +35,15 @@ public sealed class MqttSourceTests
             await run.CancelAsync();
             await running;
         }
+        await MqttFixture.PublishAsync(publisher, time.AddSeconds(1), ct, "999");
         await MqttFixture.PublishAsync(publisher, time.AddSeconds(1), ct, "true", "Pump01/Running");
+        options.Value.TopicFilter = "plant/Plant01/Line01/Pump01/Running";
         using var resumed = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var restart = adapter.RunAsync(channel.Writer, resumed.Token);
         try
         {
-            Sample recovered;
-            do { recovered = await channel.Reader.ReadAsync(ct); } while (recovered.Tag != "Running");
+            var recovered = await channel.Reader.ReadAsync(ct);
+            Assert.Equal("Running", recovered.Tag);
             Assert.Equal("Plant01", recovered.Plant);
             Assert.Equal("Line01", recovered.Line);
             Assert.Equal("Pump01", recovered.Asset);

@@ -30,6 +30,7 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                 while (buffer?.IsCollectionPaused == true)
                     await Task.Delay(TimeSpan.FromMilliseconds(100), timeProvider, cancellationToken);
                 using var sessionStop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                var sessionToken = sessionStop.Token;
                 using var client = new MqttClientFactory().CreateMqttClient();
                 var disconnected = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 var failure = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -41,14 +42,21 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                     args.AutoAcknowledge = false;
                     try
                     {
-                        await ready.Task.WaitAsync(sessionStop.Token);
-                        await admission.WaitAsync(sessionStop.Token);
+                        await ready.Task.WaitAsync(sessionToken);
+                        await admission.WaitAsync(sessionToken);
                         try
                         {
+                            // A persistent session can retain an older, wider subscription after config changes.
+                            if (MqttTopicFilterComparer.Compare(args.ApplicationMessage.Topic, settings.TopicFilter)
+                                != MqttTopicFilterCompareResult.IsMatch)
+                            {
+                                await args.AcknowledgeAsync(sessionToken);
+                                return;
+                            }
                             var sample = decoder.Decode(args.ApplicationMessage.Topic, args.ApplicationMessage.Payload.ToArray());
                             if (sample is null)
                             {
-                                await args.AcknowledgeAsync(sessionStop.Token);
+                                await args.AcknowledgeAsync(sessionToken);
                                 return;
                             }
                             var key = (sample.Plant, sample.Line);
@@ -59,12 +67,12 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                                     Plant = sample.Plant, Line = sample.Line, Endpoint = settings.Endpoint
                                 }), eventPublisher, timeProvider);
                                 trackers.Add(key, tracker);
-                                await tracker.RestoredAsync(sessionStop.Token);
+                                await tracker.RestoredAsync(sessionToken);
                             }
                             tracker.TrackAssets([sample.Asset]);
-                            await tracker.SampleAsync(sample, sessionStop.Token);
-                            await writer.WriteAsync(sample, sessionStop.Token);
-                            await args.AcknowledgeAsync(sessionStop.Token);
+                            await tracker.SampleAsync(sample, sessionToken);
+                            await writer.WriteAsync(sample, sessionToken);
+                            await args.AcknowledgeAsync(sessionToken);
                         }
                         finally { admission.Release(); }
                     }
@@ -72,7 +80,7 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                     catch (MqttCommunicationException) { disconnected.TrySetResult(); }
                     catch (Exception exception) { failure.TrySetException(exception); }
                 };
-                var capacity = WaitForCapacityAsync(sessionStop.Token);
+                var capacity = WaitForCapacityAsync(sessionToken);
                 var capacityPause = false;
                 try
                 {
@@ -84,16 +92,16 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                         await reset.DisconnectAsync(cancellationToken: cancellationToken);
                         clearSession = false;
                     }
-                    await client.ConnectAsync(Connection(settings, false), sessionStop.Token);
-                    await admission.WaitAsync(sessionStop.Token);
+                    await client.ConnectAsync(Connection(settings, false), sessionToken);
+                    await admission.WaitAsync(sessionToken);
                     try
                     {
-                        foreach (var tracker in trackers.Values) await tracker.RestoredAsync(sessionStop.Token);
+                        foreach (var tracker in trackers.Values) await tracker.RestoredAsync(sessionToken);
                     }
                     finally { admission.Release(); }
                     ready.TrySetResult();
                     var subscribed = await client.SubscribeAsync(new MqttClientSubscribeOptionsBuilder()
-                        .WithTopicFilter(filter => filter.WithTopic(settings.TopicFilter).WithAtLeastOnceQoS()).Build(), sessionStop.Token);
+                        .WithTopicFilter(filter => filter.WithTopic(settings.TopicFilter).WithAtLeastOnceQoS()).Build(), sessionToken);
                     if (subscribed.Items.Any(item => (int)item.ResultCode >= 128))
                         throw new InvalidOperationException("The MQTT broker rejected the topic subscription.");
                     logger.LogInformation("MQTT subscription created at {Endpoint} with {TopicFilter}", settings.Endpoint, settings.TopicFilter);
@@ -132,7 +140,10 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         finally
         {
-            foreach (var tracker in trackers.Values) tracker.Dispose();
+            // Cancellation stops new admissions; let an in-flight callback release its tracker first.
+            await admission.WaitAsync(CancellationToken.None);
+            try { foreach (var tracker in trackers.Values) tracker.Dispose(); }
+            finally { admission.Release(); }
         }
     }
 
