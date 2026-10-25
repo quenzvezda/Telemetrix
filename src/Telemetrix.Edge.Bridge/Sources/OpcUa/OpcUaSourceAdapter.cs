@@ -24,6 +24,8 @@ public sealed class OpcUaSourceAdapter(
         var restoring = false;
         try
         {
+            var configuration = await OpcUaClientConfiguration.CreateAsync(options.Value, telemetry, cancellationToken, logger);
+            await using var certificates = configuration.CertificateManager as IAsyncDisposable;
             while (!cancellationToken.IsCancellationRequested)
             {
                 while (buffer?.IsCollectionPaused == true)
@@ -33,7 +35,7 @@ public sealed class OpcUaSourceAdapter(
                 var pausedForCapacity = false;
                 try
                 {
-                    await RunSessionAsync(writer, restoring, sessionStop.Token);
+                    await RunSessionAsync(configuration, writer, restoring, sessionStop.Token);
                     attempt = 0;
                     restoring = true;
                 }
@@ -66,10 +68,10 @@ public sealed class OpcUaSourceAdapter(
         return true;
     }
 
-    private async Task RunSessionAsync(ChannelWriter<Sample> writer, bool restoring, CancellationToken cancellationToken)
+    private async Task RunSessionAsync(ApplicationConfiguration configuration, ChannelWriter<Sample> writer,
+        bool restoring, CancellationToken cancellationToken)
     {
         var settings = options.Value;
-        var configuration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, cancellationToken, logger);
         var description = await OpcUaEndpointSelector.SelectAsync(configuration, settings, telemetry, cancellationToken);
 
         var endpoint = new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(configuration));
