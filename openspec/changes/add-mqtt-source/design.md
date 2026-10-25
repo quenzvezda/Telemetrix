@@ -40,7 +40,7 @@ The adapter maps `good` → `0x00000000` (Good), `uncertain` → `0x40000000` (U
 
 ### Library and wiring
 - MQTTnet (client only) in `Telemetrix.MqttSim` and `Telemetrix.Edge.Bridge`.
-- `Sources/MqttSourceAdapter.cs` implements `ISourceAdapter`; configuration section `Source:Kind` = `OpcUa` | `Mqtt`, plus `Source:Mqtt:Host`, `Port`, `TopicFilter` (default `plant/+/+/+/+`), `ClientId`.
+- `Sources/Mqtt/MqttSourceAdapter.cs` implements `ISourceAdapter`; configuration section `Source:Kind` = `OpcUa` | `Mqtt`, plus `Source:Mqtt:Host`, `Port`, `TopicFilter` (default `plant/+/+/+/+`), `ClientId`.
 - Reconnect uses the existing capped exponential backoff with jitter and durable plant-event publishing. The current OPC UA adapter does not use Polly.
 - Keep MqttSim as a separate process, as accepted by the reviewer on 2026-10-25. Extract the protocol-independent pumping-line model and tag definitions into `Telemetrix.Simulation`; both simulators reference it. Preserve PlantSim behavior and seeded tests.
 - MQTTnet 5 client uses MQTT 3.1.1 explicitly. Simulator publish retries preserve the payload and source timestamp until acknowledged; no process-crash durability is promised at the simulator.

@@ -1,18 +1,33 @@
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Networks;
 using MQTTnet;
 using MQTTnet.Formatter;
 using MQTTnet.Protocol;
+using System.Net;
+using System.Net.Sockets;
 
 namespace Telemetrix.Integration.Tests;
 
 internal sealed class MqttFixture : IAsyncDisposable
 {
-    public IContainer Broker { get; } = new ContainerBuilder("eclipse-mosquitto:2.1.2-alpine")
-        .WithPortBinding(1883, true)
+    public MqttFixture(INetwork? network = null)
+    {
+        // Keep the advertised host port stable across StopAsync/StartAsync on Docker Desktop.
+        var reservation = new TcpListener(IPAddress.Loopback, 0);
+        reservation.Start();
+        var port = ((IPEndPoint)reservation.LocalEndpoint).Port;
+        reservation.Stop();
+        var builder = new ContainerBuilder("eclipse-mosquitto:2.1.2-alpine")
+        .WithPortBinding(port, 1883)
         .WithResourceMapping(System.Text.Encoding.UTF8.GetBytes("listener 1883\nallow_anonymous true\npersistence false\n"),
             "/mosquitto/config/mosquitto.conf")
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("mosquitto version .* running")).Build();
+        .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("mosquitto version .* running"));
+        if (network is not null) builder = builder.WithNetwork(network).WithNetworkAliases("mqtt");
+        Broker = builder.Build();
+    }
+
+    public IContainer Broker { get; }
 
     public string Host => Broker.Hostname;
     public int Port => Broker.GetMappedPublicPort(1883);
