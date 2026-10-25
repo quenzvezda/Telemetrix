@@ -9,8 +9,10 @@ public sealed class AssetBatcher
     private readonly TimeProvider timeProvider;
     private readonly string source;
     private readonly string endpoint;
+    private readonly BridgeMetrics? metrics;
 
-    public AssetBatcher(BatchingOptions options, TimeProvider timeProvider, string source, string endpoint)
+    public AssetBatcher(BatchingOptions options, TimeProvider timeProvider, string source, string endpoint,
+        BridgeMetrics? metrics = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.MaxSamples);
         if (options.MaxAge <= TimeSpan.Zero)
@@ -22,6 +24,7 @@ public sealed class AssetBatcher
         this.timeProvider = timeProvider;
         this.source = source;
         this.endpoint = endpoint;
+        this.metrics = metrics;
     }
 
     // Completing the input is graceful shutdown; cancellation aborts a blocked pipeline.
@@ -49,6 +52,7 @@ public sealed class AssetBatcher
                     // Bound each read turn so a continuously busy source cannot starve the timer.
                     for (var count = 0; count < 256 && input.TryRead(out var sample); count++)
                     {
+                        metrics?.SampleReceived(sample.Asset, source);
                         if (!open.TryGetValue(sample.Asset, out var batch))
                         {
                             batch = new OpenBatch(sample.Plant, sample.Line, timeProvider.GetTimestamp());

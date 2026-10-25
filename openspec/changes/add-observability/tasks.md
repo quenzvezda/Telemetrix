@@ -17,7 +17,7 @@ Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 second
 
 ## 3. Metrics
 
-- [ ] 3.1 Add the `Telemetrix.Bridge` meter with samples received, batches produced and buffer depth; verify a `MeterListener` unit test observes each instrument with the expected labels
+- [x] 3.1 Add the `Telemetrix.Bridge` meter with samples received, batches produced and buffer depth; verify a `MeterListener` unit test observes each instrument with the expected labels
 - [ ] 3.2 Add the `Telemetrix.Transformer` meter with rows written, dead-lettered batches, write duration and a 10 s consumer-lag sampler; verify an integration test sees lag grow while the consumer is paused
 - [ ] 3.3 Expose Bridge/Transformer Prometheus scrape when `Telemetry:Prometheus:Enabled=true` and add an optional `prometheus` service under the `metrics` compose profile; verify `docker compose -f deploy/docker-compose.yml --profile metrics up -d` and see the `telemetrix_*` series in Prometheus
 

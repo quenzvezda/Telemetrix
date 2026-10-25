@@ -25,6 +25,7 @@ public static class BridgeServiceCollectionExtensions
             .Validate(options => !string.IsNullOrWhiteSpace(options.Path), "Buffer:Path is required.")
             .ValidateOnStart();
         services.AddSingleton<SqliteBuffer>();
+        services.AddSingleton<BridgeMetrics>();
         services.AddSingleton<IKafkaTransport, KafkaTransport>();
         services.AddSingleton<StoreAndForwardQueue>();
         services.AddSingleton<IPlantEventPublisher, PlantEventPublisher>();
@@ -34,7 +35,8 @@ public static class BridgeServiceCollectionExtensions
             provider.GetRequiredService<IOptions<BatchingOptions>>().Value,
             provider.GetRequiredService<TimeProvider>(), mqtt ? "mqtt" : "opcua",
             mqtt ? provider.GetRequiredService<IOptions<MqttOptions>>().Value.Endpoint
-                : provider.GetRequiredService<IOptions<OpcUaOptions>>().Value.Endpoint));
+                : provider.GetRequiredService<IOptions<OpcUaOptions>>().Value.Endpoint,
+            provider.GetRequiredService<BridgeMetrics>()));
         services.AddSingleton<IBatchPublisher, KafkaBatchPublisher>();
         // Hosted services start in registration order: topic readiness precedes source ingestion.
         services.AddHostedService<TopicInitializer>();

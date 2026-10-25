@@ -57,3 +57,11 @@ publishing loop. Both are Unhealthy before readiness and after worker shutdown.
 The simulator hosting integration test passed with a Mosquitto stop/restart:
 MqttSim returned 503 while disconnected, then 200 and fresh publications after
 reconnection. All seven OPC UA tags remained readable.
+
+## Pipeline metrics
+
+Bridge's `Telemetrix.Bridge` meter counts accepted samples by asset/source,
+counts Kafka-acknowledged raw batches by asset, and observes disk buffer depth.
+The depth includes pending plant-event entries sharing the same durable queue.
+`BridgeMetricsTests` passes with real batching and gauge values 0, 1, 0 across
+buffer append/acknowledgement; no tag or batch identifier is a metric label.
