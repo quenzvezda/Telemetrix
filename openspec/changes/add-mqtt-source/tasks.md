@@ -8,7 +8,7 @@
 ## 2. MQTT simulator
 
 - [x] 2.1 Share the pumping-line value model with PlantSim (extract, not copy) and verify both projects build against it
-- [ ] 2.2 Implement MqttSim publishing all 7 tags at 1 Hz to `plant/Plant01/Line01/{asset}/{tag}` with QoS 1 and retain; verify with `docker compose exec mosquitto mosquitto_sub -t 'plant/#' -v` showing ~7 messages per second
+- [x] 2.2 Implement MqttSim publishing all 7 tags at 1 Hz to `plant/Plant01/Line01/{asset}/{tag}` with QoS 1 and retain; verify with `docker compose exec mosquitto mosquitto_sub -t 'plant/#' -v` showing ~7 messages per second
 - [ ] 2.3 Add connection retry on startup; verify by starting MqttSim before `mosquitto` and seeing it begin publishing once the broker starts
 - [ ] 2.4 Document how to run MqttSim (command, configuration keys) in the project README section; verify the documented command works as written
 
