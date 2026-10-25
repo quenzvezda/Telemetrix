@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MQTTnet" />
     <ProjectReference Include="..\Telemetrix.Contracts\Telemetrix.Contracts.csproj" />
   </ItemGroup>
 
