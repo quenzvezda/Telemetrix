@@ -11,7 +11,7 @@ On 2026-10-25 the reviewer approved M8 PR #5 and its archival, deferring manual 
 
 - [x] 2.1 Configure directory certificate stores under the PKI root for the bridge and PlantSim, creating self-signed instance certificates on first start (PlantSim SAN includes `localhost` and `plantsim`); verify `pki/own/certs` contains a certificate after first start and `git status` shows nothing under `pki/`
 - [x] 2.2 Log subject and thumbprint of every rejected peer certificate; verify the log line appears when the bridge first connects to an untrusted PlantSim
-- [ ] 2.3 Add pki volumes and a `secure` compose profile (PlantSim and OPC PLC without `--ut`/`--autoaccept`); verify `docker compose --profile secure up` starts and the first connection is rejected on both sides
+- [x] 2.3 Add pki volumes and a `secure` compose profile (PlantSim and OPC PLC without `--ut`/`--autoaccept`); verify `docker compose --profile secure up` starts and the first connection is rejected on both sides
 - [ ] 2.4 Write the trust workflow (move from `rejected/` to `trusted/`, optional helper script) in the README; verify following it establishes a SignAndEncrypt session without restarting either service
 
 ## 3. Secrets
