@@ -65,3 +65,11 @@ counts Kafka-acknowledged raw batches by asset, and observes disk buffer depth.
 The depth includes pending plant-event entries sharing the same durable queue.
 `BridgeMetricsTests` passes with real batching and gauge values 0, 1, 0 across
 buffer append/acknowledgement; no tag or batch identifier is a metric label.
+
+Transformer metrics count committed new measurements, acknowledged dead-letter
+batches and write duration in milliseconds. An independent Kafka handle samples
+assigned-partition high watermarks minus committed next offsets every 10 seconds;
+it never subscribes or calls the raw consumer from another thread.
+`TransformerMetricsTests` passed: lag grew to three batches during a blocked
+write and fell to zero after release, exactly 30 new measurements were counted,
+a replay added none, and an invalid batch incremented dead-letter count once.
