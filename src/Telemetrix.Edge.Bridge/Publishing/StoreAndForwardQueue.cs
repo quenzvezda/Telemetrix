@@ -1,4 +1,5 @@
 using Confluent.Kafka;
+using Telemetrix.Contracts;
 using Telemetrix.Edge.Bridge.Buffer;
 
 namespace Telemetrix.Edge.Bridge.Publishing;
@@ -46,6 +47,7 @@ public sealed class StoreAndForwardQueue(SqliteBuffer buffer, IKafkaTransport tr
                 continue;
             }
             var oldest = buffer.ReadOldest()!;
+            using var scope = BeginReplayScope(oldest);
             try
             {
                 await transport.PublishAsync(oldest, cancellationToken);
@@ -60,4 +62,20 @@ public sealed class StoreAndForwardQueue(SqliteBuffer buffer, IKafkaTransport tr
     }
 
     public void Dispose() => admission.Dispose();
+
+    private IDisposable? BeginReplayScope(BufferedEntry entry)
+    {
+        if (entry.Topic != KafkaOptions.RawTopic) return null;
+        try
+        {
+            var batch = TelemetryJson.Deserialize(entry.Payload);
+            return logger.BeginScope(new Dictionary<string, object?>
+                { ["batchId"] = batch.BatchId, ["assetId"] = batch.AssetId });
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            // Diagnostics must not prevent replay of the original accepted bytes.
+            return null;
+        }
+    }
 }

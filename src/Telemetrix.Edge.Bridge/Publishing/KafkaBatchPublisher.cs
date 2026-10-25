@@ -12,6 +12,8 @@ public sealed class KafkaBatchPublisher(StoreAndForwardQueue queue,
     {
         await foreach (var batch in batches.ReadAllAsync(cancellationToken))
         {
+            using var scope = logger.BeginScope(new Dictionary<string, object?>
+                { ["batchId"] = batch.BatchId, ["assetId"] = batch.AssetId });
             await queue.PublishAsync(new BufferedEntry(KafkaOptions.RawTopic, batch.AssetId,
                 TelemetryJson.Serialize(batch), batch.Samples.Count, batch.CreatedAt), cancellationToken);
             logger.LogInformation(

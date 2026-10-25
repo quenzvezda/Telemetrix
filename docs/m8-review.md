@@ -31,3 +31,12 @@ The JSON names each check and its status. With dependencies available the result
 is 200/Healthy. A non-empty Bridge buffer with dependencies up is 200/Degraded.
 An unavailable source, Kafka or database reports 503/Unhealthy naming the check.
 The HTTP hosting test covers these transitions using disposable dependencies.
+
+## Correlated JSON logging
+
+All four application hosts use JSON console logs with UTC timestamps and scopes.
+Bridge batch admission and replay, Transformer consumption/commit and handling
+carry `batchId` and `assetId` scopes. Nested storage logs inherit them.
+`CorrelatedLoggingTests` checks a nested writer after an asynchronous boundary
+using both a scope-capturing provider and the actual host's serialized JSON.
+The five store-and-forward unit tests also pass with replay correlation enabled.

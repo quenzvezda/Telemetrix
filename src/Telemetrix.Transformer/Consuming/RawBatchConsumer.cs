@@ -31,8 +31,6 @@ public sealed class RawBatchConsumer(IOptions<KafkaOptions> options, RawBatchPro
                 var result = consumer.Consume(stoppingToken);
                 // Keep Consume, callbacks and Close on this dedicated thread; process one batch at a time.
                 processor.Process(result, () => consumer.Commit(result), stoppingToken);
-                logger.LogInformation("Committed raw batch at partition={Partition}, offset={Offset}",
-                    result.Partition.Value, result.Offset.Value);
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
