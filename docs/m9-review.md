@@ -1,6 +1,6 @@
 # M9 security review
 
-Change: `add-opcua-security`. Implementation proceeds across all task groups with the reviewer's authorization on 2026-10-25. Archive and final milestone acceptance require PR approval and the outstanding reviewer checks.
+Change: `add-opcua-security`. The reviewer approved all manual results, PR #6 and M9 closure on 2026-10-25, authorizing commit/push and archival. The final dashboard correction and its regression evidence are recorded below.
 
 ## Configuration and startup
 
@@ -12,7 +12,7 @@ Verification: `dotnet test --project tests/Telemetrix.Edge.Bridge.Tests -c Relea
 
 Fresh clone (task 4.3): `pwsh -NoProfile -File ./scripts/Test-M9FreshClone.ps1` clones the committed branch, supplies a generated test database password only through ignored `deploy/.env`, removes host port bindings with a temporary override, builds/starts the secure stack and explicitly trusts its two generated identities. Result: `M9_FRESH_CLONE_PASS: secure session; measurements=42` in isolated project `telemetrix-m9-fresh-476c95e72a36`. The harness removes only that unique project's containers, images, network and volumes plus its temporary clone. The existing local stack is preserved. Remote CI secret scanning is checked before marking task 4.3 complete.
 
-Existing M7 volume (task 5.1, agent evidence pending reviewer acceptance): stop Bridge, verify raw consumer lag 0 on both populated partitions, then stop Transformer. Before migration: 121,100 measurements. Run the reviewed migration runner twice: after each run, 121,100 measurements remain. `measurement_1m` contains 1,834 historical rollups; jobs show one one-minute refresh policy, raw retention of 30 days and rollup retention of one year. No volume reset was performed. Transformer was subsequently started with `PLANT_EVENTS_ENABLED=true` supplied through the process environment, followed by Bridge. Set this flag in your ignored `deploy/.env` to retain it on later Compose recreations. The checkbox still requires the reviewer's observed acceptance.
+Existing M7 volume (task 5.1, initial agent baseline; later reviewer acceptance is recorded below): stop Bridge, verify raw consumer lag 0 on both populated partitions, then stop Transformer. Before migration: 121,100 measurements. Run the reviewed migration runner twice: after each run, 121,100 measurements remain. `measurement_1m` contains 1,834 historical rollups; jobs show one one-minute refresh policy, raw retention of 30 days and rollup retention of one year. No volume reset was performed. Transformer was subsequently started with `PLANT_EVENTS_ENABLED=true` supplied through the process environment, followed by Bridge. Set this flag in your ignored `deploy/.env` to retain it on later Compose recreations.
 
 Untrusted production client (task 4.2): a second production Bridge used `/tmp/rogue-pki`, `/tmp/rogue.db` and an ephemeral HTTP port, without sharing the active Bridge's identity/buffer. PlantSim repeatedly rejected its new thumbprint `B550E07916D45A33E9DC39E333975916AF6150D6` with `BadCertificateUntrusted`; the client never established a session. The trusted pipeline continued storing measurements (121,485 at source time `08:57:30 UTC`). The rogue container was removed; no trust was granted to it.
 
@@ -62,7 +62,7 @@ the reviewer's final existing-stack acceptance remains pending.
 
 Endpoint verification: `dotnet test --project tests/Telemetrix.Integration.Tests -c Release -- --filter-class '*OpcUaSecurityTests'` passes. OPC PLC discovery selects None exactly; a real None-only PlantSim rejects secure selection with `No matching endpoint` / `BadSecurityPolicyRejected`. OPC PLC advertises secure endpoints even with `--ut`, so the None-only negative case uses PlantSim rather than claiming OPC PLC is None-only.
 
-Tasks 5.1 and 5.2 require the reviewer's observed results. They must remain unchecked until those results are supplied. Preserve the existing TimescaleDB volume; do not run `down -v`. See `docs/m8-review.md` for the migration and dashboard procedure.
+Tasks 5.1 and 5.2 are complete from the reviewer's observed results and explicit final approval below. The existing TimescaleDB volume was preserved. See `docs/m8-review.md` for the migration and dashboard procedure.
 
 The live secured source outage check also passes: `./scripts/Test-M9SourceGap.ps1` stops PlantSim for 60 seconds and restores it with the same persistent certificate. Both assets record a 73-second gap from `2026-10-25 09:06:33+00` to `09:07:46+00`, including reconnect time. Bridge logs a fresh SignAndEncrypt session and restores all seven monitored tags. Final visual dashboard/pump-state acceptance still belongs to the reviewer.
 
@@ -75,12 +75,13 @@ The live secured source outage check also passes: `./scripts/Test-M9SourceGap.ps
 
 ## Reviewer acceptance: tasks 5.1 and 5.2
 
-OpenSpec progress is 11/13 verified tasks: all implementation/security checks
+OpenSpec progress is 13/13 verified tasks: all implementation/security checks
 are complete, including the fresh-clone check plus green remote secret scanning.
-The two remaining tasks are reviewer acceptance checkpoints with agent evidence.
+Tasks 5.1 and 5.2 have reviewer evidence and explicit final acceptance.
 
-The agent has supplied execution evidence; these checkboxes await your observed
-acceptance. OpenSpec remains active until review is approved. Never reset the
+The reviewer supplied migration and dashboard evidence, verified the corrected
+historical display and explicitly approved PR #6 and archival on 2026-10-25.
+The procedures below remain available for future checks; never reset the
 existing database volume for these checks.
 
 For task 5.1, inspect the two SQL migrations and the recorded 121,100 -> 121,100
@@ -131,6 +132,73 @@ Inspect the gap table's UTC bounds, and select Tank01 to check its two tags.
 Select seven days to exercise rollups. Review `docs/load-test.md` for the
 accepted NFR-06/NFR-07 evidence: D5 remains 500 samples / five seconds per asset.
 Record any regression before accepting these tasks and archiving M9.
+
+## Reviewer results and historical display regression (2026-10-25)
+
+Task 5.1 passed on the reviewer's existing volume. The reviewer stopped Bridge,
+observed zero lag on the populated Kafka partitions, stopped Transformer and
+recorded **173,369 measurements** twice before migration. Both migration runs
+completed without errors; the measurement count remained **173,369 after each
+run**. The reviewer observed **2,730 rollup buckets**, one one-minute refresh
+policy, 30-day raw retention and one-year rollup retention, without duplicate
+policies. Bridge and Transformer were Healthy after restarting. No volume was
+reset. This completes the task 5.1 acceptance checkpoint.
+
+For task 5.2, the reviewer supplied screenshots showing all five Pump01 tag
+trends with units, advancing live data, Stopped at **12:14:32 UTC** after
+TripPump and Running again at **12:15:28 UTC** after StartPump. Screenshots
+establish transitions, but do not measure the delay from invoking the method;
+the automated secured dashboard check supplies the within-ten-second evidence.
+UaExpert's application certificate was initially rejected, and the reviewer
+matched its subject/thumbprint before explicitly trusting its public certificate.
+
+The reviewer's source-gap script reported `M9_SECURE_GAP_PASS`, with both assets
+recording **12:18:27–12:19:40 UTC (73 seconds)**. Logs confirmed recovery with
+Basic256Sha256 SignAndEncrypt and seven monitored tags. Screenshots showed
+broken trends, an empty interval in the pump timeline, resumed samples and the
+same bounds/duration in Collection gaps. Tank01 showed Level (%) and Temperature
+(degrees Celsius); its pump panels were empty because it has no Running tag.
+
+The seven-day screenshot exposed a separate historical display regression:
+rollups existed on October 18 and 25, with no buckets on October 19–24, yet
+Grafana connected those islands with diagonal lines and extended an old pump
+state across the missing history. Historical absence without a stored Bridge
+Gap event needs a display break as well. It must not be represented as an
+invented connection failure or written back as a plant event.
+
+The panel queries now insert null display markers between non-adjacent
+one-minute rollups, and between raw chart buckets separated by more than the
+larger of one minute or the chart bucket width. The pump timeline breaks after
+more than one minute without Good samples, explicitly resumes even when the
+state is unchanged, and ends at its last observed sample instead of projecting
+the state through an unobserved tail. Existing event-based gap markers and
+Collection gaps remain unchanged. Isolated trend points are visible with
+automatic point rendering. These rules describe missing displayed history;
+they do not infer the cause of absence or change stored measurements.
+
+Regression verification: the four new `DashboardHistoryTests` cases first failed
+on the original queries. They now pass for raw and rollup ranges, both changed
+and unchanged pump state across a historical hole, and confirm no plant events
+are invented. The focused `*Dashboard*` run passes all **five tests** in
+**2 minutes 59 seconds**, including the original secured Grafana / TripPump /
+60-second outage integration check. Release build passes with zero warnings and
+errors, and strict OpenSpec validation passes all 13 items. Read-only EXPLAIN
+and query checks on the existing local data confirm null markers are returned
+for both trend and timeline. The full-suite and remote CI evidence elsewhere
+in this file predates this follow-up; the reviewer approved this follow-up on
+2026-10-25. Final remote checks are required on the pushed branch before merge.
+
+The reviewer supplied the follow-up Pump01 / All / Last 7 days screenshot after
+the fix. October 19–24 is blank: no diagonal trend connects the historical data
+islands, and no old pump state is carried across that interval. Historical
+points remain visible, recent trends are populated, and Current pump state
+shows Running with a fresh Last sample of **12:56:35 UTC**. This verifies the
+historical display regression is resolved on the existing secured stack.
+After supplying this screenshot, the reviewer explicitly approved the manual
+results, PR #6 and OpenSpec closure/archival on 2026-10-25. Task 5.2 is complete;
+the agent may commit/push the final changes and archive M9.
+D5 remains 500 samples / five seconds per asset (ADR-0015); the accepted
+NFR-06/NFR-07 results in `docs/load-test.md` are unchanged.
 
 ## Repeatable isolated checks
 
