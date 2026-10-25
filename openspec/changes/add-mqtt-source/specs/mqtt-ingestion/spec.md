@@ -7,6 +7,10 @@ The bridge SHALL, when MQTT is the configured source, subscribe to the configure
 - **WHEN** a message `{"value": 52.8, "sourceTimestamp": "2026-10-17T09:15:01Z", "quality": "good"}` arrives on `plant/Plant01/Line01/Pump01/FlowRate`
 - **THEN** the bridge emits a sample for asset `Pump01`, tag `FlowRate`, value 52.8, source timestamp 2026-10-17T09:15:01Z and a Good status code
 
+#### Scenario: Boolean payload is normalized
+- **WHEN** an MQTT payload contains JSON `true` or `false`
+- **THEN** the adapter emits numeric 1 or 0 respectively, preserving the numeric batch contract (ADR-0010)
+
 #### Scenario: Quality is mapped to a status code
 - **WHEN** a message arrives with `quality` set to `uncertain` or `bad`
 - **THEN** the sample carries the corresponding OPC UA Uncertain or Bad status code, so the transformer assigns the same quality as for an OPC UA sample
@@ -25,6 +29,13 @@ Samples collected from MQTT SHALL go through the same per-asset batching, store-
 #### Scenario: Source recorded on the batch
 - **WHEN** a batch built from MQTT samples is produced to `plant.telemetry.raw`
 - **THEN** its `source` field is `mqtt`
+
+### Requirement: Pause MQTT collection at buffer capacity
+The MQTT source SHALL honor the shared buffer's pause/resume thresholds, preserve accepted batches, and publish ordered connection-lost, connection-restored and gap events with reason `buffer-capacity` (ADR-0013). On resume it SHALL clear deliberately uncollected broker history, while retaining normal persistent-session recovery for network interruptions.
+
+#### Scenario: Collection pauses and resumes
+- **WHEN** the buffer reaches its pause threshold and later drains below its resume threshold
+- **THEN** MQTT collection disconnects and resumes, accepted batches remain queued, old queued history from the capacity pause is cleared, and durable plant events describe the intentional collection gap
 
 ### Requirement: Recover from MQTT broker loss
 The bridge SHALL reconnect to the MQTT broker with exponential backoff and resubscribe after the connection drops, and SHALL publish connection-lost and connection-restored plant events as it does for OPC UA (FR-17).

@@ -18,7 +18,7 @@ Milestone: M7 — MQTT input.
 - `mqtt-ingestion`: the bridge collecting samples from an MQTT broker and handing them to the shared batching path.
 
 ### Modified Capabilities
-- `plant-simulator`: adds MQTT publishing of the same tags (delta uses ADDED because the base capability is not archived yet).
+- `plant-simulator`: adds MQTT publishing of the same tags (ADDED requirements extend the archived M6 capability).
 
 ## Impact
 
