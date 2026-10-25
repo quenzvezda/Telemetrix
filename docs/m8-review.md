@@ -101,3 +101,19 @@ and one-year rollup retention. `RollupMigrationTests` passed on a fresh
 TimescaleDB 2.30.2/PostgreSQL 17 Testcontainer: applying the migration twice
 succeeded, retained a pre-existing measurement, and created one refresh policy
 and exactly two retention policies. Existing local volumes have not been migrated.
+
+For the existing M7 volume, the reviewer should stop Bridge while comparing
+counts, record `SELECT count(*) FROM measurement`, review each migration SQL,
+and explicitly run:
+
+```powershell
+docker compose -f deploy/docker-compose.yml --profile migrations run --rm db-migrate
+```
+
+Run the count query again before resuming Bridge; it must match. Confirm
+`SELECT * FROM timescaledb_information.continuous_aggregates` includes
+`measurement_1m`, then inspect `timescaledb_information.jobs` for its policies.
+Repeat the migration command: it must succeed without changing measurements.
+The migration runner stops on the first SQL error. Default Compose startup
+does not run `db-migrate`. Task 4.2 remains pending the reviewer's existing-volume
+verification; automated checks only mutate disposable databases.

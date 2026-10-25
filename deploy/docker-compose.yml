@@ -6,6 +6,22 @@
 name: telemetrix
 
 services:
+  db-migrate:
+    profiles: [migrations]
+    image: postgres:17
+    environment:
+      PGHOST: timescaledb
+      PGDATABASE: telemetry
+      PGUSER: telemetry
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./sql/migrations:/migrations:ro
+      - ./sql/migrate.sh:/migrate.sh:ro
+    entrypoint: [/bin/sh, /migrate.sh]
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+
   bridge:
     profiles: [pipeline, metrics]
     build:
