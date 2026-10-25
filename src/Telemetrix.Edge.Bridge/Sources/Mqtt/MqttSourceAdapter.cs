@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Text.Json;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MQTTnet;
@@ -21,6 +20,7 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
         var settings = options.Value;
         var trackers = new Dictionary<(string Plant, string Line), PlantEventTracker>();
         using var admission = new SemaphoreSlim(1, 1);
+        using var decoder = new MqttSampleDecoder(timeProvider, logger);
         var clearSession = buffer?.IsCollectionPaused == true;
         var attempt = 0;
         try
@@ -45,16 +45,9 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                         await admission.WaitAsync(sessionStop.Token);
                         try
                         {
-                            Sample sample;
-                            try
+                            var sample = decoder.Decode(args.ApplicationMessage.Topic, args.ApplicationMessage.Payload.ToArray());
+                            if (sample is null)
                             {
-                                sample = MqttSampleMapper.Map(args.ApplicationMessage.Topic,
-                                    args.ApplicationMessage.Payload.ToArray(), timeProvider.GetUtcNow(), out var unknown);
-                                if (unknown) logger.LogWarning("Unknown MQTT quality mapped to Bad at {Topic}", args.ApplicationMessage.Topic);
-                            }
-                            catch (JsonException)
-                            {
-                                logger.LogWarning("Rejected malformed MQTT sample at {Topic}", args.ApplicationMessage.Topic);
                                 await args.AcknowledgeAsync(sessionStop.Token);
                                 return;
                             }
