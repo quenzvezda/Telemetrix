@@ -2,8 +2,9 @@
 
 Change: `add-observability`. Implementation and agent-run verification are complete;
 M8 is in review and OpenSpec remains open.
-The reviewer authorized all task groups on 2026-10-25. Final D5 selection and
-milestone acceptance remain reviewer checkpoints after measurements are available.
+The reviewer authorized all task groups and accepted D5 (500 samples / 5 seconds)
+on 2026-10-25. Existing-volume migration verification and manual milestone
+acceptance remain reviewer checkpoints.
 
 The reviewer requested a PR before archival. The agent may implement all task
 groups without intermediate approval; the final PR collects the review checks.
@@ -17,8 +18,8 @@ groups without intermediate approval; the final PR collects the review checks.
    sample identities and batching defaults.
 3. Inspect the Grafana JSON and its fresh-container end-to-end test. Follow the
    dashboard outage and pump-trip steps below on the local stack.
-4. Read `docs/load-test.md` and its saved run evidence. Choose D5 after comparing
-   the baseline and alternative, then accept or request fixes in the PR.
+4. Read `docs/load-test.md` and its saved run evidence supporting the accepted
+   500/5 s D5 choice, then accept or request fixes in the PR.
 
 OpenSpec archival and final milestone acceptance wait for the reviewer.
 
@@ -237,8 +238,8 @@ tests pass (Bridge 102, Transformer 60, PlantSim 10). Both 30-minute latency
 profiles pass: p95 7,774.686 ms for 500/5 s and 4,786.757 ms for 1,000/2 s.
 Both 15-minute throughput profiles also pass at 5,250.343/s and 5,242.643/s,
 respectively, with complete drain and zero dead letters. The baseline's high-rate
-p95 is 7,644.455 ms versus 21,240.268 ms for the alternative. The recommendation
-in proposed ADR-0015 is to retain 500/5 s; reviewer selection remains pending.
+p95 is 7,644.455 ms versus 21,240.268 ms for the alternative. The reviewer accepted
+500/5 s in ADR-0015 on 2026-10-25; the existing defaults remain unchanged.
 The full Release regression suite passes 221 tests in 6 minutes 24.700 seconds,
 with one explicit load-profile test excluded from the normal suite. All four
 full-duration load profiles were executed separately and pass. Strict OpenSpec
@@ -251,8 +252,8 @@ all 20,000 samples (2,000 batches) with zero lag after restart. The isolated
 empty buffer and zero lag. Both harnesses cleaned up their disposable resources;
 the existing Compose database was not migrated or reset.
 
-The checklist is 19/22 verified. Task 4.2 awaits the reviewer's existing-M7-volume
-SQL checks, 6.4 awaits D5 selection/ADR acceptance, and 6.5 awaits the manual
+The checklist is 20/22 verified; task 6.4 is complete with D5 accepted. Task 4.2
+awaits the reviewer's existing-M7-volume SQL checks, and 6.5 awaits manual
 dashboard/milestone acceptance. These are the review checkpoints for the PR;
 archival and merge wait for approval.
 
@@ -264,5 +265,5 @@ Clone identity/completed-tick tests and the existing MqttSim health/reconnection
 test both pass. A short 1,024-batch-queue profile reached 5,014.484 received
 samples/s and drained all 152,152 publications with zero dead-letter batches.
 The bounded queue regression failed before using its configured capacity and
-passed afterward. Final duration measurements and D5 selection are tracked
-separately; a smoke run never marks the long-run acceptance tasks complete.
+passed afterward. Full-duration measurements and the accepted D5 choice are
+recorded in `docs/load-test.md`; smoke runs do not substitute for acceptance.

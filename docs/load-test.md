@@ -1,8 +1,8 @@
 # M8 latency and throughput measurements
 
 Status: both candidates passed the full 30-minute NFR-06 latency and 15-minute
-NFR-07 throughput profiles on the recorded workstation. D5 remains open pending
-reviewer selection. Short smoke runs below remain diagnostic evidence.
+NFR-07 throughput profiles on the recorded workstation. The reviewer accepted
+500 samples / 5 seconds for D5 on 2026-10-25. Short smoke runs below remain diagnostic evidence.
 
 ## Machine and software
 
@@ -171,14 +171,14 @@ lag three batches and complete drain. Its source-time window also contains
 4,725,000 measurements. Full evidence is in
 [alternative throughput](evidence/m8/throughput-alternative.json).
 
-## D5 comparison and recommendation
+## D5 comparison and accepted decision
 
 | Batching | Default-rate p95 | High-rate p95 (diagnostic) | Actual throughput | Full source/storage equality | NFR-06 / NFR-07 |
 | --- | ---: | ---: | ---: | --- | --- |
 | 500 / 5 s | 7,774.686 ms | 7,644.455 ms | 5,250.343/s | Yes | Pass / Pass |
 | 1,000 / 2 s | 4,786.757 ms | 21,240.268 ms | 5,242.643/s | Yes | Pass / Pass |
 
-Recommend retaining **500 samples / 5 seconds per asset, whichever comes first**.
+The reviewer accepted **500 samples / 5 seconds per asset, whichever comes first**, on 2026-10-25.
 It satisfies the default-rate latency bound and the sustained throughput target,
 with substantially lower measured latency under load. The shorter alternative
 improves low-rate latency but flushes smaller batches more often; low Kafka lag
@@ -191,7 +191,7 @@ that specified latency scenario. Both candidates pass the actual NFR-07 lag,
 throughput, dead-letter and complete-drain checks. The host-contention caveat
 above applies when interpreting the numerical comparison.
 
-The recommendation is proposed in [ADR-0015](adr/0015-retain-measured-batch-thresholds.md).
-The reviewer must select D5 before the ADR is accepted or M8 archived. If the
-alternative is selected, update the batching requirement/defaults first and
-repeat the selected-default acceptance runs as required by task 6.5.
+The decision is accepted in [ADR-0015](adr/0015-retain-measured-batch-thresholds.md).
+The selected thresholds retain the existing defaults and measured baseline, so
+no configuration change or repeated acceptance run is required. M8 archival
+still waits for existing-volume migration verification and manual acceptance.

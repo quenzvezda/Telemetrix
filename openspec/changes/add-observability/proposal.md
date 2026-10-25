@@ -13,7 +13,7 @@ Milestone: M8 — Observability and load.
 - FR-31: a 1-minute continuous aggregate (min, max, avg, count) of Good measurements.
 - FR-32: raw measurements are dropped after 30 days, rollups after 1 year.
 - FR-40: a provisioned Grafana dashboard with live trends per tag, pump status and data gaps.
-- NFR-06 / NFR-07: measured with a repeatable load test using the reviewer-approved baseline of 500 samples / 5 seconds per asset, whichever comes first. D5 remains open until the baseline and at least one alternative have been measured; the reviewer selects the final thresholds and the outcome is recorded as an ADR.
+- NFR-06 / NFR-07: measured with a repeatable load test using 500 samples / 5 seconds per asset, whichever comes first. After comparison with 1,000 samples / 2 seconds, the reviewer accepted the existing baseline as the final D5 thresholds on 2026-10-25, recorded in ADR-0015.
 
 ## Capabilities
 

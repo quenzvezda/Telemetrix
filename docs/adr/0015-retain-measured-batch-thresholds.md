@@ -1,12 +1,12 @@
 ---
-status: proposed
+status: accepted
 ---
 
 # Retain the measured 500-sample or five-second batch thresholds
 
-Propose keeping 500 samples or five seconds per asset, whichever comes first,
-for D5. The reviewer approved this M8 baseline on 2026-10-25; final selection
-remains pending. Both candidates passed the same full-duration latency and
+Keep 500 samples or five seconds per asset, whichever comes first, for D5.
+The reviewer explicitly selected these final thresholds on 2026-10-25 after
+reviewing the load-test comparison. Both candidates passed the full-duration latency and
 throughput profiles on the recorded workstation, with zero dead-letter batches
 and complete source-to-storage drain. See [the measurements and JSON evidence](../load-test.md).
 
@@ -25,7 +25,7 @@ for both candidates. Ordinary Bridge capacity remains 64 batches, and ordinary
 simulator/broker defaults remain unchanged. Measurements include recorded host
 contention and establish this workstation's result, not an unmeasured laptop's.
 
-Do not mark this ADR accepted or close D5 until the reviewer selects the final
-thresholds. Selecting different defaults requires aligning the batching
-requirement and configuration and repeating the selected-default acceptance
-runs before M8 acceptance.
+The selected thresholds match the existing defaults and the measured baseline;
+no runtime or batching requirement change is needed. The passing baseline runs
+provide the selected-default NFR-06 / NFR-07 evidence. Existing-M7-volume
+migration verification and manual M8 acceptance remain separate reviewer steps.

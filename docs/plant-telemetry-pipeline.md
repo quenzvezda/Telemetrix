@@ -399,7 +399,7 @@ Stretch goals, once milestone 9 is done:
 
 Decisions to make before or during the build:
 
-- [ ] Batch thresholds: keep 500 samples / 5 s, or tune after measuring latency (NFR-06)?
+- [x] Batch thresholds: retain 500 samples / 5 s per asset, whichever comes first; accepted after the M8 latency/throughput comparison on 2026-10-25 ([ADR-0015](adr/0015-retain-measured-batch-thresholds.md)).
 - [x] Unknown tags: dead-letter by default; automatic tag creation is an explicit opt-in (ADR-0011).
 - [x] Booleans and strings: nullable numeric values, booleans converted to 1/0 by source adapters, strings out of scope for v1 (ADR-0010).
 - [ ] Buffer limit at the edge: how many hours of data, and what happens when it fills (drop oldest or stop subscribing)?
