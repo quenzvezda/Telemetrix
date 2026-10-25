@@ -1,10 +1,10 @@
 # M8 review package
 
-Change: `add-observability`. Implementation and agent-run verification are complete;
-M8 is in review and OpenSpec remains open.
+Change: `add-observability`, archived on 2026-10-25 after the reviewer approved
+PR #5 and explicitly deferred manual testing until M9 is complete.
 The reviewer authorized all task groups and accepted D5 (500 samples / 5 seconds)
-on 2026-10-25. Existing-volume migration verification and manual milestone
-acceptance remain reviewer checkpoints.
+on 2026-10-25. Existing-volume migration verification and manual dashboard
+acceptance remain unverified and are carried into M9 tasks 5.1 and 5.2.
 
 The reviewer requested a PR before archival. The agent may implement all task
 groups without intermediate approval; the final PR collects the review checks.
@@ -21,7 +21,9 @@ groups without intermediate approval; the final PR collects the review checks.
 4. Read `docs/load-test.md` and its saved run evidence supporting the accepted
    500/5 s D5 choice, then accept or request fixes in the PR.
 
-OpenSpec archival and final milestone acceptance wait for the reviewer.
+The reviewer approved archival with those two deferred checkpoints. This guide
+remains the procedure for the follow-up checks on the final secured M9 stack;
+archival does not claim that manual testing has passed.
 
 ## HTTP hosting
 
@@ -252,10 +254,12 @@ all 20,000 samples (2,000 batches) with zero lag after restart. The isolated
 empty buffer and zero lag. Both harnesses cleaned up their disposable resources;
 the existing Compose database was not migrated or reset.
 
-The checklist is 20/22 verified; task 6.4 is complete with D5 accepted. Task 4.2
-awaits the reviewer's existing-M7-volume SQL checks, and 6.5 awaits manual
-dashboard/milestone acceptance. These are the review checkpoints for the PR;
-archival and merge wait for approval.
+The archived checklist remains 20/22 verified; task 6.4 is complete with D5
+accepted. The reviewer approved PR #5 and explicitly deferred testing until M9
+is complete. Tasks 4.2 and 6.5 remain unchecked as an accepted closure exception,
+carried into `openspec/changes/add-opcua-security/tasks.md` tasks 5.1 and 5.2.
+Neither existing-volume migration nor final manual dashboard acceptance is
+claimed to have passed. Complete both before final M9 acceptance.
 
 ## Load tooling
 

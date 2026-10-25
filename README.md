@@ -10,7 +10,7 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 ## Project status
 
-M1–M7 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M7 review](docs/m7-review.md). PlantSim and MqttSim share the seven-tag pumping-line model; Bridge selects OPC UA or MQTT by configuration. M8 adds health endpoints, correlated JSON logs, OpenTelemetry metrics, SQL rollups/retention, a Grafana dashboard and repeatable load profiles; see the [M8 review package](docs/m8-review.md) for verification and pending acceptance. The clean topic is deferred to the separate sink (ADR-0012).
+M1–M8 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M8 review](docs/m8-review.md). PlantSim and MqttSim share the seven-tag pumping-line model; Bridge selects OPC UA or MQTT by configuration. M8 adds health endpoints, correlated JSON logs, OpenTelemetry metrics, SQL rollups/retention, a Grafana dashboard and measured load profiles. The reviewer deferred two M8 manual checks until M9 is complete; they remain unverified and are tracked in the [M9 checklist](openspec/changes/add-opcua-security/tasks.md). The clean topic is deferred to the separate sink (ADR-0012).
 
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 

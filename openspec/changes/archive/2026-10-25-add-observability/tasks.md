@@ -2,7 +2,7 @@
 
 Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 seconds per asset, whichever comes first. The reviewer subsequently authorized autonomous implementation across all task groups and requested a PR before archival. After the load-test comparison, the reviewer explicitly accepted the same thresholds for D5 on 2026-10-25 (ADR-0015). Existing-volume migration checks and final manual acceptance remain reviewer actions; keep those tasks unchecked until their complete verification passes.
 
-Review status on 2026-10-25: 20/22 tasks verified; implementation, agent-run verification and D5 are complete. All four full-duration load profiles pass; results and accepted ADR-0015 are linked from `docs/load-test.md`. Release regression: 221 passed, one explicit load profile excluded; M4 SIGKILL and M5 short-outage regressions pass. Tasks 4.2 and 6.5 remain unchecked for reviewer-owned existing-volume verification and manual acceptance. Do not archive before review approval.
+Closure approved by the reviewer on 2026-10-25 after reviewing PR #5 without issues. The reviewer explicitly deferred manual testing until M9 is complete. Archive with 20/22 tasks verified: tasks 4.2 and 6.5 remain unchecked and are carried into `add-opcua-security` tasks 5.1 and 5.2. This is a reviewer-approved deferral, not a claim that the existing M7 volume or final manual dashboard checks passed. Implementation, agent-run verification and D5 are complete; all four full-duration load profiles pass. Release regression: 221 passed, one explicit load profile excluded; M4 SIGKILL and M5 short-outage regressions pass.
 
 ## 1. Dependencies and hosting
 

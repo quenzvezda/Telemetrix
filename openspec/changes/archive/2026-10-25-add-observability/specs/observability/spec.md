@@ -1,3 +1,7 @@
+## Purpose
+
+Defines service readiness, pipeline flow metrics, correlated batch logs and measured latency and throughput evidence for operating the telemetry pipeline.
+
 ## ADDED Requirements
 
 ### Requirement: Health endpoint

@@ -1,5 +1,7 @@
 # Tasks
 
+On 2026-10-25 the reviewer approved M8 PR #5 and its archival, deferring manual testing until M9 is complete. Group 5 carries those unverified M8 checkpoints forward; complete it before final M9 acceptance. M9 implementation has not started.
+
 ## 1. Configuration and fail-closed startup
 
 - [ ] 1.1 Add the `OpcUa:Security` options (mode, policy, PKI root, auto-accept) with an `IValidateOptions` + `ValidateOnStart` rule that rejects None/auto-accept outside Development; verify unit tests cover Production+None (fails), Development+None (starts with warning), Production+SignAndEncrypt (passes)
@@ -22,3 +24,8 @@
 - [ ] 4.1 With the `secure` profile, connect the bridge to PlantSim with Basic256Sha256 SignAndEncrypt; verify the session's security mode in the bridge log and rows still arriving in `measurement`
 - [ ] 4.2 Connect with a client whose certificate is not trusted (e.g. a second bridge instance with a fresh PKI root or UaExpert); verify it is rejected (M9 "Done when", NFR-09)
 - [ ] 4.3 Run the fresh-clone check: clone, supply secrets only via `deploy/.env` and user-secrets, `docker compose up`; verify the stack runs and the CI secret scan is green (NFR-10)
+
+## 5. Deferred M8 manual verification before M9 acceptance
+
+- [ ] 5.1 Complete archived M8 task 4.2 on the existing M7 volume: review SQL, stop input, drain Transformer, record the measurement count, run the explicit migration command, and verify unchanged count, rollups and 30-day/raw plus one-year/rollup policies; repeat the migration safely. Follow `docs/m8-review.md`; record the reviewer's observed results without resetting the existing volume.
+- [ ] 5.2 Complete archived M8 task 6.5 after M9 implementation: have the reviewer verify live tag trends, pump state within one refresh, and a 60-second source outage with gap bounds and broken trends on the final secured stack; confirm D5 remains 500 samples / 5 seconds, review the recorded NFR-06/NFR-07 evidence and obtain final manual acceptance. Record any regression and its resolution before M9 acceptance.

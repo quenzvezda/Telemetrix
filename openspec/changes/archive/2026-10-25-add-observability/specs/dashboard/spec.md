@@ -1,3 +1,7 @@
+## Purpose
+
+Defines the operator dashboard for live tag trends, pump running state and durable source-gap history, using retained measurements and one-minute rollups.
+
 ## ADDED Requirements
 
 ### Requirement: Live trends per tag

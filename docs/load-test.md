@@ -193,5 +193,7 @@ above applies when interpreting the numerical comparison.
 
 The decision is accepted in [ADR-0015](adr/0015-retain-measured-batch-thresholds.md).
 The selected thresholds retain the existing defaults and measured baseline, so
-no configuration change or repeated acceptance run is required. M8 archival
-still waits for existing-volume migration verification and manual acceptance.
+no configuration change or repeated acceptance run is required. The reviewer
+approved M8 archival on 2026-10-25 and deferred existing-volume migration and
+manual dashboard testing until M9 is complete; those checks remain unverified
+and are tracked as M9 tasks 5.1 and 5.2.
