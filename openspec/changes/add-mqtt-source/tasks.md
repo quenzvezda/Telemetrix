@@ -22,5 +22,5 @@
 
 ## 4. Milestone verification
 
-- [ ] 4.1 Run the stack with MqttSim and the bridge on `Source:Kind=Mqtt`; verify rows for all 7 tags appear in `measurement` with no transformer code or configuration change (M7 "Done when")
+- [x] 4.1 Run the stack with MqttSim and the bridge on `Source:Kind=Mqtt`; verify rows for all 7 tags appear in `measurement` with no transformer code or configuration change (M7 "Done when")
 - [ ] 4.2 Compare the same 10 minutes from OPC UA and MQTT runs; verify both give the same row count per tag (± the samples sent during the switch) and note the protocol comparison in the change's notes
