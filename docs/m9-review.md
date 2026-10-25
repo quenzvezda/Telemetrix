@@ -134,6 +134,12 @@ Record any regression before accepting these tasks and archiving M9.
 
 ## Repeatable isolated checks
 
+The initial Ubuntu CI run exposed host bind-mount ownership in the secured
+dashboard fixture: container user `app` could not write a runner-owned host PKI
+directory. The fixture now keeps PlantSim's private store inside the container
+and exchanges only public DER certificates through the Docker API, preserving
+the production image's existing PKI ownership and non-root execution.
+
 The focused secured dashboard run passes. Final Release build has zero warnings
 and errors. The full local regression passes **236 tests** (237 total, one
 explicit long load profile excluded) in 5 minutes 57.964 seconds. Strict OpenSpec

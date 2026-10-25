@@ -68,20 +68,22 @@ public class DashboardTests(ITestOutputHelper output)
         reservation.Start();
         var port = ((IPEndPoint)reservation.LocalEndpoint).Port;
         reservation.Stop();
-        var serverPki = Path.Combine(directory, "server", "pki");
         var bridgePki = Path.Combine(directory, "bridge", "pki");
-        Directory.CreateDirectory(serverPki);
         await using var plant = new ContainerBuilder(image).WithPortBinding(port, 4840)
             // The SDK resolves loopback URLs to the client's real machine name.
             // A host-facing certificate must cover that name across Docker NAT.
             .WithHostname(Environment.MachineName)
-            .WithBindMount(serverPki, "/app/pki")
             .WithEnvironment("PlantSim__Endpoint", $"opc.tcp://{Environment.MachineName}:4840")
             .WithEnvironment("Faults__Random__Enabled", "false")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("PlantSim OPC UA server started")).Build();
         await plant.StartAsync(ct);
-        using var serverCertificate = X509CertificateLoader.LoadCertificateFromFile(
-            Assert.Single(Directory.GetFiles(Path.Combine(serverPki, "own", "certs"), "*.der")));
+        // Exchange public certificates through Docker's API. A host bind mount
+        // would replace the image's app-owned PKI with a different Linux uid.
+        var listing = await plant.ExecAsync(["find", "/app/pki/own/certs", "-type", "f", "-name", "*.der"], ct);
+        Assert.Equal(0, listing.ExitCode);
+        var serverCertificatePath = Assert.Single(listing.Stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        var serverCertificateBytes = await plant.ReadFileAsync(serverCertificatePath, ct);
+        using var serverCertificate = X509CertificateLoader.LoadCertificate(serverCertificateBytes);
         var domains = serverCertificate.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single().EnumerateDnsNames().ToArray();
         Assert.Contains("localhost", domains);
         Assert.Contains("plantsim", domains);
@@ -100,8 +102,11 @@ public class DashboardTests(ITestOutputHelper output)
             var settings = bridge.Services.GetRequiredService<IOptions<OpcUaOptions>>().Value;
             var telemetry = bridge.Services.GetRequiredService<ITelemetryContext>();
             var clientConfiguration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, ct);
-            TrustPublicCertificate(serverPki, bridgePki);
-            TrustPublicCertificate(bridgePki, serverPki);
+            Directory.CreateDirectory(Path.Combine(bridgePki, "trusted", "certs"));
+            await File.WriteAllBytesAsync(Path.Combine(bridgePki, "trusted", "certs", "plantsim.der"), serverCertificateBytes, ct);
+            var clientCertificate = Assert.Single(Directory.GetFiles(Path.Combine(bridgePki, "own", "certs"), "*.der"));
+            Assert.Equal(0, (await plant.ExecAsync(["mkdir", "-p", "/app/pki/trusted/certs"], ct)).ExitCode);
+            await plant.CopyAsync(await File.ReadAllBytesAsync(clientCertificate, ct), "/app/pki/trusted/certs/bridge.der", ct: ct);
             var description = await OpcUaEndpointSelector.SelectAsync(clientConfiguration, settings, telemetry, ct);
             using var advertised = X509CertificateLoader.LoadCertificate(description.ServerCertificate.ToArray()!);
             output.WriteLine($"Advertised certificate: {advertised.Thumbprint}; {advertised.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single().Format(false)}");
@@ -168,13 +173,6 @@ public class DashboardTests(ITestOutputHelper output)
             }
         }
         if (Directory.Exists(directory)) Directory.Delete(directory, true);
-    }
-
-    private static void TrustPublicCertificate(string from, string to)
-    {
-        var certificate = Assert.Single(Directory.GetFiles(Path.Combine(from, "own", "certs"), "*.der"));
-        Directory.CreateDirectory(Path.Combine(to, "trusted", "certs"));
-        File.Copy(certificate, Path.Combine(to, "trusted", "certs", Path.GetFileName(certificate)));
     }
 
     private static string PanelSql(JsonElement panels, int id) => panels.EnumerateArray().Single(panel => panel.GetProperty("id").GetInt32() == id)
