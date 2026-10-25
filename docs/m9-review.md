@@ -75,6 +75,10 @@ The live secured source outage check also passes: `./scripts/Test-M9SourceGap.ps
 
 ## Reviewer acceptance: tasks 5.1 and 5.2
 
+OpenSpec progress is 11/13 verified tasks: all implementation/security checks
+are complete, including the fresh-clone check plus green remote secret scanning.
+The two remaining tasks are reviewer acceptance checkpoints with agent evidence.
+
 The agent has supplied execution evidence; these checkboxes await your observed
 acceptance. OpenSpec remains active until review is approved. Never reset the
 existing database volume for these checks.
