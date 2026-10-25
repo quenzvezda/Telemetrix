@@ -7,7 +7,12 @@ using System.Text.Json;
 using Dapper;
 using DotNet.Testcontainers.Builders;
 using Npgsql;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Opc.Ua;
+using Opc.Ua.Client;
 using Telemetrix.Edge.Bridge;
+using Telemetrix.Edge.Bridge.Sources.OpcUa;
 using Telemetrix.Transformer;
 
 namespace Telemetrix.Integration.Tests;
@@ -62,7 +67,11 @@ public class DashboardTests(ITestOutputHelper output)
         reservation.Start();
         var port = ((IPEndPoint)reservation.LocalEndpoint).Port;
         reservation.Stop();
+        var serverPki = Path.Combine(directory, "server", "pki");
+        var bridgePki = Path.Combine(directory, "bridge", "pki");
+        Directory.CreateDirectory(serverPki);
         await using var plant = new ContainerBuilder(image).WithPortBinding(port, 4840)
+            .WithBindMount(serverPki, "/app/pki")
             .WithEnvironment("PlantSim__Endpoint", "opc.tcp://0.0.0.0:4840")
             .WithEnvironment("Faults__Random__Enabled", "false")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("PlantSim OPC UA server started")).Build();
@@ -71,11 +80,17 @@ public class DashboardTests(ITestOutputHelper output)
         {
             await using var bridge = BridgeApplication.Build(["--environment=PlantSim", "--Http:Port=0",
                 $"--contentRoot={Path.Combine(AppContext.BaseDirectory, "config")}", $"--OpcUa:Endpoint={endpoint}",
+                $"--OpcUa:Security:PkiRoot={bridgePki}",
                 $"--Kafka:BootstrapServers={environment.Kafka.GetBootstrapAddress()}",
                 $"--Buffer:Path={Path.Combine(directory, "bridge.db")}", "--Logging:LogLevel:Default=Warning"]);
             await using var transformer = TransformerApplication.Build(["--Http:Port=0", "--PlantEvents:Enabled=true",
                 $"--Kafka:BootstrapServers={environment.Kafka.GetBootstrapAddress()}",
                 $"--ConnectionStrings:Telemetry={environment.Database.GetConnectionString()}", "--Logging:LogLevel:Default=Warning"]);
+            var settings = bridge.Services.GetRequiredService<IOptions<OpcUaOptions>>().Value;
+            var telemetry = bridge.Services.GetRequiredService<ITelemetryContext>();
+            var clientConfiguration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, ct);
+            TrustPublicCertificate(serverPki, bridgePki);
+            TrustPublicCertificate(bridgePki, serverPki);
             await transformer.StartAsync(ct);
             await bridge.StartAsync(ct);
             try
@@ -84,8 +99,11 @@ public class DashboardTests(ITestOutputHelper output)
                 while (await connection.ExecuteScalarAsync<int>(new CommandDefinition("SELECT count(DISTINCT tag_id) FROM measurement", cancellationToken: ct)) != 7)
                     await Task.Delay(100, ct);
                 using (var trend = await QueryAsync(http, trendSql, "time_series", TimeSpan.FromMinutes(15), ct)) AssertFramesHaveValues(trend);
-                await using var client = new PlantSimFixture(endpoint);
-                using (var session = await client.ConnectAsync(ct))
+                var description = await OpcUaEndpointSelector.SelectAsync(clientConfiguration, settings, telemetry, ct);
+                Assert.Equal(MessageSecurityMode.SignAndEncrypt, description.SecurityMode);
+                using (var session = await new DefaultSessionFactory(telemetry).CreateAsync(clientConfiguration,
+                    new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(clientConfiguration)),
+                    false, true, "Telemetrix.Dashboard.Security", 60000, new UserIdentity(), default, ct))
                 {
                     var tripAt = DateTimeOffset.UtcNow;
                     await PlantSimFaultTests.CallAsync(session, "TripPump", ct);
@@ -132,6 +150,13 @@ public class DashboardTests(ITestOutputHelper output)
             }
         }
         if (Directory.Exists(directory)) Directory.Delete(directory, true);
+    }
+
+    private static void TrustPublicCertificate(string from, string to)
+    {
+        var certificate = Assert.Single(Directory.GetFiles(Path.Combine(from, "own", "certs"), "*.der"));
+        Directory.CreateDirectory(Path.Combine(to, "trusted", "certs"));
+        File.Copy(certificate, Path.Combine(to, "trusted", "certs", Path.GetFileName(certificate)));
     }
 
     private static string PanelSql(JsonElement panels, int id) => panels.EnumerateArray().Single(panel => panel.GetProperty("id").GetInt32() == id)

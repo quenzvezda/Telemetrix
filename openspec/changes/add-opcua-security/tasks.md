@@ -1,6 +1,6 @@
 # Tasks
 
-On 2026-10-25 the reviewer approved M8 PR #5 and its archival, deferring manual testing until M9 is complete. Group 5 carries those unverified M8 checkpoints forward; complete it before final M9 acceptance. M9 implementation has not started.
+On 2026-10-25 the reviewer approved M8 PR #5 and its archival, deferring manual testing until M9 is complete. Group 5 carries those unverified M8 checkpoints forward; complete it before final M9 acceptance. The reviewer authorized implementation across all M9 groups and requested a PR before archival. Implementation and automated evidence are recorded in `docs/m9-review.md`; final reviewer acceptance remains required.
 
 ## 1. Configuration and fail-closed startup
 
