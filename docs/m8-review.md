@@ -23,3 +23,11 @@ dotnet run --project tests/Telemetrix.Integration.Tests -- -class Telemetrix.Int
 
 Both tests passed locally. Docker-based checks use disposable Testcontainers
 infrastructure and do not modify the existing Compose database.
+
+## Bridge and Transformer health
+
+Request `http://localhost:5101/health` or `http://localhost:5102/health`.
+The JSON names each check and its status. With dependencies available the result
+is 200/Healthy. A non-empty Bridge buffer with dependencies up is 200/Degraded.
+An unavailable source, Kafka or database reports 503/Unhealthy naming the check.
+The HTTP hosting test covers these transitions using disposable dependencies.

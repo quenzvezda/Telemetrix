@@ -10,7 +10,7 @@ Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 second
 
 ## 2. Health and logging
 
-- [ ] 2.1 Add `/health` with the configured OPC UA or MQTT source/Kafka checks (Bridge) and Kafka/database checks (Transformer); verify integration tests with Testcontainers return 200/Healthy when dependencies are up, 503 naming a failed dependency when down, and 200/Degraded when a non-empty buffer drains with dependencies healthy
+- [x] 2.1 Add `/health` with the configured OPC UA or MQTT source/Kafka checks (Bridge) and Kafka/database checks (Transformer); verify integration tests with Testcontainers return 200/Healthy when dependencies are up, 503 naming a failed dependency when down, and 200/Degraded when a non-empty buffer drains with dependencies healthy
 - [ ] 2.2 Configure JSON console logging with scopes in Bridge, Transformer, PlantSim and MqttSim; open a structured `batchId`/`assetId` scope around every Bridge/Transformer batch path; verify a capturing-logger test sees the scope on nested entries and emitted JSON parses with the correlation properties
 - [ ] 2.3 Verify NFR-12 manually: produce one batch, grep both services' logs for its `batchId`, and see produce → consume → write in order
 - [ ] 2.4 Add `/health` to PlantSim (OPC UA server and simulation loop) and MqttSim (broker connection and publishing loop); verify startup/worker-state checks, then use a Mosquitto Testcontainer to verify MqttSim returns 503 on broker loss and recovers to 200 without disrupting sample publication

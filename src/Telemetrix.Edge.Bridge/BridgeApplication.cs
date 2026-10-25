@@ -1,4 +1,6 @@
 using Telemetrix.Edge.Bridge.Sources;
+using Telemetrix.Edge.Bridge.Health;
+using Microsoft.AspNetCore.Http;
 
 namespace Telemetrix.Edge.Bridge;
 
@@ -11,6 +13,18 @@ public static class BridgeApplication
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddBridgeSource(builder.Configuration);
         builder.Services.AddBridgePipeline(builder.Configuration);
-        return builder.Build();
+        builder.Services.AddHealthChecks().AddCheck<SourceHealthCheck>("source")
+            .AddCheck<KafkaHealthCheck>("kafka").AddCheck<BufferHealthCheck>("buffer");
+        var app = builder.Build();
+        app.MapHealthChecks("/health", new()
+        {
+            ResponseWriter = (http, report) => http.Response.WriteAsJsonAsync(new
+            {
+                status = report.Status.ToString(),
+                checks = report.Entries.ToDictionary(entry => entry.Key,
+                    entry => new { status = entry.Value.Status.ToString(), description = entry.Value.Description })
+            })
+        });
+        return app;
     }
 }

@@ -15,6 +15,9 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
     ILogger<MqttSourceAdapter> logger, IPlantEventPublisher eventPublisher,
     SqliteBuffer? buffer = null) : ISourceAdapter
 {
+    private int connected;
+    public bool IsConnected => Volatile.Read(ref connected) != 0;
+
     public async Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken)
     {
         var settings = options.Value;
@@ -35,7 +38,12 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                 var disconnected = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 var failure = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                client.DisconnectedAsync += _ => { disconnected.TrySetResult(); return Task.CompletedTask; };
+                client.DisconnectedAsync += _ =>
+                {
+                    Volatile.Write(ref connected, 0);
+                    disconnected.TrySetResult();
+                    return Task.CompletedTask;
+                };
                 client.ApplicationMessageReceivedAsync += async args =>
                 {
                     // Do not ACK cancelled admission; normal persistent-session reconnect can redeliver it.
@@ -104,6 +112,7 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                         .WithTopicFilter(filter => filter.WithTopic(settings.TopicFilter).WithAtLeastOnceQoS()).Build(), sessionToken);
                     if (subscribed.Items.Any(item => (int)item.ResultCode >= 128))
                         throw new InvalidOperationException("The MQTT broker rejected the topic subscription.");
+                    Volatile.Write(ref connected, 1);
                     logger.LogInformation("MQTT subscription created at {Endpoint} with {TopicFilter}", settings.Endpoint, settings.TopicFilter);
                     attempt = 0;
                     var completed = await Task.WhenAny(disconnected.Task, capacity, failure.Task);
@@ -116,6 +125,7 @@ public sealed class MqttSourceAdapter(IOptions<MqttOptions> options, TimeProvide
                 }
                 finally
                 {
+                    Volatile.Write(ref connected, 0);
                     await sessionStop.CancelAsync();
                     client.Dispose();
                     try { await capacity; }
