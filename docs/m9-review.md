@@ -50,6 +50,14 @@ its former public trust entry was moved outside the trusted store. The current
 PlantSim thumbprint is `182991672B1001E68494AC4122F96D44899910F2`, with both
 required SANs verified, and the current production Bridge is Healthy.
 
+Visual verification on the disposable secured dashboard shows repeated Pump01
+tag trends/units, a Running/Stopped timeline and current Running state after
+recovery. The gap table displays `2026-10-25 09:27:55` to `09:29:03` UTC,
+duration 68.0 seconds, with broken trends across that interval. The same test
+checks Stopped through Grafana's panel query within ten seconds after TripPump,
+then verifies null trend markers and seven-day rollups. This is agent evidence;
+the reviewer's final existing-stack acceptance remains pending.
+
 Endpoint verification: `dotnet test --project tests/Telemetrix.Integration.Tests -c Release -- --filter-class '*OpcUaSecurityTests'` passes. OPC PLC discovery selects None exactly; a real None-only PlantSim rejects secure selection with `No matching endpoint` / `BadSecurityPolicyRejected`. OPC PLC advertises secure endpoints even with `--ut`, so the None-only negative case uses PlantSim rather than claiming OPC PLC is None-only.
 
 Tasks 5.1 and 5.2 require the reviewer's observed results. They must remain unchecked until those results are supplied. Preserve the existing TimescaleDB volume; do not run `down -v`. See `docs/m8-review.md` for the migration and dashboard procedure.
@@ -119,6 +127,11 @@ accepted NFR-06/NFR-07 evidence: D5 remains 500 samples / five seconds per asset
 Record any regression before accepting these tasks and archiving M9.
 
 ## Repeatable isolated checks
+
+The focused secured dashboard run passes. The final full-solution regression and
+remote PR checks are recorded below when complete. The one explicit long load
+profile remains excluded from the ordinary suite; its accepted full-duration
+M8 evidence remains in `docs/load-test.md`.
 
 ```powershell
 dotnet build -c Release
