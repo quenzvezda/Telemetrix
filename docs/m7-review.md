@@ -1,7 +1,7 @@
 # M7 MQTT input review
 
-Status: implementation verification in progress; reviewer acceptance and OpenSpec
-archive are pending. The reviewer authorized all task groups autonomously on
+Status: all 13 implementation tasks are complete and verified; reviewer acceptance
+and OpenSpec archive are pending. The reviewer authorized all task groups autonomously on
 2026-10-25. Review this branch before archiving `add-mqtt-source` or merging it.
 
 ## What changed and why
@@ -14,8 +14,13 @@ archive are pending. The reviewer authorized all task groups autonomously on
   startup/network failures while preserving each pending source timestamp.
 - Bridge selects OPC UA (default) or MQTT using `Source:Kind`. Both feed the
   existing per-asset batching, SQLite store-and-forward and Kafka publication.
+- OPC UA subscriptions include source timestamp changes, keeping constant Boolean
+  measurements at the simulator's 1 Hz rate for a fair protocol comparison.
 - MQTT normal reconnects preserve persistent sessions; capacity pauses reset
   deliberately uncollected broker history and report the collection gap.
+- Configured MQTT topic filters support standard `+` and `#` wildcards. After a
+  persistent-session filter change, older subscriptions cannot admit samples
+  outside the current filter.
 - Malformed samples increment `bridge.mqtt.rejected`. Warnings are limited to
   one per ten seconds per adapter, including unknown quality mapped to Bad.
 
@@ -41,10 +46,24 @@ M7_PIPELINE_PASS: seven tags stored from the production MqttSim container; Runni
 M7_RESTART_PASS: seven fresh tags and six ordered durable plant.events after broker restart.
 ```
 
-The real 600-second protocol comparison is pending. It uses two disposable
+The final Release build passed with zero warnings/errors. All 207 tests outside
+the protocol-comparison class passed together. The comparison class also passed
+its 15-second check with 15 measurements for each of seven tags in both protocols
+(105 MQTT and 105 OPC UA measurements). Strict OpenSpec validation passed all
+12 items (active changes and main specs). The 207-test suite plus the full
+600-second comparison cover all 208 tests successfully.
+
+Two existing timing-sensitive tests were stabilized: replay cancellation may
+return normally between iterations or throw inside an await, and Kafka topic
+metadata/configuration can become visible shortly after creation. Exact delivery,
+ordering, retention and deadline assertions remain in place.
+
+The real 600-second protocol comparison passed on 2026-10-25 over the UTC
+interval `[02:45:22.6936400, 02:55:22.6936400)`. Each protocol stored exactly
+600 measurements per tag: 4,200 MQTT and 4,200 OPC UA measurements across all
+seven tags, with zero observed count difference. It used two disposable
 Kafka/TimescaleDB stacks and the same source-time interval for both protocols;
-it checks seven matching tag counts at 1 Hz with at most one sample of boundary
-difference per tag. CI's default comparison is a 15-second regression, not the
+the assertion allows at most one sample of window-boundary difference per tag. CI's default comparison is a 15-second regression, not the
 ten-minute acceptance observation.
 
 Re-run from the repository root with Docker running:
@@ -98,6 +117,16 @@ Messages**. Inspect a fresh batch: `source` is `mqtt`, `endpoint` is
 `mqtt://localhost:1883`, identity matches its topic, and `Running` is numeric 1.
 Port 8080 must be available for the local Kafka UI service.
 
+If another application occupies 8080, omit `kafka-ui` from the startup command
+and run a temporary UI on 18080 instead:
+
+```powershell
+docker compose -f deploy/docker-compose.yml run --rm --no-deps -p 18080:8080 kafka-ui
+```
+
+Use [the alternate Kafka UI](http://localhost:18080) for the same checks, and
+stop that foreground command with Ctrl+C afterward.
+
 ### 3. Verify measurements
 
 Run this read-only SQL against the local `telemetry` database:
@@ -116,8 +145,7 @@ ORDER BY m.time DESC LIMIT 5;
 ```
 
 Expect seven tags after a batch window. While running steadily each tag adds
-about 60 measurements per minute. `Running` is numeric 1 and quality Good; use
-the actual stored quality representation from the existing schema.
+about 60 measurements per minute. `Running` is numeric 1 and quality is 0 (Good), as defined by the existing schema.
 
 ### 4. Restart the broker
 
