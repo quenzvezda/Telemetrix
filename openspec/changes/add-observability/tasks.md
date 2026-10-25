@@ -25,7 +25,7 @@ Planning baseline approved by the reviewer on 2026-10-25: 500 samples / 5 second
 
 - [x] 4.1 Add `deploy/sql/migrations/001_rollups_and_retention.sql` (continuous aggregate, refresh policy, both retention policies, all idempotent); verify it runs twice in a row without error on a fresh database
 - [ ] 4.2 Add the one-shot `db-migrate` compose service under an opt-in `migrations` profile with SQL errors stopping execution; document the SQL review and manual command `docker compose -f deploy/docker-compose.yml --profile migrations run --rm db-migrate`; verify default compose startup does not run it, and have the reviewer verify on an existing M7 volume that rollups and policies appear and the stored measurement count is unchanged
-- [ ] 4.3 Add an integration test (TimescaleDB Testcontainer) inserting 10/20/30 Good and 999 Bad in one minute, refreshing the aggregate, and asserting min 10 / max 30 / avg 20 / count 3
+- [x] 4.3 Add an integration test (TimescaleDB Testcontainer) inserting 10/20/30 Good and 999 Bad in one minute, refreshing the aggregate, and asserting min 10 / max 30 / avg 20 / count 3
 - [ ] 4.4 Verify retention policies with `SELECT * FROM timescaledb_information.jobs` showing 30 days on `measurement` and 1 year on `measurement_1m`
 
 ## 5. Dashboard

@@ -7,6 +7,35 @@ namespace Telemetrix.Integration.Tests;
 public class RollupMigrationTests
 {
     [Fact]
+    public async Task RollupIncludesOnlyGoodMeasurements()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        await using var database = new PostgreSqlBuilder("timescale/timescaledb:2.30.2-pg17").Build();
+        await database.StartAsync(ct);
+        await using var source = NpgsqlDataSource.Create(database.GetConnectionString());
+        await InitializeAsync(source, ct);
+        await MigrateAsync(source, ct);
+        await using var connection = await source.OpenConnectionAsync(ct);
+        var now = DateTimeOffset.UtcNow.AddMinutes(-5);
+        var start = new DateTimeOffset(now.Ticks - now.Ticks % TimeSpan.TicksPerMinute, TimeSpan.Zero);
+        await connection.ExecuteAsync(new CommandDefinition("""
+            INSERT INTO measurement(time,tag_id,value,quality,batch_id)
+            VALUES (@Start,2,10,0,@Batch), (@Start + interval '10 seconds',2,20,0,@Batch),
+                   (@Start + interval '20 seconds',2,30,0,@Batch), (@Start + interval '30 seconds',2,999,2,@Batch)
+            """, new { Start = start, Batch = Guid.NewGuid() }, cancellationToken: ct));
+        await connection.ExecuteAsync(new CommandDefinition("CALL refresh_continuous_aggregate('measurement_1m', @Start, @End)",
+            new { Start = start, End = start.AddMinutes(1) }, cancellationToken: ct));
+        await using var command = new NpgsqlCommand("SELECT min_value,max_value,avg_value,sample_count FROM measurement_1m", connection);
+        await using var reader = await command.ExecuteReaderAsync(ct);
+        Assert.True(await reader.ReadAsync(ct));
+        Assert.Equal(10, reader.GetDouble(0));
+        Assert.Equal(30, reader.GetDouble(1));
+        Assert.Equal(20, reader.GetDouble(2));
+        Assert.Equal(3, reader.GetInt64(3));
+        Assert.False(await reader.ReadAsync(ct));
+    }
+
+    [Fact]
     public async Task MigrationIsIdempotentAndPreservesExistingMeasurements()
     {
         var ct = TestContext.Current.CancellationToken;

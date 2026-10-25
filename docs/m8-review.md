@@ -117,3 +117,6 @@ Repeat the migration command: it must succeed without changing measurements.
 The migration runner stops on the first SQL error. Default Compose startup
 does not run `db-migrate`. Task 4.2 remains pending the reviewer's existing-volume
 verification; automated checks only mutate disposable databases.
+
+The Good-only rollup test passed after refreshing a completed minute containing
+10/20/30 Good and 999 Bad: min 10, max 30, average 20, count 3.
