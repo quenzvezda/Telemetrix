@@ -1,8 +1,8 @@
 # M8 latency and throughput measurements
 
-Status: profiles are being verified. Short smoke runs are diagnostic evidence,
-not substitutes for the 30-minute NFR-06 or 15-minute NFR-07 acceptance runs.
-D5 remains open for the reviewer after the comparison.
+Status: both candidates passed the full 30-minute NFR-06 latency and 15-minute
+NFR-07 throughput profiles on the recorded workstation. D5 remains open pending
+reviewer selection. Short smoke runs below remain diagnostic evidence.
 
 ## Machine and software
 
@@ -151,6 +151,7 @@ The final baseline throughput run passed:
 | Batching | UTC measurement window, 2026-10-25 | Seconds | Actual received/s | Lag slope (batches/s) | First / last minute mean lag | Final published / stored | Dead letters |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 500 / 5 s | 06:19:46.586–06:34:46.593 | 900.007 | 5,250.343 | -0.018977 | 44.000 / 0.615 | 4,884,600 / 4,884,600 | 0 |
+| 1,000 / 2 s | 06:35:35.945–06:50:35.954 | 900.008 | 5,242.643 | -0.000156 | 1.500 / 1.308 | 4,884,600 / 4,884,600 | 0 |
 
 Maximum observed lag was 133 batches; the backlog drained rather than growing.
 The source-time measurement window contains 4,725,000 measurements. Final counts
@@ -165,6 +166,32 @@ This is recorded host contention; the result is not an idle-machine benchmark.
 The alternative throughput run follows sequentially on the same machine and
 uses the same final source, broker and application queue settings.
 
-The alternative throughput result and D5 recommendation will be recorded after
-measurement. The provisional 500/5 s baseline has now passed both full-duration
-latency and throughput checks on this workstation.
+The alternative also passed full-duration throughput acceptance, with maximum
+lag three batches and complete drain. Its source-time window also contains
+4,725,000 measurements. Full evidence is in
+[alternative throughput](evidence/m8/throughput-alternative.json).
+
+## D5 comparison and recommendation
+
+| Batching | Default-rate p95 | High-rate p95 (diagnostic) | Actual throughput | Full source/storage equality | NFR-06 / NFR-07 |
+| --- | ---: | ---: | ---: | --- | --- |
+| 500 / 5 s | 7,774.686 ms | 7,644.455 ms | 5,250.343/s | Yes | Pass / Pass |
+| 1,000 / 2 s | 4,786.757 ms | 21,240.268 ms | 5,242.643/s | Yes | Pass / Pass |
+
+Recommend retaining **500 samples / 5 seconds per asset, whichever comes first**.
+It satisfies the default-rate latency bound and the sustained throughput target,
+with substantially lower measured latency under load. The shorter alternative
+improves low-rate latency but flushes smaller batches more often; low Kafka lag
+does not reveal waiting earlier in the pipeline. The measurements establish the
+latency trade-off, not a profiler-based attribution of every queueing delay.
+
+NFR-06 is evaluated at the default simulation rate, so the alternative's
+21.240-second high-rate p95 is a diagnostic drawback rather than a failure of
+that specified latency scenario. Both candidates pass the actual NFR-07 lag,
+throughput, dead-letter and complete-drain checks. The host-contention caveat
+above applies when interpreting the numerical comparison.
+
+The recommendation is proposed in [ADR-0015](adr/0015-retain-measured-batch-thresholds.md).
+The reviewer must select D5 before the ADR is accepted or M8 archived. If the
+alternative is selected, update the batching requirement/defaults first and
+repeat the selected-default acceptance runs as required by task 6.5.

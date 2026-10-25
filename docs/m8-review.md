@@ -119,9 +119,22 @@ TimescaleDB 2.30.2/PostgreSQL 17 Testcontainer: applying the migration twice
 succeeded, retained a pre-existing measurement, and created one refresh policy
 and exactly two retention policies. Existing local volumes have not been migrated.
 
-For the existing M7 volume, stop Bridge, wait for Transformer lag to reach zero,
-then stop Transformer before comparing counts. Record `SELECT count(*) FROM measurement`, review each migration SQL,
-and explicitly run:
+For the existing M7 volume, stop Bridge:
+
+```powershell
+docker compose -f deploy/docker-compose.yml stop bridge
+```
+
+At `http://localhost:8080`, wait for group `transformer` to have zero lag
+(or query `sum(telemetrix_consumer_lag)` at `http://localhost:9090`). Then stop
+Transformer before comparing counts:
+
+```powershell
+docker compose -f deploy/docker-compose.yml stop transformer
+```
+
+Record `SELECT count(*) FROM measurement`, review each migration SQL, and
+explicitly run:
 
 ```powershell
 docker compose -f deploy/docker-compose.yml --profile migrations run --rm db-migrate
@@ -141,7 +154,7 @@ the original measurement, backfills its historical rollup and creates the event
 table. The runner also fails if no migration files are mounted, rather than
 reporting a successful no-op.
 
-A subsequent injected failing SQL file returns non-zero and prevents the next
+An injected failing SQL file returns non-zero and prevents the next
 fixture migration from creating its sentinel table. All four migration/rollup
 tests passed with the real shell runner. Simulator health tests also explicitly
 check readiness before startup as well as after shutdown.
@@ -152,15 +165,14 @@ The Good-only rollup test passed after refreshing a completed minute containing
 The jobs inspection test joined `timescaledb_information.jobs` to
 `timescaledb_information.continuous_aggregates` to resolve the rollup's internal
 hypertable. It returned exactly `measurement = 30 days` and
-`measurement_1m = 1 year`. All three rollup/migration tests passed.
+`measurement_1m = 1 year`.
 
 Migration 001 also backfills completed historical buckets from the oldest raw
 bucket still present. The refresh policy alone only covers its rolling one-hour
 window. The regression test now includes a measurement from two days earlier,
 then removes that raw history, inserts newer raw data and reruns the migration;
-both the older retained rollup and the new one remain. All three tests pass with
-this history coverage. The test driver executes backfill separately from DDL,
-matching `psql -f` rather than putting the refresh procedure in an Npgsql pipeline.
+both the older retained rollup and the new one remain. All four migration/rollup
+tests pass with this history coverage.
 
 ## Plant event storage
 
@@ -216,6 +228,17 @@ call `StartPump` to recover. The final automated fresh-Grafana run reported
 Stopped through the actual panel query in 5.887 seconds, within one 10-second
 refresh interval. Its timeline data and the visual review included the state
 transition and recovery.
+
+## Verification status
+
+The full solution builds in Release with zero warnings/errors. All 172 unit
+tests pass (Bridge 102, Transformer 60, PlantSim 10). Both 30-minute latency
+profiles pass: p95 7,774.686 ms for 500/5 s and 4,786.757 ms for 1,000/2 s.
+Both 15-minute throughput profiles also pass at 5,250.343/s and 5,242.643/s,
+respectively, with complete drain and zero dead letters. The baseline's high-rate
+p95 is 7,644.455 ms versus 21,240.268 ms for the alternative. The recommendation
+in proposed ADR-0015 is to retain 500/5 s; reviewer selection remains pending.
+Whole-suite/container regression results will be added after those runs finish.
 
 ## Load tooling
 

@@ -42,7 +42,7 @@ Decide before the milestone that needs it starts unless the reviewer explicitly 
 
 | # | Decision | Needed by | Leaning |
 | --- | --- | --- | --- |
-| D5 | Final batch thresholds after measured latency and throughput comparison | M8 acceptance, after load tests | Approved baseline: 500 samples / 5 s per asset; final choice remains open until reviewer selection and ADR |
+| D5 | Final batch thresholds after measured latency and throughput comparison | M8 acceptance, after load tests | Both candidates pass; recommend retaining 500 samples / 5 s based on high-rate latency. See [measurements](docs/load-test.md) and [proposed ADR-0015](docs/adr/0015-retain-measured-batch-thresholds.md); final reviewer choice pending |
 
 ## Resolved decisions
 
