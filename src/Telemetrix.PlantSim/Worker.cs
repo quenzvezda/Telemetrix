@@ -103,10 +103,11 @@ public sealed class Worker(IOptions<PlantSimOptions> options, ITelemetryContext 
             configuration.ApplicationUri, telemetry, ct);
         if (existing is not null) return;
         // The SDK normalizes localhost to the machine name for opc.tcp. Preserve
-        // both public connection names explicitly in the certificate SAN.
+        // both public connection names explicitly in the certificate SAN. Put the
+        // machine name first: the factory normalizes the first domain entry.
         using var certificate = DefaultCertificateFactory.Instance.CreateApplicationCertificate(configuration.ApplicationUri!,
             "Telemetrix.PlantSim", "CN=Telemetrix.PlantSim",
-            ["localhost", "plantsim", Environment.MachineName, new Uri(options.Value.Endpoint).Host]).CreateForRSA();
+            [Environment.MachineName, "localhost", "plantsim", new Uri(options.Value.Endpoint).Host]).CreateForRSA();
         using var store = CertificateIdentifierResolver.OpenStore(identifier, telemetry)
             ?? throw new InvalidOperationException("PlantSim could not open its application certificate store.");
         await store.AddAsync(certificate, null, ct);

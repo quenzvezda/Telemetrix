@@ -16,7 +16,7 @@ public class OpcUaSecurityTests
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         deadline.CancelAfter(TimeSpan.FromMinutes(1));
         var ct = deadline.Token;
-        await using var server = new PlantSimFixture(secure: true);
+        await using var server = new PlantSimFixture(secure: true, listenOnAllInterfaces: true);
         await server.StartAsync(ct);
         var clientRoot = Path.Combine(server.PkiPath, "client", "pki");
         var options = new OpcUaOptions { Endpoint = server.Endpoint };

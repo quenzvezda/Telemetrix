@@ -19,7 +19,7 @@ internal sealed class PlantSimFixture : IAsyncDisposable
     public ITelemetryContext Telemetry => host.Services.GetRequiredService<ITelemetryContext>();
     public Worker Worker => host.Services.GetRequiredService<Worker>();
 
-    public PlantSimFixture(string? externalEndpoint = null, bool secure = false)
+    public PlantSimFixture(string? externalEndpoint = null, bool secure = false, bool listenOnAllInterfaces = false)
     {
         var reservation = new TcpListener(IPAddress.Loopback, 0);
         reservation.Start();
@@ -30,7 +30,8 @@ internal sealed class PlantSimFixture : IAsyncDisposable
         builder.Logging.ClearProviders();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["PlantSim:Endpoint"] = Endpoint,
+            ["PlantSim:Endpoint"] = listenOnAllInterfaces
+                ? new UriBuilder(Endpoint) { Host = "0.0.0.0" }.Uri.ToString() : Endpoint,
             ["PlantSim:PkiPath"] = directory,
             ["PlantSim:SecurityMode"] = secure ? "SignAndEncrypt" : "None",
             ["Faults:Random:Enabled"] = "false"

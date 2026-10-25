@@ -8,7 +8,7 @@ Change: `add-opcua-security`. Implementation proceeds across all task groups wit
 
 Verification: `dotnet test --project tests/Telemetrix.Edge.Bridge.Tests -c Release` passes 110 tests, including Production/Staging/PlantSim rejection of None, Production rejection of auto-accept and acceptance of secure Production settings. Development logs a warning for insecure settings.
 
-## Deferred M8 acceptance
+## Verification evidence
 
 Fresh clone (task 4.3): `pwsh -NoProfile -File ./scripts/Test-M9FreshClone.ps1` clones the committed branch, supplies a generated test database password only through ignored `deploy/.env`, removes host port bindings with a temporary override, builds/starts the secure stack and explicitly trusts its two generated identities. Result: `M9_FRESH_CLONE_PASS: secure session; measurements=42` in isolated project `telemetrix-m9-fresh-476c95e72a36`. The harness removes only that unique project's containers, images, network and volumes plus its temporary clone. The existing local stack is preserved. Remote CI secret scanning is checked before marking task 4.3 complete.
 
@@ -30,8 +30,93 @@ Rejected-certificate logs: secure integration verification checks that the actua
 
 Certificate verification: the two `OpcUaSecurityTests` pass. Both applications generate directory-store certificates, the Bridge certificate survives configuration recreation byte-for-byte, PlantSim SAN contains `localhost` and `plantsim`, each untrusted peer is rejected, and adding trust establishes a secure session without restarting. `git check-ignore pki/own/certs/example.der` confirms the PKI directory is ignored. Test PKIs are isolated temporary directories. Existing insecure regression fixtures explicitly use Development.
 
+The secured container dashboard check exposed a certificate-factory detail: it
+normalizes the first domain entry. Listing the machine name first preserves
+`localhost` in container certificates. The security integration test now binds
+PlantSim to `0.0.0.0` while connecting through `localhost`, covering the actual
+container case rather than only an in-process localhost listener. It passes with
+hostname validation enabled. Dashboard preflight now reports certificate errors
+immediately instead of waiting for the measurement deadline.
+
 Endpoint verification: `dotnet test --project tests/Telemetrix.Integration.Tests -c Release -- --filter-class '*OpcUaSecurityTests'` passes. OPC PLC discovery selects None exactly; a real None-only PlantSim rejects secure selection with `No matching endpoint` / `BadSecurityPolicyRejected`. OPC PLC advertises secure endpoints even with `--ut`, so the None-only negative case uses PlantSim rather than claiming OPC PLC is None-only.
 
 Tasks 5.1 and 5.2 require the reviewer's observed results. They must remain unchecked until those results are supplied. Preserve the existing TimescaleDB volume; do not run `down -v`. See `docs/m8-review.md` for the migration and dashboard procedure.
 
 The live secured source outage check also passes: `./scripts/Test-M9SourceGap.ps1` stops PlantSim for 60 seconds and restores it with the same persistent certificate. Both assets record a 73-second gap from `2026-10-25 09:06:33+00` to `09:07:46+00`, including reconnect time. Bridge logs a fresh SignAndEncrypt session and restores all seven monitored tags. Final visual dashboard/pump-state acceptance still belongs to the reviewer.
+
+## Review order
+
+1. Inspect the Bridge options/validator, exact endpoint selector and client certificate configuration. The adapter retains one certificate manager across retries and disposes it on shutdown.
+2. Inspect PlantSim's explicit SAN creation, secure server policy and environment validator, then the Compose PKI volumes and thumbprint-checking trust helper.
+3. Inspect `.gitleaks.toml`, the CI secrets job and isolated negative-key test. No credential-bearing appsettings files were present to migrate.
+4. Inspect `OpcUaSecurityTests`, the server option tests and secured `DashboardTests`, then the existing-volume/fresh-clone evidence above.
+
+## Reviewer acceptance: tasks 5.1 and 5.2
+
+The agent has supplied execution evidence; these checkboxes await your observed
+acceptance. OpenSpec remains active until review is approved. Never reset the
+existing database volume for these checks.
+
+For task 5.1, inspect the two SQL migrations and the recorded 121,100 -> 121,100
+-> 121,100 counts above. To repeat, stop Bridge, wait for the populated raw-topic
+partitions' lag to reach zero, then stop Transformer:
+
+```powershell
+docker compose -f deploy/docker-compose.yml stop bridge
+docker compose -f deploy/docker-compose.yml exec -T kafka /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server kafka:9092 --describe --group transformer
+docker compose -f deploy/docker-compose.yml stop transformer
+docker compose -f deploy/docker-compose.yml exec -T timescaledb psql -X -v ON_ERROR_STOP=1 -U telemetry -d telemetry -c 'SELECT count(*) FROM measurement'
+docker compose -f deploy/docker-compose.yml --profile migrations run --rm db-migrate
+```
+
+Repeat the count and migration commands: both counts must match your new paused
+baseline. Inspect `SELECT view_name FROM timescaledb_information.continuous_aggregates`
+and `SELECT proc_name,hypertable_name,config FROM timescaledb_information.jobs`.
+Expect `measurement_1m`, its one-minute refresh, 30-day raw retention and one-year
+rollup retention, with no duplicate policies after rerunning.
+
+Set `PLANT_EVENTS_ENABLED=true` in ignored `deploy/.env` now that migrations have
+passed. Resume and enable metrics:
+
+```powershell
+docker compose -f deploy/docker-compose.yml --profile secure --profile metrics up -d --build
+curl.exe -fsS http://localhost:5101/health
+curl.exe -fsS http://localhost:5102/health
+```
+
+Expect Healthy for both. Existing approved certificates remain trusted. For new
+identities, follow the README trust workflow; do not auto-accept them.
+
+For task 5.2, sign into [Grafana](http://localhost:3000/d/telemetrix) using your
+existing local account. The agent's separate browser reached the login page;
+no existing account was accessed or changed. Select Pump01 and all tags, check
+live trends/units and Running state. In UaExpert connect securely to
+`opc.tcp://localhost:4840`, explicitly exchange public certificates, and call
+`Objects/Plant01/Line01/Simulation/TripPump`. Expect Stopped within one ten-second
+refresh, with its change/sample time. Call `StartPump` to restore Running.
+
+```powershell
+./scripts/Test-M9SourceGap.ps1
+```
+
+Expect `M9_SECURE_GAP_PASS`, two asset gaps of at least 60 seconds, fresh secured
+measurements after recovery, and a break in Grafana trends across the gap.
+Inspect the gap table's UTC bounds, and select Tank01 to check its two tags.
+Select seven days to exercise rollups. Review `docs/load-test.md` for the
+accepted NFR-06/NFR-07 evidence: D5 remains 500 samples / five seconds per asset.
+Record any regression before accepting these tasks and archiving M9.
+
+## Repeatable isolated checks
+
+```powershell
+dotnet build -c Release
+dotnet test -c Release --no-build
+pwsh -NoProfile -File ./scripts/Test-M9FreshClone.ps1
+./scripts/Test-SecretScan.ps1 -Docker
+docker run --rm -v "${PWD}:/repo:ro" zricethezav/gitleaks:v8.30.1 git --redact --config /repo/.gitleaks.toml --log-opts=--all /repo
+npx -y @fission-ai/openspec@1.14.3 validate --all --strict
+```
+
+The fresh-clone/negative-key harnesses create and remove only their uniquely
+named disposable resources. The source-gap script intentionally exercises the
+existing local simulator; it does not reset volumes or change trust.

@@ -76,7 +76,8 @@ public class DashboardTests(ITestOutputHelper output)
             .WithEnvironment("Faults__Random__Enabled", "false")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("PlantSim OPC UA server started")).Build();
         await plant.StartAsync(ct);
-        var endpoint = $"opc.tcp://{plant.Hostname}:{port}";
+        // Use the explicit SAN covered by PlantSim's host-facing certificate.
+        var endpoint = $"opc.tcp://localhost:{port}";
         {
             await using var bridge = BridgeApplication.Build(["--environment=PlantSim", "--Http:Port=0",
                 $"--contentRoot={Path.Combine(AppContext.BaseDirectory, "config")}", $"--OpcUa:Endpoint={endpoint}",
@@ -91,6 +92,14 @@ public class DashboardTests(ITestOutputHelper output)
             var clientConfiguration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, ct);
             TrustPublicCertificate(serverPki, bridgePki);
             TrustPublicCertificate(bridgePki, serverPki);
+            var description = await OpcUaEndpointSelector.SelectAsync(clientConfiguration, settings, telemetry, ct);
+            Assert.Equal(MessageSecurityMode.SignAndEncrypt, description.SecurityMode);
+            Task<ISession> Connect() => new DefaultSessionFactory(telemetry).CreateAsync(clientConfiguration,
+                new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(clientConfiguration)),
+                false, true, "Telemetrix.Dashboard.Security", 60000, new UserIdentity(), default, ct);
+            // Fail with the actual certificate/endpoint error before waiting for measurements.
+            using (var preflight = await Connect())
+                Assert.True(StatusCode.IsGood((await preflight.ReadValueAsync(VariableIds.Server_ServerStatus_CurrentTime, ct)).StatusCode));
             await transformer.StartAsync(ct);
             await bridge.StartAsync(ct);
             try
@@ -99,11 +108,7 @@ public class DashboardTests(ITestOutputHelper output)
                 while (await connection.ExecuteScalarAsync<int>(new CommandDefinition("SELECT count(DISTINCT tag_id) FROM measurement", cancellationToken: ct)) != 7)
                     await Task.Delay(100, ct);
                 using (var trend = await QueryAsync(http, trendSql, "time_series", TimeSpan.FromMinutes(15), ct)) AssertFramesHaveValues(trend);
-                var description = await OpcUaEndpointSelector.SelectAsync(clientConfiguration, settings, telemetry, ct);
-                Assert.Equal(MessageSecurityMode.SignAndEncrypt, description.SecurityMode);
-                using (var session = await new DefaultSessionFactory(telemetry).CreateAsync(clientConfiguration,
-                    new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(clientConfiguration)),
-                    false, true, "Telemetrix.Dashboard.Security", 60000, new UserIdentity(), default, ct))
+                using (var session = await Connect())
                 {
                     var tripAt = DateTimeOffset.UtcNow;
                     await PlantSimFaultTests.CallAsync(session, "TripPump", ct);
