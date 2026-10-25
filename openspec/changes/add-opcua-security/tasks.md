@@ -17,7 +17,7 @@ On 2026-10-25 the reviewer approved M8 PR #5 and its archival, deferring manual 
 ## 3. Secrets
 
 - [x] 3.1 Move every password out of `appsettings*.json` into user-secrets (IDE) and environment variables (containers); verify `git grep -i password -- '*.json'` returns no value-bearing match and the stack still starts
-- [ ] 3.2 Add a gitleaks step and `.gitleaks.toml` (allowlisting only `deploy/.env.example`) to `.github/workflows/ci.yml`; verify CI passes on the clean repo and fails on a throwaway branch that commits a fake private key
+- [x] 3.2 Add a gitleaks step and `.gitleaks.toml` (allowlisting only `deploy/.env.example`) to `.github/workflows/ci.yml`; verify CI passes on the clean repo and fails on a throwaway branch that commits a fake private key
 
 ## 4. Milestone verification
 
