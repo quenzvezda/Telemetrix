@@ -105,13 +105,7 @@ public sealed class OpcUaSourceAdapter(
             ClientConfiguration = new ClientConfiguration { DefaultSessionTimeout = 60000 }
         };
         await configuration.ValidateAsync(ApplicationType.Client, cancellationToken);
-        var description = await CoreClientUtils.SelectEndpointAsync(
-            configuration, settings.Endpoint, false, telemetry, cancellationToken)
-            ?? throw new InvalidOperationException("The server offers no OPC UA endpoint with security None.");
-        if (description.SecurityMode != MessageSecurityMode.None)
-        {
-            throw new InvalidOperationException("M2 requires an OPC UA endpoint with security None.");
-        }
+        var description = await OpcUaEndpointSelector.SelectAsync(configuration, settings, telemetry, cancellationToken);
 
         var endpoint = new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(configuration));
         using var subscription = new Subscription(telemetry, new SubscriptionOptions
