@@ -1,4 +1,5 @@
 using Opc.Ua;
+using Microsoft.Extensions.Options;
 using Telemetrix.Simulation;
 using Telemetrix.PlantSim.Faults;
 
@@ -8,6 +9,7 @@ public static class PlantSimServices
 {
     public static IServiceCollection AddPlantSimulator(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddSingleton<IValidateOptions<PlantSimOptions>, PlantSimSecurityValidator>();
         services.AddOptions<PlantSimOptions>().Bind(configuration.GetSection("PlantSim"))
             .Validate(options => Uri.TryCreate(options.Endpoint, UriKind.Absolute, out var uri) &&
                 uri.Scheme == "opc.tcp" && uri.Port > 0, "PlantSim:Endpoint must be an opc.tcp URL with a port.")
@@ -30,4 +32,14 @@ public static class PlantSimServices
         services.AddHostedService<RandomFaultScheduler>();
         return services;
     }
+}
+
+internal sealed class PlantSimSecurityValidator(IHostEnvironment environment) : IValidateOptions<PlantSimOptions>
+{
+    public ValidateOptionsResult Validate(string? name, PlantSimOptions options) => options.SecurityMode switch
+    {
+        "SignAndEncrypt" => ValidateOptionsResult.Success,
+        "None" when environment.IsDevelopment() => ValidateOptionsResult.Success,
+        _ => ValidateOptionsResult.Fail("PlantSim:SecurityMode must be SignAndEncrypt; None is allowed only in Development.")
+    };
 }

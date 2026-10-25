@@ -23,7 +23,8 @@ services:
         condition: service_healthy
 
   bridge:
-    profiles: [pipeline, metrics]
+    profiles: [pipeline, metrics, secure]
+    hostname: bridge
     build:
       context: ..
       dockerfile: deploy/DeliveryReview.Dockerfile
@@ -31,12 +32,16 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: PlantSim
       OpcUa__Endpoint: opc.tcp://plantsim:4840
+      OpcUa__Security__Mode: SignAndEncrypt
+      OpcUa__Security__PkiRoot: /app/pki
+      OpcUa__Security__AutoAcceptUntrusted: "false"
       Kafka__BootstrapServers: kafka:9092
       Buffer__Path: /buffer/bridge.db
       Telemetry__Prometheus__Enabled: "true"
     ports: ["5101:5101"]
     volumes:
       - edgebuffer:/buffer
+      - bridge-pki:/app/pki
     depends_on:
       kafka:
         condition: service_healthy
@@ -44,7 +49,7 @@ services:
         condition: service_started
 
   transformer:
-    profiles: [pipeline, metrics]
+    profiles: [pipeline, metrics, secure]
     build:
       context: ..
       dockerfile: deploy/DeliveryReview.Dockerfile
@@ -83,20 +88,24 @@ services:
     build:
       context: ..
       dockerfile: src/Telemetrix.PlantSim/Dockerfile
-    hostname: plantsim
+    hostname: ${OPCUA_HOST_NAME:-plantsim}
     environment:
       PlantSim__Endpoint: opc.tcp://plantsim:4840
       PlantSim__PkiPath: /app/pki
+      PlantSim__SecurityMode: SignAndEncrypt
       Faults__Random__Enabled: "${PLANTSIM_RANDOM_FAULTS:-false}"
     ports: ["4840:4840", "5103:5103"]
     volumes:
-      - plantsim-pki:/app/pki
+      # Keep the pre-M9 PKI volume intact; provision an explicit secure identity.
+      - plantsim-secure-pki:/app/pki
 
   opc-plc:
     image: mcr.microsoft.com/iotedge/opc-plc:2.15.11
-    # --ut allows SecurityMode None for development (NFR-09); add simulation flags from the OPC PLC README.
-    command: --pn=50000 --autoaccept --ut
+    hostname: opc-plc
+    command: --pn=50000 --ph=opc-plc --cdn=localhost,opc-plc --ap=/app/pki/own --tp=/app/pki/trusted --rp=/app/pki/rejected --ip=/app/pki/issuer
     ports: ["50000:50000"]
+    volumes:
+      - opc-plc-pki:/app/pki
 
   mosquitto:
     image: eclipse-mosquitto:2.1.2-alpine
@@ -169,6 +178,8 @@ services:
 
 volumes:
   edgebuffer:
-  plantsim-pki:
+  plantsim-secure-pki:
+  bridge-pki:
+  opc-plc-pki:
   kafkadata:
   tsdata:

@@ -32,7 +32,7 @@ public sealed class MqttComparisonTests(ITestOutputHelper output)
         try
         {
             using var mqttBridge = MqttPipelineTests.Bridge(mqttEnvironment, mqtt, Path.Combine(directory, "mqtt"));
-            var opcBuilder = Host.CreateApplicationBuilder();
+            var opcBuilder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = Environments.Development });
             opcBuilder.Configuration.Sources.Clear();
             opcBuilder.Logging.ClearProviders();
             opcBuilder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "config", "appsettings.json"))
@@ -40,6 +40,8 @@ public sealed class MqttComparisonTests(ITestOutputHelper output)
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
                     ["OpcUa:Endpoint"] = plant.Endpoint,
+                    ["OpcUa:Security:Mode"] = "None",
+                    ["OpcUa:Security:PkiRoot"] = Path.Combine(directory, "opc", "pki"),
                     ["Kafka:BootstrapServers"] = opcEnvironment.Kafka.GetBootstrapAddress(),
                     ["Buffer:Path"] = Path.Combine(directory, "opc", "edge.db")
                 });

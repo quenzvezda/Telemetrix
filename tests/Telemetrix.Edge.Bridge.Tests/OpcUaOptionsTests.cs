@@ -20,7 +20,7 @@ public class OpcUaOptionsTests
         Assert.Equal("Plant01", options.Plant);
         Assert.Equal("Line01", options.Line);
         Assert.Equal("opc.tcp://localhost:50000", options.Endpoint);
-        Assert.Equal("None", options.SecurityMode);
+        Assert.Equal("None", options.Security.Mode);
         Assert.Equal(500, options.SamplingIntervalMs);
         Assert.Equal(1000, options.PublishingIntervalMs);
         Assert.Equal(10u, options.QueueSize);
@@ -43,7 +43,9 @@ public class OpcUaOptionsTests
     [InlineData("OpcUa:SamplingIntervalMs", "0")]
     [InlineData("OpcUa:PublishingIntervalMs", "-1")]
     [InlineData("OpcUa:QueueSize", "0")]
-    [InlineData("OpcUa:SecurityMode", "SignAndEncrypt")]
+    [InlineData("OpcUa:Security:Mode", "Invalid")]
+    [InlineData("OpcUa:Security:Policy", "None")]
+    [InlineData("OpcUa:Security:PkiRoot", " ")]
     public async Task InvalidConfigurationFailsAtHostStartupAndNamesTheSetting(string key, string value)
     {
         var builder = CreateBuilder();
@@ -108,7 +110,8 @@ public class OpcUaOptionsTests
     {
         var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
         {
-            DisableDefaults = true
+            DisableDefaults = true,
+            EnvironmentName = Environments.Development
         });
         builder.Logging.ClearProviders();
         builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "config", "appsettings.json"));
@@ -119,5 +122,34 @@ public class OpcUaOptionsTests
 
         builder.Services.AddOpcUaOptions(builder.Configuration);
         return builder;
+    }
+
+    [Theory]
+    [InlineData("Production", "None", false, false)]
+    [InlineData("Staging", "None", false, false)]
+    [InlineData("PlantSim", "None", false, false)]
+    [InlineData("Production", "SignAndEncrypt", true, false)]
+    [InlineData("Production", "SignAndEncrypt", false, true)]
+    [InlineData("Development", "None", false, true)]
+    public async Task SecuritySettingsAreValidatedAtStartup(string environment, string mode, bool autoAccept, bool starts)
+    {
+        var builder = CreateBuilder();
+        builder.Environment.EnvironmentName = environment;
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["OpcUa:Security:Mode"] = mode,
+            ["OpcUa:Security:AutoAcceptUntrusted"] = autoAccept.ToString()
+        });
+        using var host = builder.Build();
+        if (starts)
+        {
+            await host.StartAsync(TestContext.Current.CancellationToken);
+            await host.StopAsync(TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            var error = await Assert.ThrowsAsync<OptionsValidationException>(() => host.StartAsync(TestContext.Current.CancellationToken));
+            Assert.Contains("OpcUa:Security:", error.Message);
+        }
     }
 }

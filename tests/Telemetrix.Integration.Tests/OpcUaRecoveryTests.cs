@@ -49,6 +49,7 @@ public class OpcUaRecoveryTests(ITestOutputHelper output) : IDisposable
             .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "config", "appsettings.Development.json"))
             .Build();
         var options = configuration.GetSection("OpcUa").Get<OpcUaOptions>()!;
+        options.Security.PkiRoot = Path.Combine(directory, "pki");
         options.Endpoint = new UriBuilder("opc.tcp", container.Hostname, hostPort).Uri.ToString();
         if (browse)
         {

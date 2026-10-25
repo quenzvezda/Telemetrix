@@ -37,13 +37,14 @@ public sealed class PlantEventDeliveryTests(ITestOutputHelper output) : IDisposa
         await using var kafka = new KafkaBuilder("apache/kafka:4.3.1")
             .WithEnvironment("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "false").Build();
         await Task.WhenAll(opc.StartAsync(ct), kafka.StartAsync(ct));
-        var builder = Host.CreateApplicationBuilder();
+        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = Environments.Development });
         builder.Logging.ClearProviders();
         builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "config", "appsettings.json"))
             .AddJsonFile(Path.Combine(AppContext.BaseDirectory, "config", "appsettings.Development.json"))
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["OpcUa:Endpoint"] = new UriBuilder("opc.tcp", opc.Hostname, port).Uri.ToString(),
+                ["OpcUa:Security:PkiRoot"] = Path.Combine(directory, "pki"),
                 ["Kafka:BootstrapServers"] = kafka.GetBootstrapAddress(),
                 ["Buffer:Path"] = Path.Combine(directory, "bridge.db")
             });

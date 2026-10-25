@@ -35,7 +35,7 @@ public class SimulatorWebHostTests
         try
         {
             await using var plant = PlantSimApplication.Build(["--Http:Port=0", $"--PlantSim:Endpoint=opc.tcp://localhost:{port}",
-                $"--PlantSim:PkiPath={pki}", "--Faults:Random:Enabled=false"]);
+                $"--PlantSim:PkiPath={pki}", "--environment=Development", "--PlantSim:SecurityMode=None", "--Faults:Random:Enabled=false"]);
             await using var simulator = MqttSimApplication.Build(["--Http:Port=0", $"--MqttSim:Host={mqtt.Host}",
                 $"--MqttSim:Port={mqtt.Port}"]);
             Assert.False(plant.Services.GetRequiredService<Worker>().IsReady);

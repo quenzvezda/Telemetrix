@@ -2,12 +2,18 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Dapper;
 using DotNet.Testcontainers.Builders;
 using Npgsql;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Opc.Ua;
+using Opc.Ua.Client;
 using Telemetrix.Edge.Bridge;
+using Telemetrix.Edge.Bridge.Sources.OpcUa;
 using Telemetrix.Transformer;
 
 namespace Telemetrix.Integration.Tests;
@@ -62,20 +68,56 @@ public class DashboardTests(ITestOutputHelper output)
         reservation.Start();
         var port = ((IPEndPoint)reservation.LocalEndpoint).Port;
         reservation.Stop();
+        var bridgePki = Path.Combine(directory, "bridge", "pki");
         await using var plant = new ContainerBuilder(image).WithPortBinding(port, 4840)
-            .WithEnvironment("PlantSim__Endpoint", "opc.tcp://0.0.0.0:4840")
+            // The SDK resolves loopback URLs to the client's real machine name.
+            // A host-facing certificate must cover that name across Docker NAT.
+            .WithHostname(Environment.MachineName)
+            .WithEnvironment("PlantSim__Endpoint", $"opc.tcp://{Environment.MachineName}:4840")
             .WithEnvironment("Faults__Random__Enabled", "false")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("PlantSim OPC UA server started")).Build();
         await plant.StartAsync(ct);
-        var endpoint = $"opc.tcp://{plant.Hostname}:{port}";
+        // Exchange public certificates through Docker's API. A host bind mount
+        // would replace the image's app-owned PKI with a different Linux uid.
+        var listing = await plant.ExecAsync(["find", "/app/pki/own/certs", "-type", "f", "-name", "*.der"], ct);
+        Assert.Equal(0, listing.ExitCode);
+        var serverCertificatePath = Assert.Single(listing.Stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        var serverCertificateBytes = await plant.ReadFileAsync(serverCertificatePath, ct);
+        using var serverCertificate = X509CertificateLoader.LoadCertificate(serverCertificateBytes);
+        var domains = serverCertificate.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single().EnumerateDnsNames().ToArray();
+        Assert.Contains("localhost", domains);
+        Assert.Contains("plantsim", domains);
+        output.WriteLine($"Server certificate: {serverCertificate.Thumbprint}; DNS: {string.Join(", ", domains)}");
+        // Use the explicit SAN covered by PlantSim's host-facing certificate.
+        var endpoint = $"opc.tcp://localhost:{port}";
         {
             await using var bridge = BridgeApplication.Build(["--environment=PlantSim", "--Http:Port=0",
                 $"--contentRoot={Path.Combine(AppContext.BaseDirectory, "config")}", $"--OpcUa:Endpoint={endpoint}",
+                $"--OpcUa:Security:PkiRoot={bridgePki}",
                 $"--Kafka:BootstrapServers={environment.Kafka.GetBootstrapAddress()}",
                 $"--Buffer:Path={Path.Combine(directory, "bridge.db")}", "--Logging:LogLevel:Default=Warning"]);
             await using var transformer = TransformerApplication.Build(["--Http:Port=0", "--PlantEvents:Enabled=true",
                 $"--Kafka:BootstrapServers={environment.Kafka.GetBootstrapAddress()}",
                 $"--ConnectionStrings:Telemetry={environment.Database.GetConnectionString()}", "--Logging:LogLevel:Default=Warning"]);
+            var settings = bridge.Services.GetRequiredService<IOptions<OpcUaOptions>>().Value;
+            var telemetry = bridge.Services.GetRequiredService<ITelemetryContext>();
+            var clientConfiguration = await OpcUaClientConfiguration.CreateAsync(settings, telemetry, ct);
+            Directory.CreateDirectory(Path.Combine(bridgePki, "trusted", "certs"));
+            await File.WriteAllBytesAsync(Path.Combine(bridgePki, "trusted", "certs", "plantsim.der"), serverCertificateBytes, ct);
+            var clientCertificate = Assert.Single(Directory.GetFiles(Path.Combine(bridgePki, "own", "certs"), "*.der"));
+            Assert.Equal(0, (await plant.ExecAsync(["mkdir", "-p", "/app/pki/trusted/certs"], ct)).ExitCode);
+            await plant.CopyAsync(await File.ReadAllBytesAsync(clientCertificate, ct), "/app/pki/trusted/certs/bridge.der", ct: ct);
+            var description = await OpcUaEndpointSelector.SelectAsync(clientConfiguration, settings, telemetry, ct);
+            using var advertised = X509CertificateLoader.LoadCertificate(description.ServerCertificate.ToArray()!);
+            output.WriteLine($"Advertised certificate: {advertised.Thumbprint}; {advertised.Extensions.OfType<X509SubjectAlternativeNameExtension>().Single().Format(false)}");
+            Assert.Equal(serverCertificate.Thumbprint, advertised.Thumbprint);
+            Assert.Equal(MessageSecurityMode.SignAndEncrypt, description.SecurityMode);
+            Task<ISession> Connect() => new DefaultSessionFactory(telemetry).CreateAsync(clientConfiguration,
+                new ConfiguredEndpoint(null, description, EndpointConfiguration.Create(clientConfiguration)),
+                false, true, "Telemetrix.Dashboard.Security", 60000, new UserIdentity(), default, ct);
+            // Fail with the actual certificate/endpoint error before waiting for measurements.
+            using (var preflight = await Connect())
+                Assert.True(StatusCode.IsGood((await preflight.ReadValueAsync(VariableIds.Server_ServerStatus_CurrentTime, ct)).StatusCode));
             await transformer.StartAsync(ct);
             await bridge.StartAsync(ct);
             try
@@ -84,8 +126,7 @@ public class DashboardTests(ITestOutputHelper output)
                 while (await connection.ExecuteScalarAsync<int>(new CommandDefinition("SELECT count(DISTINCT tag_id) FROM measurement", cancellationToken: ct)) != 7)
                     await Task.Delay(100, ct);
                 using (var trend = await QueryAsync(http, trendSql, "time_series", TimeSpan.FromMinutes(15), ct)) AssertFramesHaveValues(trend);
-                await using var client = new PlantSimFixture(endpoint);
-                using (var session = await client.ConnectAsync(ct))
+                using (var session = await Connect())
                 {
                     var tripAt = DateTimeOffset.UtcNow;
                     await PlantSimFaultTests.CallAsync(session, "TripPump", ct);

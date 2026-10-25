@@ -90,7 +90,7 @@
     {
       "id": 2,
       "title": "Pump state",
-      "description": "Source Running tag. Gaps remain empty.",
+      "description": "Source Running tag. Recorded gaps and more than one minute without Good samples remain empty. State ends at its last observed sample.",
       "type": "state-timeline",
       "datasource": {
         "type": "grafana-postgresql-datasource",
@@ -111,7 +111,7 @@
           },
           "editorMode": "code",
           "rawQuery": true,
-          "rawSql": "WITH states AS (\n SELECT m.time,m.value,lag(m.value) OVER(ORDER BY m.time) AS previous\n FROM measurement m JOIN tag t USING(tag_id)\n WHERE $__timeFilter(m.time) AND t.asset_id=${asset:sqlstring} AND t.name='Running' AND m.quality=0\n)\nSELECT time,value,'Pump state' AS metric FROM states WHERE previous IS DISTINCT FROM value\nUNION ALL\nSELECT greatest(gap_start,$__timeFrom()::timestamptz)+interval '1 microsecond',NULL::double precision,'Pump state'\nFROM plant_event WHERE asset_id=${asset:sqlstring} AND event_type='Gap'\nAND gap_end>=$__timeFrom() AND gap_start<=$__timeTo()\nUNION ALL\nSELECT resumed.time,resumed.value,'Pump state'\nFROM plant_event g\nJOIN LATERAL (\n SELECT m.time,m.value FROM measurement m JOIN tag t USING(tag_id)\n WHERE t.asset_id=g.asset_id AND t.name='Running' AND m.quality=0 AND m.time>=g.gap_end\n ORDER BY m.time LIMIT 1\n) resumed ON true\nWHERE g.asset_id=${asset:sqlstring} AND g.event_type='Gap'\n AND g.gap_end>=$__timeFrom() AND g.gap_start<=$__timeTo()\nORDER BY time",
+          "rawSql": "WITH states AS (\n SELECT m.time,m.value,lag(m.value) OVER(ORDER BY m.time) AS previous,\n        lag(m.time) OVER(ORDER BY m.time) AS previous_time,\n        lead(m.time) OVER(ORDER BY m.time) AS next_time\n FROM measurement m JOIN tag t USING(tag_id)\n WHERE $__timeFilter(m.time) AND t.asset_id=${asset:sqlstring} AND t.name='Running' AND m.quality=0\n)\nSELECT time,value,'Pump state' AS metric FROM states\nWHERE previous IS DISTINCT FROM value OR time-previous_time>interval '1 minute'\nUNION ALL\nSELECT previous_time+interval '1 millisecond',NULL::double precision,'Pump state'\nFROM states WHERE time-previous_time>interval '1 minute'\nUNION ALL\nSELECT time+interval '1 millisecond',NULL::double precision,'Pump state'\nFROM states WHERE next_time IS NULL\nUNION ALL\nSELECT greatest(gap_start,$__timeFrom()::timestamptz)+interval '1 millisecond',NULL::double precision,'Pump state'\nFROM plant_event WHERE asset_id=${asset:sqlstring} AND event_type='Gap'\nAND gap_end>=$__timeFrom() AND gap_start<=$__timeTo()\nUNION ALL\nSELECT resumed.time,resumed.value,'Pump state'\nFROM plant_event g\nJOIN LATERAL (\n SELECT m.time,m.value FROM measurement m JOIN tag t USING(tag_id)\n WHERE t.asset_id=g.asset_id AND t.name='Running' AND m.quality=0 AND m.time>=g.gap_end\n ORDER BY m.time LIMIT 1\n) resumed ON true\nWHERE g.asset_id=${asset:sqlstring} AND g.event_type='Gap'\n AND g.gap_end>=$__timeFrom() AND g.gap_start<=$__timeTo()\nORDER BY time",
           "format": "time_series"
         }
       ],
@@ -227,7 +227,7 @@
     {
       "id": 1,
       "title": "$asset / $tag",
-      "description": "Good measurements; six-hour ranges and longer use one-minute rollups. Null markers prevent lines across source gaps.",
+      "description": "Good measurements; six-hour ranges and longer use one-minute rollups. Source gaps and missing history remain blank.",
       "type": "timeseries",
       "datasource": {
         "type": "grafana-postgresql-datasource",
@@ -253,7 +253,7 @@
           },
           "editorMode": "code",
           "rawQuery": true,
-          "rawSql": "WITH trend AS (\n  SELECT time_bucket('${__interval}'::interval,m.time) AS time,avg(m.value) AS value,t.name AS metric\n  FROM measurement m JOIN tag t USING(tag_id)\n  WHERE $__timeFilter(m.time) AND t.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring}) AND m.quality=0\n    AND ($__unixEpochTo()-$__unixEpochFrom())<21600\n  GROUP BY 1,3\n  UNION ALL\n  SELECT r.bucket AS time,r.avg_value AS value,t.name AS metric\n  FROM measurement_1m r JOIN tag t USING(tag_id)\n  WHERE $__timeFilter(r.bucket) AND t.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring})\n    AND ($__unixEpochTo()-$__unixEpochFrom())>=21600\n), gap_marks AS (\n  SELECT greatest(g.gap_start,$__timeFrom()::timestamptz)+interval '1 microsecond' AS time,\n         NULL::double precision AS value,t.name AS metric\n  FROM plant_event g JOIN tag t ON t.asset_id=g.asset_id\n  WHERE g.event_type='Gap' AND g.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring}) AND g.gap_end>=$__timeFrom() AND g.gap_start<=$__timeTo()\n  UNION ALL\n  SELECT least(g.gap_end,$__timeTo()::timestamptz)-interval '1 microsecond',NULL::double precision,t.name\n  FROM plant_event g JOIN tag t ON t.asset_id=g.asset_id\n  WHERE g.event_type='Gap' AND g.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring}) AND g.gap_end>=$__timeFrom() AND g.gap_start<=$__timeTo()\n)\nSELECT time,value,metric FROM trend\nUNION ALL SELECT time,value,metric FROM gap_marks\nORDER BY time",
+          "rawSql": "WITH trend AS (\n  SELECT time_bucket('${__interval}'::interval,m.time) AS time,avg(m.value) AS value,t.name AS metric\n  FROM measurement m JOIN tag t USING(tag_id)\n  WHERE $__timeFilter(m.time) AND t.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring}) AND m.quality=0\n    AND ($__unixEpochTo()-$__unixEpochFrom())<21600\n  GROUP BY 1,3\n  UNION ALL\n  SELECT r.bucket AS time,r.avg_value AS value,t.name AS metric\n  FROM measurement_1m r JOIN tag t USING(tag_id)\n  WHERE $__timeFilter(r.bucket) AND t.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring})\n    AND ($__unixEpochTo()-$__unixEpochFrom())>=21600\n), ordered_trend AS (\n  SELECT time,value,metric,lag(time) OVER(PARTITION BY metric ORDER BY time) AS previous_time\n  FROM trend\n), history_marks AS (\n  SELECT previous_time+CASE WHEN ($__unixEpochTo()-$__unixEpochFrom())>=21600\n    THEN interval '1 minute' ELSE '${__interval}'::interval END AS time,\n    NULL::double precision AS value,metric\n  FROM ordered_trend\n  WHERE time-previous_time>CASE WHEN ($__unixEpochTo()-$__unixEpochFrom())>=21600\n    THEN interval '1 minute' ELSE greatest('${__interval}'::interval,interval '1 minute') END\n), gap_marks AS (\n  SELECT greatest(g.gap_start,$__timeFrom()::timestamptz)+interval '1 microsecond' AS time,\n         NULL::double precision AS value,t.name AS metric\n  FROM plant_event g JOIN tag t ON t.asset_id=g.asset_id\n  WHERE g.event_type='Gap' AND g.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring}) AND g.gap_end>=$__timeFrom() AND g.gap_start<=$__timeTo()\n  UNION ALL\n  SELECT least(g.gap_end,$__timeTo()::timestamptz)-interval '1 microsecond',NULL::double precision,t.name\n  FROM plant_event g JOIN tag t ON t.asset_id=g.asset_id\n  WHERE g.event_type='Gap' AND g.asset_id=${asset:sqlstring}\n    AND t.name IN (${tag:sqlstring}) AND g.gap_end>=$__timeFrom() AND g.gap_start<=$__timeTo()\n)\nSELECT time,value,metric FROM trend\nUNION ALL SELECT time,value,metric FROM gap_marks\nUNION ALL SELECT time,value,metric FROM history_marks\nORDER BY time",
           "format": "time_series"
         }
       ],
@@ -267,7 +267,7 @@
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "fillOpacity": 10,
-            "showPoints": "never",
+            "showPoints": "auto",
             "spanNulls": false,
             "axisPlacement": "auto"
           }
@@ -418,7 +418,7 @@
             "properties": [
               {
                 "id": "unit",
-              "value": "suffix:s"
+                "value": "suffix:s"
               },
               {
                 "id": "decimals",

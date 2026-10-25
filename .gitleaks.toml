@@ -1,0 +1,11 @@
+title = "Telemetrix secret scanning"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Only the documented dotenv placeholder"
+condition = "AND"
+paths = ['''^deploy/\.env\.example$''']
+regexTarget = "line"
+regexes = ['''^POSTGRES_PASSWORD=change-me$''']

@@ -33,6 +33,8 @@ public sealed class PlantSimPipelineTests(ITestOutputHelper output) : IDisposabl
             .WithName($"telemetrix-plantsim-test:{Guid.NewGuid():N}").Build();
         await image.CreateAsync(ct);
         await using var simulator = new ContainerBuilder(image)
+            .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
+            .WithEnvironment("PlantSim__SecurityMode", "None")
             .WithEnvironment("PlantSim__Endpoint", "opc.tcp://0.0.0.0:4840")
             .WithEnvironment("Faults__Random__Enabled", "false")
             .WithPortBinding(4840, true)
@@ -43,7 +45,7 @@ public sealed class PlantSimPipelineTests(ITestOutputHelper output) : IDisposabl
         await using var client = new PlantSimFixture(endpoint);
         using var session = await client.ConnectAsync(ct);
 
-        var builder = Host.CreateApplicationBuilder();
+        var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings { EnvironmentName = Environments.Development });
         builder.Configuration.Sources.Clear();
         builder.Logging.ClearProviders();
         builder.Configuration.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "config", "appsettings.json"))
@@ -51,6 +53,8 @@ public sealed class PlantSimPipelineTests(ITestOutputHelper output) : IDisposabl
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["OpcUa:Endpoint"] = endpoint,
+                ["OpcUa:Security:Mode"] = "None",
+                ["OpcUa:Security:PkiRoot"] = Path.Combine(directory, "pki"),
                 ["Kafka:BootstrapServers"] = environment.Kafka.GetBootstrapAddress(),
                 ["Buffer:Path"] = Path.Combine(directory, "bridge.db")
             });
