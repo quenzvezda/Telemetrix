@@ -146,4 +146,25 @@ including every lag observation, is in
 [baseline latency](evidence/m8/latency-baseline.json) and
 [alternative latency](evidence/m8/latency-alternative.json).
 
-The full throughput runs and D5 recommendation will be recorded after measurement.
+The final baseline throughput run passed:
+
+| Batching | UTC measurement window, 2026-10-25 | Seconds | Actual received/s | Lag slope (batches/s) | First / last minute mean lag | Final published / stored | Dead letters |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 500 / 5 s | 06:19:46.586–06:34:46.593 | 900.007 | 5,250.343 | -0.018977 | 44.000 / 0.615 | 4,884,600 / 4,884,600 | 0 |
+
+Maximum observed lag was 133 batches; the backlog drained rather than growing.
+The source-time measurement window contains 4,725,000 measurements. Final counts
+also include warm-up and the completed last source tick. Both source and storage
+drain checks passed. The actual reception rate exceeds 5,000/s, independently
+of the configured nominal rate. Full evidence is in
+[baseline throughput](evidence/m8/throughput-baseline.json).
+
+The baseline's early window overlapped low-rate latency profiles and briefly
+the interrupted runners before their child processes were explicitly stopped.
+This is recorded host contention; the result is not an idle-machine benchmark.
+The alternative throughput run follows sequentially on the same machine and
+uses the same final source, broker and application queue settings.
+
+The alternative throughput result and D5 recommendation will be recorded after
+measurement. The provisional 500/5 s baseline has now passed both full-duration
+latency and throughput checks on this workstation.
