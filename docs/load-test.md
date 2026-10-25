@@ -37,8 +37,10 @@ Bridge and Transformer run through their actual application factories, with
 JSON logging at Warning and Prometheus export enabled.
 
 Latency uses the ordinary seven-tag PlantSim OPC UA source at 1 Hz for 1,800
-measured seconds. Throughput uses 143 MqttSim pumping-line clones at 5 Hz:
-143 × 7 × 5 = 5,005 offered samples/s, for 900 measured seconds. The first
+measured seconds. Throughput uses 150 MqttSim pumping-line clones at 5 Hz:
+150 × 7 × 5 = 5,250 offered samples/s, for 900 measured seconds. This gives
+the generator 5% headroom for timer jitter; acceptance still requires at least
+5,000 actually received samples/s. The first
 line keeps its original identities; further line/asset identifiers get unique
 suffixes. The disposable catalog is seeded before Transformer starts, keeping
 the default unknown-tag dead-letter policy. Publications use QoS 1, retain,
@@ -114,6 +116,13 @@ This is a bounded benchmark deployment setting, not a change to the default
 development broker or the batching decision. The report records the broker
 capacity; final source acknowledgement/storage equality remains mandatory.
 The low-rate latency runs use the ordinary broker-independent OPC UA source.
+
+An intermediate repeated baseline was stopped after the source rate fell below
+5,000/s following host scheduling pauses. At 5,005 nominal samples/s the original
+generator had only 0.1% headroom; its periodic timer coalesces missed ticks rather
+than inventing historical samples. The final comparison uses 150 clones for
+both candidates, records its actual offered/received rate, and keeps the same
+900-second measurement duration. The interrupted run is not acceptance evidence.
 
 ## Acceptance results
 

@@ -54,7 +54,9 @@ public class LoadProfileTests(ITestOutputHelper output)
         await using var environment = new DeliveryTestEnvironment();
         await environment.StartAsync(ct);
         await RollupMigrationTests.MigrateAsync(environment.Source, ct);
-        var lines = kind == "throughput" ? 143 : 1;
+        // Offer 5% headroom so timer jitter cannot turn a generator pause into
+        // a false pipeline ceiling; acceptance still measures actual reception.
+        var lines = kind == "throughput" ? 150 : 1;
         if (lines > 1) await SeedCatalogAsync(environment, lines, ct);
         // Bound broker burst absorption independently of the application's batch queue.
         const int brokerQueueCapacity = 100000;
@@ -75,7 +77,7 @@ public class LoadProfileTests(ITestOutputHelper output)
             arguments.AddRange(["--Source:Kind=Mqtt", $"--Source:Mqtt:Host={mqtt.Host}", $"--Source:Mqtt:Port={mqtt.Port}",
                 $"--Source:Mqtt:ClientId=load-{Guid.NewGuid():N}"]);
             mqttSimulator = MqttSimApplication.Build(["--Http:Port=0", $"--MqttSim:Host={mqtt.Host}", $"--MqttSim:Port={mqtt.Port}",
-                "--MqttSim:LineCount=143", "--MqttSim:TickInterval=00:00:00.200", "--MqttSim:MaxInFlight=64", "--Logging:LogLevel:Default=Warning"]);
+                $"--MqttSim:LineCount={lines}", "--MqttSim:TickInterval=00:00:00.200", "--MqttSim:MaxInFlight=64", "--Logging:LogLevel:Default=Warning"]);
         }
         else
         {

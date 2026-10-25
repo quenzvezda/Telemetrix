@@ -84,7 +84,7 @@ The load tooling SHALL retain normal simulator defaults, scale uniquely identifi
 - **THEN** it publishes the original seven tag topics at 1 Hz with one in-flight publication
 
 #### Scenario: Scaled source preserves identity and order
-- **WHEN** the throughput profile runs 143 pumping-line clones at 5 Hz
+- **WHEN** the throughput profile runs 150 pumping-line clones at 5 Hz (5,250 offered samples/s, with actual reception required to sustain at least 5,000/s)
 - **THEN** every clone has distinct asset/tag identities, every source tick completes before the next starts, and the report includes actual publication and reception rates and a final drain count
 
 #### Scenario: Bounded batch queue tuning
