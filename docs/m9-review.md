@@ -10,6 +10,8 @@ Verification: `dotnet test --project tests/Telemetrix.Edge.Bridge.Tests -c Relea
 
 ## Deferred M8 acceptance
 
+Secrets audit: `git grep -i password -- '*.json'` finds no matches. App projects already have `UserSecretsId`; no password migration was necessary. Compose supplies the database password only from ignored `deploy/.env` via environment variables. README now documents IDE user-secrets and PKI boundaries. The live secured stack starts with these providers.
+
 Trust workflow: the README documents rejected-to-trusted movement and the thumbprint-checked `deploy/Trust-OpcUaCertificates.ps1` helper. Running it first prints identities without changes; supplying the two observed thumbprints establishes mutual trust on the live secure Compose stack. Bridge logs SignAndEncrypt/Basic256Sha256, creates seven monitored tags and reports Healthy without restarting either application. `docker inspect --format '{{.State.StartedAt}}' telemetrix-bridge-1 telemetrix-plantsim-1` retains the original startup times.
 
 Compose verification: `docker compose -f deploy/docker-compose.yml --profile secure config --quiet` and `up -d --build` succeed on the existing stack. PlantSim logs `BadCertificateUntrusted` for the new Bridge certificate and no session is established. Mutual rejection is covered by the staged integration test: the server rejects the client before it sends its own certificate, so both rejection logs need not occur in one connection attempt. OPC PLC runs without `--ut`/`--autoaccept`, with explicit persistent store paths. M9 uses a new PlantSim secure PKI volume; the old PKI, Kafka, edge buffer and TimescaleDB volumes are preserved.

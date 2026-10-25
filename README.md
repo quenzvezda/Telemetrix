@@ -288,6 +288,14 @@ latency and throughput evidence. Long load tests run explicitly through
 
 #### Run the Transformer
 
+All committed `appsettings*.json` files contain no credential values. For an IDE
+launch, the Transformer project already has a `UserSecretsId`: use Visual
+Studio's **Manage User Secrets** to set `ConnectionStrings:Telemetry` in the
+local Development secret store. Keep that file outside the repository.
+Container launches receive the connection string through environment variables
+from the ignored `deploy/.env`; never print `docker compose config` without
+`--quiet`. Certificate private keys belong only in the ignored PKI stores.
+
 Start Bridge first so that its raw topic exists. Configure `ConnectionStrings:Telemetry`
 through environment variable `ConnectionStrings__Telemetry` or another .NET configuration
 provider; keep credentials out of committed files. In a dedicated PowerShell terminal,
