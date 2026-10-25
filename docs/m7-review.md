@@ -1,8 +1,6 @@
 # M7 MQTT input review
 
-Status: all 13 implementation tasks are complete and verified; reviewer acceptance
-and OpenSpec archive are pending. The reviewer authorized all task groups autonomously on
-2026-10-25. Review this branch before archiving `add-mqtt-source` or merging it.
+Status: accepted by the reviewer on 2026-10-25 through [PR #4](https://github.com/quenzvezda/Telemetrix/pull/4). All 13 tasks are complete; the change is [archived](../openspec/changes/archive/2026-10-25-add-mqtt-source/) and its six requirements are synced into main specs. CI build/test, strict OpenSpec, M4 SIGKILL and M5 edge-outage jobs passed.
 
 ## What changed and why
 
@@ -28,8 +26,8 @@ Read [ADR-0014](adr/0014-mqtt-payload-and-session-boundaries.md), then the paylo
 mapper, decoder and adapter under `Sources/Mqtt`, followed by source registration
 and the shared simulation extraction. Transformer source/configuration, database
 schema, batch contract and the 500-sample/5-second defaults stay unchanged.
-Use `git log --oneline main..HEAD` for the task commits and
-`git diff main -- src/Telemetrix.Transformer` to verify the Transformer boundary.
+Use PR #4's commit history and diff to inspect the task commits and verify that
+`src/Telemetrix.Transformer` has no changes.
 
 ## Automated verification
 
@@ -173,4 +171,4 @@ and verifies ordered capacity-gap events. The second rejects/counts a malformed
 flood, checks warning rate limiting and then accepts a valid sample.
 
 Stop host services with Ctrl+C, then `docker compose -f deploy/docker-compose.yml
-stop mqttsim` when finished. Do not archive the change until reviewer acceptance.
+stop mqttsim` when finished. Reviewer acceptance and archive were completed on 2026-10-25.
