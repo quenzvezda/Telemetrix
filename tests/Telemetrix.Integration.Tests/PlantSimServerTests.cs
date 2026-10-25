@@ -9,8 +9,13 @@ public sealed class PlantSimServerTests
     private static async Task<List<string>> BrowseNamesAsync(Browser browser, NodeId id, CancellationToken ct)
     {
         List<string> names = [];
-        foreach (var reference in await browser.BrowseAsync(id, ct))
+        var references = await browser.BrowseAsync(id, ct);
+        for (var index = 0; index < references.Count; index++)
+        {
+            var reference = references[index];
             names.Add(reference.BrowseName.Name!);
+        }
+
         return names;
     }
 
