@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Telemetrix.Simulation\Telemetrix.Simulation.csproj" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Configuration" />

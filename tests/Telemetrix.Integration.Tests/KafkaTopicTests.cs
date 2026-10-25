@@ -47,17 +47,37 @@ public class KafkaTopicTests
             await initializer.Ready.WaitAsync(ct);
             await initializer.StopAsync(ct);
 
-            var metadata = admin.GetMetadata(topicName, TimeSpan.FromSeconds(10));
-            var topic = Assert.Single(metadata.Topics);
+            TopicMetadata topic;
+            while (true)
+            {
+                ct.ThrowIfCancellationRequested();
+                topic = Assert.Single(admin.GetMetadata(topicName, TimeSpan.FromSeconds(10)).Topics);
+                if (topic.Error.Code != ErrorCode.UnknownTopicOrPart) break;
+                await Task.Delay(100, ct);
+            }
             Assert.False(topic.Error.IsError, topic.Error.ToString());
             Assert.Equal(preExisting ? 2 : partitions, topic.Partitions.Count);
-            var configs = await admin.DescribeConfigsAsync([new ConfigResource
+            while (true)
             {
-                Name = topicName,
-                Type = ResourceType.Topic
-            }]).WaitAsync(ct);
-            Assert.Equal(preExisting ? "60000" : retention,
-                Assert.Single(configs).Entries["retention.ms"].Value);
+                try
+                {
+                    var configs = await admin.DescribeConfigsAsync([new ConfigResource
+                    {
+                        Name = topicName,
+                        Type = ResourceType.Topic
+                    }]).WaitAsync(ct);
+                    Assert.Equal(preExisting ? "60000" : retention,
+                        Assert.Single(configs).Entries["retention.ms"].Value);
+                    break;
+                }
+                catch (DescribeConfigsException exception) when (exception.Results.All(result =>
+                    result.Error.Code == ErrorCode.UnknownTopicOrPart))
+                {
+                    // Topic creation can precede configuration visibility at the controller.
+                    // Keep the original deadline and exact configuration assertion.
+                    await Task.Delay(100, ct);
+                }
+            }
         }
     }
 }

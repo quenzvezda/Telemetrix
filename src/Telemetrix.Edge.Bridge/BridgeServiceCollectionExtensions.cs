@@ -3,6 +3,7 @@ using Telemetrix.Edge.Bridge.Batching;
 using Telemetrix.Edge.Bridge.Publishing;
 using Telemetrix.Edge.Bridge.Sources.OpcUa;
 using Telemetrix.Edge.Bridge.Buffer;
+using Telemetrix.Edge.Bridge.Sources.Mqtt;
 
 namespace Telemetrix.Edge.Bridge;
 
@@ -28,10 +29,12 @@ public static class BridgeServiceCollectionExtensions
         services.AddSingleton<StoreAndForwardQueue>();
         services.AddSingleton<IPlantEventPublisher, PlantEventPublisher>();
         services.AddSingleton<PlantEventTracker>();
+        var mqtt = string.Equals(configuration["Source:Kind"], "Mqtt", StringComparison.OrdinalIgnoreCase);
         services.AddSingleton(provider => new AssetBatcher(
             provider.GetRequiredService<IOptions<BatchingOptions>>().Value,
-            provider.GetRequiredService<TimeProvider>(), "opcua",
-            provider.GetRequiredService<IOptions<OpcUaOptions>>().Value.Endpoint));
+            provider.GetRequiredService<TimeProvider>(), mqtt ? "mqtt" : "opcua",
+            mqtt ? provider.GetRequiredService<IOptions<MqttOptions>>().Value.Endpoint
+                : provider.GetRequiredService<IOptions<OpcUaOptions>>().Value.Endpoint));
         services.AddSingleton<IBatchPublisher, KafkaBatchPublisher>();
         // Hosted services start in registration order: topic readiness precedes source ingestion.
         services.AddHostedService<TopicInitializer>();

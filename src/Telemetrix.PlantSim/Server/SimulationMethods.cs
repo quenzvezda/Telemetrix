@@ -1,5 +1,5 @@
 using Opc.Ua;
-using Telemetrix.PlantSim.Model;
+using Telemetrix.Simulation;
 
 namespace Telemetrix.PlantSim.Server;
 

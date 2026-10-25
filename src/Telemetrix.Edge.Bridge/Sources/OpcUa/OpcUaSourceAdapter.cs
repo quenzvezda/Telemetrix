@@ -150,6 +150,7 @@ public sealed class OpcUaSourceAdapter(
                     AttributeId = Attributes.Value,
                     SamplingInterval = settings.SamplingIntervalMs,
                     QueueSize = settings.QueueSize,
+                    Filter = new DataChangeFilter { Trigger = DataChangeTrigger.StatusValueTimestamp },
                     DiscardOldest = true,
                     MonitoringMode = MonitoringMode.Reporting
                 });

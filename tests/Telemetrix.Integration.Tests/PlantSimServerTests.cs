@@ -1,6 +1,6 @@
 using Opc.Ua;
 using Opc.Ua.Client;
-using Telemetrix.PlantSim.Model;
+using Telemetrix.Simulation;
 
 namespace Telemetrix.Integration.Tests;
 

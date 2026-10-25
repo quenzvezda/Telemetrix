@@ -275,6 +275,31 @@ The Grafana login is separate from the PostgreSQL account. `POSTGRES_PASSWORD` s
 
 #### Test MQTT
 
+M7's [MqttSim](src/Telemetrix.MqttSim/README.md) publishes the same seven pumping-line
+tags as PlantSim, using their shared simulation model. With Mosquitto running:
+
+```powershell
+dotnet run --project src/Telemetrix.MqttSim -c Release
+```
+
+Use a unique `--MqttSim:ClientId` if running more than one simulator. The simulator
+README lists all settings and the Docker alternative.
+
+Select MQTT in a dedicated Bridge terminal (Transformer keeps its existing configuration):
+
+```powershell
+dotnet run --project src/Telemetrix.Edge.Bridge -c Release -- --Source:Kind=Mqtt
+```
+
+`Source__Kind=Mqtt` is the equivalent environment setting. `Source:Mqtt:Host`,
+`Port`, `TopicFilter` and `ClientId` default to `localhost`, `1883`,
+`plant/+/+/+/+` and `telemetrix-bridge`. Every concurrent Bridge needs a unique
+client id. MQTT startup does not require OPC UA tag configuration. The optional
+`Mqtt` environment loads `appsettings.Mqtt.json`; the default source remains OPC UA.
+MQTT payload booleans become numeric 1/0 before batching. See
+[ADR-0014](docs/adr/0014-mqtt-payload-and-session-boundaries.md) for session and
+capacity-pause behavior.
+
 In terminal A, start a subscriber that exits after one message or 30 seconds:
 
 ```powershell

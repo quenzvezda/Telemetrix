@@ -6,6 +6,15 @@
 name: telemetrix
 
 services:
+  mqttsim:
+    profiles: [mqtt]
+    build:
+      context: ..
+      dockerfile: src/Telemetrix.MqttSim/Dockerfile
+    environment:
+      MqttSim__Host: mosquitto
+    depends_on: [mosquitto]
+
   plantsim:
     build:
       context: ..

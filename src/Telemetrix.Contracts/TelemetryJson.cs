@@ -8,6 +8,13 @@ public static class TelemetryJson
 
     public static JsonSerializerOptions Options => Context.Options;
 
+    public static byte[] Serialize(MqttTagPayload payload) =>
+        JsonSerializer.SerializeToUtf8Bytes(payload, Context.MqttTagPayload);
+
+    public static MqttTagPayload DeserializeMqtt(ReadOnlySpan<byte> utf8Json) =>
+        JsonSerializer.Deserialize(utf8Json, Context.MqttTagPayload)
+        ?? throw new JsonException("An MQTT payload cannot be null.");
+
     public static byte[] Serialize(TelemetryBatch batch) =>
         JsonSerializer.SerializeToUtf8Bytes(batch, Context.TelemetryBatch);
 
