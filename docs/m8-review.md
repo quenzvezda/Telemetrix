@@ -175,3 +175,11 @@ the dashboard's export view recognized `telemetrix` as the dashboard resource.
 The first visual run exposed a Windows SQLite cleanup ordering issue in the
 test harness; hosts are now disposed before their temporary buffer is removed,
 and the complete subsequent run passed.
+
+To verify pump state manually, use UaExpert at `opc.tcp://localhost:4840`,
+browse `Objects/Plant01/Line01/Simulation`, and call `TripPump`. On the
+`Pump01` dashboard, the next refresh must show Stopped and its change time;
+call `StartPump` to recover. The final automated fresh-Grafana run reported
+Stopped through the actual panel query in 5.887 seconds, within one 10-second
+refresh interval. Its timeline data and the visual review included the state
+transition and recovery.
