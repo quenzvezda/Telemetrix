@@ -2,6 +2,11 @@
 
 Change: `add-opcua-security`. The reviewer approved all manual results, PR #6 and M9 closure on 2026-10-25, authorizing commit/push and archival. The final dashboard correction and its regression evidence are recorded below.
 
+The change is [archived](../openspec/changes/archive/2026-10-25-add-opcua-security/)
+with all 13 tasks complete. Its four connection-security requirements are synced
+into `openspec/specs/connection-security/spec.md`. Final CI and merge status are
+available on [PR #6](https://github.com/quenzvezda/Telemetrix/pull/6).
+
 ## Configuration and startup
 
 `OpcUa:Security` configures mode, policy, PKI root and auto-accept. Secure defaults apply in every environment; Development explicitly selects None. Startup rejects insecure settings outside Development. The old `OpcUa:SecurityMode` setting is replaced by `OpcUa:Security:Mode`.
