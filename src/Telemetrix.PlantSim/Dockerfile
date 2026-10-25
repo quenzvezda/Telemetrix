@@ -2,8 +2,10 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY Directory.Build.props Directory.Packages.props global.json ./
 COPY src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj src/Telemetrix.PlantSim/
+COPY src/Telemetrix.Simulation/Telemetrix.Simulation.csproj src/Telemetrix.Simulation/
 RUN dotnet restore src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj
 COPY src/Telemetrix.PlantSim/ src/Telemetrix.PlantSim/
+COPY src/Telemetrix.Simulation/ src/Telemetrix.Simulation/
 RUN dotnet publish src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj -c Release --no-restore -o /app
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0

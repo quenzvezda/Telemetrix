@@ -1,6 +1,6 @@
 using Opc.Ua;
 using Opc.Ua.Server;
-using Telemetrix.PlantSim.Model;
+using Telemetrix.Simulation;
 
 namespace Telemetrix.PlantSim.Server;
 

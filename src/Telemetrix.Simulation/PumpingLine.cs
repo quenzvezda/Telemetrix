@@ -1,4 +1,4 @@
-namespace Telemetrix.PlantSim.Model;
+namespace Telemetrix.Simulation;
 
 /// <summary>A single pumping line, independent of OPC UA and safe for concurrent fault requests.</summary>
 public sealed class PumpingLine(TimeProvider timeProvider)

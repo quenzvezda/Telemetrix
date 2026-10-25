@@ -2,7 +2,7 @@ using Microsoft.Extensions.Options;
 using Opc.Ua;
 using Opc.Ua.Configuration;
 using Telemetrix.PlantSim.Server;
-using Telemetrix.PlantSim.Model;
+using Telemetrix.Simulation;
 using System.Threading.Channels;
 
 namespace Telemetrix.PlantSim;

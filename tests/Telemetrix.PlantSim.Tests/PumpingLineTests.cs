@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Time.Testing;
-using Telemetrix.PlantSim.Model;
+using Telemetrix.Simulation;
 
 namespace Telemetrix.PlantSim.Tests;
 

@@ -1,4 +1,4 @@
-using Telemetrix.PlantSim.Model;
+using Telemetrix.Simulation;
 
 namespace Telemetrix.PlantSim.Faults;
 

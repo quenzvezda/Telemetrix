@@ -1,4 +1,4 @@
-namespace Telemetrix.PlantSim.Model;
+namespace Telemetrix.Simulation;
 
 public sealed record PlantTag(string Asset, string Name, string Unit, double Minimum, double Maximum,
     bool IsBoolean = false)

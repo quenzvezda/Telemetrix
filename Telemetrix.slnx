@@ -4,6 +4,7 @@
     <Project Path="src/Telemetrix.Edge.Bridge/Telemetrix.Edge.Bridge.csproj" />
     <Project Path="src/Telemetrix.MqttSim/Telemetrix.MqttSim.csproj" />
     <Project Path="src/Telemetrix.PlantSim/Telemetrix.PlantSim.csproj" />
+    <Project Path="src/Telemetrix.Simulation/Telemetrix.Simulation.csproj" />
     <Project Path="src/Telemetrix.Transformer/Telemetrix.Transformer.csproj" />
   </Folder>
   <Folder Name="/tests/">
