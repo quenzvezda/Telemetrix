@@ -1,0 +1,1480 @@
+{
+  "kind": "latency",
+  "maxSamples": 500,
+  "batchAgeSeconds": 5,
+  "lines": 1,
+  "tickMilliseconds": 1000,
+  "maxInFlight": 1,
+  "rawPartitions": 6,
+  "batchQueueCapacity": 64,
+  "startedAt": "2026-10-25T05:52:03.5678064+00:00",
+  "endedAt": "2026-10-25T06:22:03.5726181+00:00",
+  "measuredSeconds": 1800.0048091,
+  "acceptanceDuration": true,
+  "samplesReceived": 12607,
+  "measurementsWritten": 12565,
+  "actualSamplesPerSecond": 7.0038701764932965,
+  "samplesPublished": 12607,
+  "finalPublishedSamples": null,
+  "drainedBeforeDeadline": true,
+  "writtenPerSecond": 6.9805369054999815,
+  "sourceWindowMeasurements": 12593,
+  "p95Milliseconds": 7774.686,
+  "deadLetteredBatches": 0,
+  "finalAcceptedSamples": 12824,
+  "finalStoredMeasurements": 12824,
+  "lagSlopeBatchesPerSecond": 0,
+  "firstMinuteMeanLag": 0,
+  "lastMinuteMeanLag": 0,
+  "maxLag": 0,
+  "lag": [
+    {
+      "Seconds": 0.0034049,
+      "Batches": 0
+    },
+    {
+      "Seconds": 5.0126709,
+      "Batches": 0
+    },
+    {
+      "Seconds": 10.0203123,
+      "Batches": 0
+    },
+    {
+      "Seconds": 15.0271966,
+      "Batches": 0
+    },
+    {
+      "Seconds": 20.0351897,
+      "Batches": 0
+    },
+    {
+      "Seconds": 25.0370517,
+      "Batches": 0
+    },
+    {
+      "Seconds": 30.0481641,
+      "Batches": 0
+    },
+    {
+      "Seconds": 35.0530959,
+      "Batches": 0
+    },
+    {
+      "Seconds": 40.0592382,
+      "Batches": 0
+    },
+    {
+      "Seconds": 45.0705937,
+      "Batches": 0
+    },
+    {
+      "Seconds": 50.0821076,
+      "Batches": 0
+    },
+    {
+      "Seconds": 55.0894547,
+      "Batches": 0
+    },
+    {
+      "Seconds": 60.0999684,
+      "Batches": 0
+    },
+    {
+      "Seconds": 65.1097959,
+      "Batches": 0
+    },
+    {
+      "Seconds": 70.1200379,
+      "Batches": 0
+    },
+    {
+      "Seconds": 75.1317796,
+      "Batches": 0
+    },
+    {
+      "Seconds": 80.1462525,
+      "Batches": 0
+    },
+    {
+      "Seconds": 85.1524862,
+      "Batches": 0
+    },
+    {
+      "Seconds": 90.1664226,
+      "Batches": 0
+    },
+    {
+      "Seconds": 95.1768588,
+      "Batches": 0
+    },
+    {
+      "Seconds": 100.1908013,
+      "Batches": 0
+    },
+    {
+      "Seconds": 105.1941634,
+      "Batches": 0
+    },
+    {
+      "Seconds": 110.2031253,
+      "Batches": 0
+    },
+    {
+      "Seconds": 115.2078586,
+      "Batches": 0
+    },
+    {
+      "Seconds": 120.2084518,
+      "Batches": 0
+    },
+    {
+      "Seconds": 125.2086861,
+      "Batches": 0
+    },
+    {
+      "Seconds": 130.2101734,
+      "Batches": 0
+    },
+    {
+      "Seconds": 135.2177623,
+      "Batches": 0
+    },
+    {
+      "Seconds": 140.2189565,
+      "Batches": 0
+    },
+    {
+      "Seconds": 145.2249149,
+      "Batches": 0
+    },
+    {
+      "Seconds": 150.2292466,
+      "Batches": 0
+    },
+    {
+      "Seconds": 155.2429813,
+      "Batches": 0
+    },
+    {
+      "Seconds": 160.2527699,
+      "Batches": 0
+    },
+    {
+      "Seconds": 165.2529081,
+      "Batches": 0
+    },
+    {
+      "Seconds": 170.2542678,
+      "Batches": 0
+    },
+    {
+      "Seconds": 175.2621994,
+      "Batches": 0
+    },
+    {
+      "Seconds": 180.2637012,
+      "Batches": 0
+    },
+    {
+      "Seconds": 185.2667915,
+      "Batches": 0
+    },
+    {
+      "Seconds": 190.2799679,
+      "Batches": 0
+    },
+    {
+      "Seconds": 195.2849508,
+      "Batches": 0
+    },
+    {
+      "Seconds": 200.2980803,
+      "Batches": 0
+    },
+    {
+      "Seconds": 205.3075866,
+      "Batches": 0
+    },
+    {
+      "Seconds": 210.3165903,
+      "Batches": 0
+    },
+    {
+      "Seconds": 215.3236314,
+      "Batches": 0
+    },
+    {
+      "Seconds": 220.3279711,
+      "Batches": 0
+    },
+    {
+      "Seconds": 225.3323014,
+      "Batches": 0
+    },
+    {
+      "Seconds": 230.3376096,
+      "Batches": 0
+    },
+    {
+      "Seconds": 235.3471801,
+      "Batches": 0
+    },
+    {
+      "Seconds": 240.3612308,
+      "Batches": 0
+    },
+    {
+      "Seconds": 245.3620883,
+      "Batches": 0
+    },
+    {
+      "Seconds": 250.3758342,
+      "Batches": 0
+    },
+    {
+      "Seconds": 255.3863035,
+      "Batches": 0
+    },
+    {
+      "Seconds": 260.387081,
+      "Batches": 0
+    },
+    {
+      "Seconds": 265.3899047,
+      "Batches": 0
+    },
+    {
+      "Seconds": 270.3963274,
+      "Batches": 0
+    },
+    {
+      "Seconds": 275.4101147,
+      "Batches": 0
+    },
+    {
+      "Seconds": 280.4136257,
+      "Batches": 0
+    },
+    {
+      "Seconds": 285.4236633,
+      "Batches": 0
+    },
+    {
+      "Seconds": 290.4269064,
+      "Batches": 0
+    },
+    {
+      "Seconds": 295.4297278,
+      "Batches": 0
+    },
+    {
+      "Seconds": 300.4315451,
+      "Batches": 0
+    },
+    {
+      "Seconds": 305.4407135,
+      "Batches": 0
+    },
+    {
+      "Seconds": 310.4438959,
+      "Batches": 0
+    },
+    {
+      "Seconds": 315.4474367,
+      "Batches": 0
+    },
+    {
+      "Seconds": 320.450734,
+      "Batches": 0
+    },
+    {
+      "Seconds": 325.4564088,
+      "Batches": 0
+    },
+    {
+      "Seconds": 330.4571257,
+      "Batches": 0
+    },
+    {
+      "Seconds": 335.4613564,
+      "Batches": 0
+    },
+    {
+      "Seconds": 340.4649174,
+      "Batches": 0
+    },
+    {
+      "Seconds": 345.4791227,
+      "Batches": 0
+    },
+    {
+      "Seconds": 350.4861206,
+      "Batches": 0
+    },
+    {
+      "Seconds": 355.4917032,
+      "Batches": 0
+    },
+    {
+      "Seconds": 360.4950019,
+      "Batches": 0
+    },
+    {
+      "Seconds": 365.4989527,
+      "Batches": 0
+    },
+    {
+      "Seconds": 370.5079831,
+      "Batches": 0
+    },
+    {
+      "Seconds": 375.5165176,
+      "Batches": 0
+    },
+    {
+      "Seconds": 380.5247837,
+      "Batches": 0
+    },
+    {
+      "Seconds": 385.529227,
+      "Batches": 0
+    },
+    {
+      "Seconds": 390.5380111,
+      "Batches": 0
+    },
+    {
+      "Seconds": 395.5491753,
+      "Batches": 0
+    },
+    {
+      "Seconds": 400.5504934,
+      "Batches": 0
+    },
+    {
+      "Seconds": 405.5569985,
+      "Batches": 0
+    },
+    {
+      "Seconds": 410.5607787,
+      "Batches": 0
+    },
+    {
+      "Seconds": 415.5702515,
+      "Batches": 0
+    },
+    {
+      "Seconds": 420.5835254,
+      "Batches": 0
+    },
+    {
+      "Seconds": 425.5892121,
+      "Batches": 0
+    },
+    {
+      "Seconds": 430.5933463,
+      "Batches": 0
+    },
+    {
+      "Seconds": 435.5959025,
+      "Batches": 0
+    },
+    {
+      "Seconds": 440.6009962,
+      "Batches": 0
+    },
+    {
+      "Seconds": 445.6160251,
+      "Batches": 0
+    },
+    {
+      "Seconds": 450.6175249,
+      "Batches": 0
+    },
+    {
+      "Seconds": 455.6241945,
+      "Batches": 0
+    },
+    {
+      "Seconds": 460.6258474,
+      "Batches": 0
+    },
+    {
+      "Seconds": 465.6309277,
+      "Batches": 0
+    },
+    {
+      "Seconds": 470.6396594,
+      "Batches": 0
+    },
+    {
+      "Seconds": 475.6454883,
+      "Batches": 0
+    },
+    {
+      "Seconds": 480.6561299,
+      "Batches": 0
+    },
+    {
+      "Seconds": 485.6685752,
+      "Batches": 0
+    },
+    {
+      "Seconds": 490.6756367,
+      "Batches": 0
+    },
+    {
+      "Seconds": 495.6833053,
+      "Batches": 0
+    },
+    {
+      "Seconds": 500.688908,
+      "Batches": 0
+    },
+    {
+      "Seconds": 505.6954917,
+      "Batches": 0
+    },
+    {
+      "Seconds": 510.7066238,
+      "Batches": 0
+    },
+    {
+      "Seconds": 515.7139204,
+      "Batches": 0
+    },
+    {
+      "Seconds": 520.7176829,
+      "Batches": 0
+    },
+    {
+      "Seconds": 525.7265473,
+      "Batches": 0
+    },
+    {
+      "Seconds": 530.7280438,
+      "Batches": 0
+    },
+    {
+      "Seconds": 535.7437194,
+      "Batches": 0
+    },
+    {
+      "Seconds": 540.7533766,
+      "Batches": 0
+    },
+    {
+      "Seconds": 545.7648929,
+      "Batches": 0
+    },
+    {
+      "Seconds": 550.7720036,
+      "Batches": 0
+    },
+    {
+      "Seconds": 555.7754133,
+      "Batches": 0
+    },
+    {
+      "Seconds": 560.778427,
+      "Batches": 0
+    },
+    {
+      "Seconds": 565.7909476,
+      "Batches": 0
+    },
+    {
+      "Seconds": 570.7954015,
+      "Batches": 0
+    },
+    {
+      "Seconds": 575.7991744,
+      "Batches": 0
+    },
+    {
+      "Seconds": 580.8084405,
+      "Batches": 0
+    },
+    {
+      "Seconds": 585.8124938,
+      "Batches": 0
+    },
+    {
+      "Seconds": 590.8268511,
+      "Batches": 0
+    },
+    {
+      "Seconds": 595.8372291,
+      "Batches": 0
+    },
+    {
+      "Seconds": 600.8418148,
+      "Batches": 0
+    },
+    {
+      "Seconds": 605.8425864,
+      "Batches": 0
+    },
+    {
+      "Seconds": 610.8527135,
+      "Batches": 0
+    },
+    {
+      "Seconds": 615.8598044,
+      "Batches": 0
+    },
+    {
+      "Seconds": 620.8591985,
+      "Batches": 0
+    },
+    {
+      "Seconds": 625.8613989,
+      "Batches": 0
+    },
+    {
+      "Seconds": 630.8748904,
+      "Batches": 0
+    },
+    {
+      "Seconds": 635.8898096,
+      "Batches": 0
+    },
+    {
+      "Seconds": 640.9045567,
+      "Batches": 0
+    },
+    {
+      "Seconds": 645.9183454,
+      "Batches": 0
+    },
+    {
+      "Seconds": 650.9278045,
+      "Batches": 0
+    },
+    {
+      "Seconds": 655.9330055,
+      "Batches": 0
+    },
+    {
+      "Seconds": 660.9403846,
+      "Batches": 0
+    },
+    {
+      "Seconds": 665.9533583,
+      "Batches": 0
+    },
+    {
+      "Seconds": 670.9607213,
+      "Batches": 0
+    },
+    {
+      "Seconds": 675.9608482,
+      "Batches": 0
+    },
+    {
+      "Seconds": 680.9726634,
+      "Batches": 0
+    },
+    {
+      "Seconds": 685.9772898,
+      "Batches": 0
+    },
+    {
+      "Seconds": 690.9796512,
+      "Batches": 0
+    },
+    {
+      "Seconds": 695.9915805,
+      "Batches": 0
+    },
+    {
+      "Seconds": 700.9964107,
+      "Batches": 0
+    },
+    {
+      "Seconds": 706.0081725,
+      "Batches": 0
+    },
+    {
+      "Seconds": 711.0210883,
+      "Batches": 0
+    },
+    {
+      "Seconds": 716.026671,
+      "Batches": 0
+    },
+    {
+      "Seconds": 721.027958,
+      "Batches": 0
+    },
+    {
+      "Seconds": 726.0347802,
+      "Batches": 0
+    },
+    {
+      "Seconds": 731.0500688,
+      "Batches": 0
+    },
+    {
+      "Seconds": 736.0640392,
+      "Batches": 0
+    },
+    {
+      "Seconds": 741.0737452,
+      "Batches": 0
+    },
+    {
+      "Seconds": 746.0812827,
+      "Batches": 0
+    },
+    {
+      "Seconds": 751.0822367,
+      "Batches": 0
+    },
+    {
+      "Seconds": 756.0824952,
+      "Batches": 0
+    },
+    {
+      "Seconds": 761.092572,
+      "Batches": 0
+    },
+    {
+      "Seconds": 766.1079094,
+      "Batches": 0
+    },
+    {
+      "Seconds": 771.1197725,
+      "Batches": 0
+    },
+    {
+      "Seconds": 776.1294664,
+      "Batches": 0
+    },
+    {
+      "Seconds": 781.1306142,
+      "Batches": 0
+    },
+    {
+      "Seconds": 786.1373367,
+      "Batches": 0
+    },
+    {
+      "Seconds": 791.1460673,
+      "Batches": 0
+    },
+    {
+      "Seconds": 796.1566469,
+      "Batches": 0
+    },
+    {
+      "Seconds": 801.1644991,
+      "Batches": 0
+    },
+    {
+      "Seconds": 806.17864,
+      "Batches": 0
+    },
+    {
+      "Seconds": 811.1862807,
+      "Batches": 0
+    },
+    {
+      "Seconds": 816.1873004,
+      "Batches": 0
+    },
+    {
+      "Seconds": 821.2018204,
+      "Batches": 0
+    },
+    {
+      "Seconds": 826.2096066,
+      "Batches": 0
+    },
+    {
+      "Seconds": 831.21302,
+      "Batches": 0
+    },
+    {
+      "Seconds": 836.2198715,
+      "Batches": 0
+    },
+    {
+      "Seconds": 841.2223558,
+      "Batches": 0
+    },
+    {
+      "Seconds": 846.2272904,
+      "Batches": 0
+    },
+    {
+      "Seconds": 851.2268385,
+      "Batches": 0
+    },
+    {
+      "Seconds": 856.240016,
+      "Batches": 0
+    },
+    {
+      "Seconds": 861.2544653,
+      "Batches": 0
+    },
+    {
+      "Seconds": 866.2618314,
+      "Batches": 0
+    },
+    {
+      "Seconds": 871.2630575,
+      "Batches": 0
+    },
+    {
+      "Seconds": 876.2682738,
+      "Batches": 0
+    },
+    {
+      "Seconds": 881.2737389,
+      "Batches": 0
+    },
+    {
+      "Seconds": 886.2862426,
+      "Batches": 0
+    },
+    {
+      "Seconds": 891.2941389,
+      "Batches": 0
+    },
+    {
+      "Seconds": 896.2944519,
+      "Batches": 0
+    },
+    {
+      "Seconds": 901.3029257,
+      "Batches": 0
+    },
+    {
+      "Seconds": 906.3186305,
+      "Batches": 0
+    },
+    {
+      "Seconds": 911.3280404,
+      "Batches": 0
+    },
+    {
+      "Seconds": 916.3286817,
+      "Batches": 0
+    },
+    {
+      "Seconds": 921.3416843,
+      "Batches": 0
+    },
+    {
+      "Seconds": 926.3492327,
+      "Batches": 0
+    },
+    {
+      "Seconds": 931.3595434,
+      "Batches": 0
+    },
+    {
+      "Seconds": 936.3665035,
+      "Batches": 0
+    },
+    {
+      "Seconds": 941.3719399,
+      "Batches": 0
+    },
+    {
+      "Seconds": 946.3835336,
+      "Batches": 0
+    },
+    {
+      "Seconds": 951.3832244,
+      "Batches": 0
+    },
+    {
+      "Seconds": 956.391657,
+      "Batches": 0
+    },
+    {
+      "Seconds": 961.3908871,
+      "Batches": 0
+    },
+    {
+      "Seconds": 966.4020288,
+      "Batches": 0
+    },
+    {
+      "Seconds": 971.4074137,
+      "Batches": 0
+    },
+    {
+      "Seconds": 976.4204743,
+      "Batches": 0
+    },
+    {
+      "Seconds": 981.4238538,
+      "Batches": 0
+    },
+    {
+      "Seconds": 986.4293074,
+      "Batches": 0
+    },
+    {
+      "Seconds": 991.4353158,
+      "Batches": 0
+    },
+    {
+      "Seconds": 996.4359392,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1001.4504822,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1006.4517095,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1011.4537744,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1016.464794,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1021.4698334,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1026.4721373,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1031.4772093,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1036.4899848,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1041.4943488,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1046.4978309,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1051.4985807,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1056.5002922,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1061.5117486,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1066.5171607,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1071.5319719,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1076.5405363,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1081.5466483,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1086.5565278,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1091.5568353,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1096.559281,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1101.570337,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1106.5802415,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1111.5806747,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1116.5913744,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1121.6047261,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1126.6076436,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1131.6194438,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1136.6253116,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1141.6279001,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1146.635287,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1151.6417117,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1156.6538922,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1161.6646766,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1166.6744052,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1171.6843923,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1176.6854526,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1181.6886417,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1186.6901371,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1191.6953082,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1196.7038656,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1201.7123133,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1206.7187106,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1211.7233839,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1216.7321175,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1221.7417638,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1226.7426127,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1231.756078,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1236.7680033,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1241.7787893,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1246.7914771,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1251.8014765,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1256.8096275,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1261.8196001,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1266.8225729,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1271.8361918,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1276.8480447,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1281.8518867,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1286.8527894,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1291.8632264,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1296.8665842,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1301.8762641,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1306.876321,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1311.8906355,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1316.8910786,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1321.9025077,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1326.9135484,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1331.9146695,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1336.9172257,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1341.9217115,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1346.9281708,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1351.9388141,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1356.9528277,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1361.9599006,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1366.96261,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1371.9668277,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1376.9759489,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1381.9908641,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1386.9975908,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1392.0071367,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1397.0097633,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1402.0181459,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1407.0183851,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1412.02177,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1417.0318497,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1422.0429025,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1427.0481082,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1432.0605953,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1437.068017,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1442.0794532,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1447.0805206,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1452.0888523,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1457.0916884,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1462.1058971,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1467.1119555,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1472.1160181,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1477.1260373,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1482.1293833,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1487.1298346,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1492.1373933,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1497.1522414,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1502.1552766,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1507.1664567,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1512.1668764,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1517.1790964,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1522.1807119,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1527.1825705,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1532.1902407,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1537.1938147,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1542.2064535,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1547.2091686,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1552.216735,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1557.2256634,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1562.2347472,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1567.2408658,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1572.2443241,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1577.2525065,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1582.2645973,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1587.2751845,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1592.2875995,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1597.2967723,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1602.3103341,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1607.3212321,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1612.3328556,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1617.3389531,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1622.3431698,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1627.3558155,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1632.3598974,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1637.3726035,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1642.375944,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1647.3894825,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1652.4004287,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1657.4139893,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1662.4256142,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1667.438217,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1672.4460373,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1677.4531277,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1682.4616176,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1687.4727919,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1692.4838152,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1697.4931767,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1702.4992225,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1707.505469,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1712.5102929,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1717.5207569,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1722.5233457,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1727.523757,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1732.5329648,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1737.5375154,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1742.5412334,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1747.5419453,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1752.5442455,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1757.5467729,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1762.5607965,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1767.5665936,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1772.5681208,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1777.5756833,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1782.5751557,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1787.5843436,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1792.5846596,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1797.5926187,
+      "Batches": 0
+    },
+    {
+      "Seconds": 1800.0048091,
+      "Batches": 0
+    }
+  ],
+  "passed": true,
+  "runtime": ".NET 10.0.13",
+  "operatingSystem": "Microsoft Windows 10.0.26200",
+  "logicalProcessors": 12
+}

@@ -132,4 +132,18 @@ the requested bounded capacity. With only throughput queue capacity changed to
 152,152 source publications to the same database measurement count, with zero
 dead-letter batches. This is a successful smoke result, not full acceptance.
 
-The full runs and D5 recommendation will be recorded here after measurement.
+The full-duration latency results are:
+
+| Batching | UTC measurement window, 2026-10-25 | Seconds | p95 | Final accepted / stored | Dead letters | Result |
+| --- | --- | ---: | ---: | ---: | ---: | --- |
+| 500 / 5 s | 05:52:03.568–06:22:03.573 | 1,800.005 | 7,774.686 ms | 12,824 / 12,824 | 0 | Pass |
+| 1,000 / 2 s | 05:52:06.332–06:22:06.344 | 1,800.012 | 4,786.757 ms | 12,824 / 12,824 | 0 | Pass |
+
+Both used the default seven-tag OPC UA source, 64-batch queue and six raw
+partitions. Kafka lag remained zero in every recorded observation. Latency
+includes the concurrent host load described above. Full JSON evidence,
+including every lag observation, is in
+[baseline latency](evidence/m8/latency-baseline.json) and
+[alternative latency](evidence/m8/latency-alternative.json).
+
+The full throughput runs and D5 recommendation will be recorded after measurement.
