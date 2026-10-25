@@ -26,6 +26,10 @@ Samples collected from MQTT SHALL go through the same per-asset batching, store-
 - **WHEN** the bridge is switched from the OPC UA source to the MQTT source by configuration only
 - **THEN** the same tags land in `measurement` with no transformer change
 
+#### Scenario: Compare timestamp-only changes
+- **WHEN** the same seven tags are sampled at 1 Hz over a shared source-time window using OPC UA and MQTT
+- **THEN** both protocols retain fresh source timestamps even when a Boolean value remains constant, and their per-tag measurement counts match within a one-sample window boundary tolerance
+
 #### Scenario: Source recorded on the batch
 - **WHEN** a batch built from MQTT samples is produced to `plant.telemetry.raw`
 - **THEN** its `source` field is `mqtt`

@@ -17,6 +17,11 @@ becomes Bad. Malformed payloads are rejected and counted without stopping collec
 Source timestamps remain measurement time (ADR-0009); receive time supplies the
 diagnostic server timestamp. Existing numeric batch contracts and Transformer stay unchanged.
 
+For the protocol comparison, request OPC UA `StatusValueTimestamp` notifications.
+A constant Boolean still has fresh source measurements; relying on the default
+status/value trigger would suppress them. The Bridge forwards real source-time
+updates and does not manufacture samples or fill collection gaps.
+
 Use a stable, unique client id and a persistent broker session for ordinary
 disconnects, with acknowledgment only after bounded channel admission. QoS 1 can
 duplicate samples; the existing `(tag_id, time)` uniqueness removes duplicates.

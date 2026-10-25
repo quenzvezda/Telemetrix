@@ -11,6 +11,7 @@ Milestone: M7 — MQTT input.
 - FR-03: a simulator publishes the 7 pumping-line tags over MQTT to `plant/Plant01/Line01/{asset}/{tag}`, with value, source timestamp and quality in each payload.
 - FR-17: the bridge can collect from MQTT through the same batching, buffering and producing path as OPC UA; batches carry `source: "mqtt"`.
 - The transformer is unchanged: MQTT-sourced batches are stored exactly like OPC UA ones.
+- OPC UA subscriptions include source timestamp changes so constant Boolean tags remain comparable with MQTT's 1 Hz publications.
 
 ## Capabilities
 
