@@ -23,10 +23,10 @@ public class WebHostTests
         try
         {
             await using var transformer = TransformerApplication.Build([
-                "--Http:Port=0", $"--Kafka:BootstrapServers={environment.Kafka.GetBootstrapAddress()}",
+                "--Http:Port=0", "--Telemetry:Prometheus:Enabled=true", $"--Kafka:BootstrapServers={environment.Kafka.GetBootstrapAddress()}",
                 $"--ConnectionStrings:Telemetry={environment.Database.GetConnectionString()}"]);
             await using var bridge = BridgeApplication.Build([
-                "--Http:Port=0", "--Source:Kind=Mqtt", $"--Source:Mqtt:Host={mqtt.Host}",
+                "--Http:Port=0", "--Telemetry:Prometheus:Enabled=true", "--Source:Kind=Mqtt", $"--Source:Mqtt:Host={mqtt.Host}",
                 $"--Source:Mqtt:Port={mqtt.Port}", $"--Source:Mqtt:ClientId=web-{Guid.NewGuid():N}",
                 $"--Kafka:BootstrapServers={environment.Kafka.GetBootstrapAddress()}",
                 $"--Buffer:Path={buffer}", "--Batching:MaxSamples=1"]);
@@ -39,6 +39,10 @@ public class WebHostTests
             // Retained publication also covers the source subscribing after HTTP startup.
             await MqttFixture.PublishAsync(publisher, DateTimeOffset.UtcNow, ct, retain: true);
             await environment.WaitForCountAsync(1, ct);
+            var received = await http.GetStringAsync(Address(bridge) + "/metrics", ct);
+            Assert.Contains("telemetrix_samples_received", received);
+            Assert.Contains("service_name=\"Telemetrix.Bridge\"", received);
+            Assert.Contains("telemetrix_rows_written", await http.GetStringAsync(Address(transformer) + "/metrics", ct));
             await AssertHealthAsync(http, bridge, HttpStatusCode.OK, "Healthy", ct);
             await AssertHealthAsync(http, transformer, HttpStatusCode.OK, "Healthy", ct);
             var disk = bridge.Services.GetRequiredService<SqliteBuffer>();

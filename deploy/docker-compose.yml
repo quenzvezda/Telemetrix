@@ -6,6 +6,52 @@
 name: telemetrix
 
 services:
+  bridge:
+    profiles: [pipeline, metrics]
+    build:
+      context: ..
+      dockerfile: deploy/DeliveryReview.Dockerfile
+      target: bridge
+    environment:
+      ASPNETCORE_ENVIRONMENT: PlantSim
+      OpcUa__Endpoint: opc.tcp://plantsim:4840
+      Kafka__BootstrapServers: kafka:9092
+      Buffer__Path: /buffer/bridge.db
+      Telemetry__Prometheus__Enabled: "true"
+    ports: ["5101:5101"]
+    volumes:
+      - edgebuffer:/buffer
+    depends_on:
+      kafka:
+        condition: service_healthy
+      plantsim:
+        condition: service_started
+
+  transformer:
+    profiles: [pipeline, metrics]
+    build:
+      context: ..
+      dockerfile: deploy/DeliveryReview.Dockerfile
+      target: transformer
+    environment:
+      Kafka__BootstrapServers: kafka:9092
+      ConnectionStrings__Telemetry: Host=timescaledb;Database=telemetry;Username=telemetry;Password=${POSTGRES_PASSWORD}
+      Telemetry__Prometheus__Enabled: "true"
+    ports: ["5102:5102"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
+  prometheus:
+    profiles: [metrics]
+    image: prom/prometheus:v3.5.0
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on: [bridge, transformer]
+
   mqttsim:
     profiles: [mqtt]
     build:
@@ -105,6 +151,7 @@ services:
         condition: service_healthy
 
 volumes:
+  edgebuffer:
   plantsim-pki:
   kafkadata:
   tsdata:

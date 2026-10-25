@@ -73,3 +73,22 @@ it never subscribes or calls the raw consumer from another thread.
 `TransformerMetricsTests` passed: lag grew to three batches during a blocked
 write and fell to zero after release, exactly 30 new measurements were counted,
 a replay added none, and an invalid batch incremented dead-letter count once.
+
+Start the optional container pipeline and Prometheus after setting `deploy/.env`:
+
+```powershell
+docker compose -f deploy/docker-compose.yml --profile metrics up -d --build
+```
+
+At `http://localhost:9090`, query `up`, `telemetrix_samples_received_total`,
+`telemetrix_batches_produced_total`, `telemetrix_rows_written_total`,
+`telemetrix_buffer_depth` and `telemetrix_consumer_lag`. Scrapes run every five
+seconds. Both targets returned `up=1` locally; the raw endpoints at ports 5101
+and 5102 exported these series with `service_name` labels. HTTP integration
+verification also passed with the Prometheus exporter enabled. Set
+`Telemetry__Prometheus__Enabled=false` to disable `/metrics`; development can
+use `Telemetry__Console__Enabled=true` for the diagnostic console exporter.
+
+Dependencies are pinned to OpenTelemetry 1.18.0 and its matching Prometheus
+ASP.NET Core exporter 1.18.0-beta.1. The API usage follows the
+[upstream exporter documentation](https://github.com/open-telemetry/opentelemetry-dotnet/blob/coreunstable-1.18.0-beta.1/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md).
