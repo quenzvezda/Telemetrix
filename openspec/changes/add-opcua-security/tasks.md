@@ -4,7 +4,7 @@ On 2026-10-25 the reviewer approved M8 PR #5 and its archival, deferring manual 
 
 ## 1. Configuration and fail-closed startup
 
-- [ ] 1.1 Add the `OpcUa:Security` options (mode, policy, PKI root, auto-accept) with an `IValidateOptions` + `ValidateOnStart` rule that rejects None/auto-accept outside Development; verify unit tests cover Production+None (fails), Development+None (starts with warning), Production+SignAndEncrypt (passes)
+- [x] 1.1 Add the `OpcUa:Security` options (mode, policy, PKI root, auto-accept) with an `IValidateOptions` + `ValidateOnStart` rule that rejects None/auto-accept outside Development; verify unit tests cover Production+None (fails), Development+None (starts with warning), Production+SignAndEncrypt (passes)
 - [ ] 1.2 Select the endpoint by exact security mode and policy with no fallback; verify a unit/integration test against an OPC PLC container exposing only None fails with the "no matching endpoint" message
 
 ## 2. Certificates and trust

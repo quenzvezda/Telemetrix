@@ -2,7 +2,8 @@ using Microsoft.Extensions.Options;
 
 namespace Telemetrix.Edge.Bridge.Sources.OpcUa;
 
-internal sealed class OpcUaOptionsValidator : IValidateOptions<OpcUaOptions>
+internal sealed class OpcUaOptionsValidator(IHostEnvironment environment, ILogger<OpcUaOptionsValidator> logger)
+    : IValidateOptions<OpcUaOptions>
 {
     public ValidateOptionsResult Validate(string? name, OpcUaOptions options)
     {
@@ -25,10 +26,20 @@ internal sealed class OpcUaOptionsValidator : IValidateOptions<OpcUaOptions>
             failures.Add("OpcUa:Endpoint must be an absolute opc.tcp:// URL with a host.");
         }
 
-        if (!string.Equals(options.SecurityMode, "None", StringComparison.OrdinalIgnoreCase))
+        if (options.Security.Mode is not ("None" or "Sign" or "SignAndEncrypt"))
         {
-            failures.Add("OpcUa:SecurityMode must be None in M2; secure connections are added in M9.");
+            failures.Add("OpcUa:Security:Mode must be None, Sign or SignAndEncrypt.");
         }
+        if (options.Security.Policy != "Basic256Sha256")
+            failures.Add("OpcUa:Security:Policy must be Basic256Sha256 (None mode selects the None policy).");
+        if (string.IsNullOrWhiteSpace(options.Security.PkiRoot))
+            failures.Add("OpcUa:Security:PkiRoot is required.");
+        if (!environment.IsDevelopment() && options.Security.Mode == "None")
+            failures.Add("OpcUa:Security:Mode=None is allowed only in Development.");
+        if (!environment.IsDevelopment() && options.Security.AutoAcceptUntrusted)
+            failures.Add("OpcUa:Security:AutoAcceptUntrusted is allowed only in Development.");
+        if (environment.IsDevelopment() && (options.Security.Mode == "None" || options.Security.AutoAcceptUntrusted))
+            logger.LogWarning("OPC UA connection is unsecured or accepts untrusted certificates; Development only");
 
         if (options.SamplingIntervalMs <= 0)
         {

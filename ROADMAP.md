@@ -20,7 +20,7 @@ Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.m
 | M6 | Own OPC UA server | `add-plant-simulator` | FR-01, FR-02 | Bridge switches from OPC PLC to PlantSim by configuration only | Done |
 | M7 | MQTT input | `add-mqtt-source` | FR-03, FR-17 | Same tags land in the database from MQTT with no transformer change | Done |
 | M8 | Observability and load | `add-observability` | FR-31, FR-32, FR-40, FR-41, NFR-06, NFR-07, NFR-12 | Dashboard shows trends, pump state and gaps; p95 latency < 10 s; 5,000 samples/s without growing lag | Done (manual checks deferred to M9) |
-| M9 | Security | `add-opcua-security` | NFR-09, NFR-10 | An untrusted client certificate is rejected; no secret in the repo | Not started |
+| M9 | Security | `add-opcua-security` | NFR-09, NFR-10 | An untrusted client certificate is rejected; no secret in the repo | In progress |
 
 M3 was accepted and archived on 2026-10-18 with all 14 tasks complete. Its four capabilities are in main specs; see the [archived change](openspec/changes/archive/2026-10-18-add-end-to-end-slice/) and [review evidence](docs/m3-group6-review.md). The observed stopped-consumer backlog remains documented; zero lag and M4 delivery guarantees are not claimed.
 
