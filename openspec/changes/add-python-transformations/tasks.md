@@ -18,7 +18,7 @@ On 2026-10-31 the reviewer asked for issue #7 to be implemented to completion, a
 
 ## 4. Validation, dispositions and storage
 
-- [ ] 4.1 Add the output validator and transformation engine (dispositions, derived Quality and range checks, failure records, derived Tag resolution through an interface); verify `dotnet test tests/Telemetrix.Transformer.Tests --filter "FullyQualifiedName~TransformationOutput|FullyQualifiedName~TransformationEngine"` covers every disposition, empty output and each malformed case
+- [x] 4.1 Add the output validator and transformation engine (dispositions, derived Quality and range checks, failure records, derived Tag resolution through an interface); verify `dotnet test tests/Telemetrix.Transformer.Tests --filter "FullyQualifiedName~TransformationOutput|FullyQualifiedName~TransformationEngine"` covers every disposition, empty output and each malformed case
 - [ ] 4.2 Add migration `003_transformations.sql`, the Postgres derived Tag catalog, run lookup and the atomic run/derived/disposition write in `MeasurementWriter`; wire the engine into `TelemetryBatchHandler` and DI with fail-fast startup; verify `dotnet test tests/Telemetrix.Integration.Tests --filter FullyQualifiedName~TransformationStorage` shows the migration applies twice, the transaction is atomic, a conflicting output Tag fails and a recorded Batch is not transformed again
 
 ## 5. Observability, examples and deployment
