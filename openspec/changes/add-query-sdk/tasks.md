@@ -17,7 +17,7 @@ On 2026-10-31 the reviewer asked for issue #8 to be implemented to completion, a
 
 ## 4. Verification against TimescaleDB
 
-- [ ] 4.1 Add the integration suite (container with `init.sql` and all migrations, reader login, seeded data); verify `python -m pytest sdk/python/tests/integration` covers Tag metadata, Asset/interval Measurements, boundaries, offsets, Quality filters, null/Bad/empty, 25,000-row streaming, concurrent inserts, cursor mismatch, Rollups, Gaps, missing migrations, timeout, cancellation, missing privilege, unreachable host, owner warning and read-only session
+- [x] 4.1 Add the integration suite (container with `init.sql` and all migrations, reader login, seeded data); verify `python -m pytest sdk/python/tests/integration` covers Tag metadata, Asset/interval Measurements, boundaries, offsets, Quality filters, null/Bad/empty, 25,000-row streaming, concurrent inserts, cursor mismatch, Rollups, Gaps, missing migrations, timeout, cancellation, missing privilege, unreachable host, owner warning and read-only session
 - [ ] 4.2 Add the `python-sdk` CI job (build the wheel, install into a clean environment, run unit and integration tests); verify the job passes on the PR
 
 ## 5. Documentation and milestone verification
