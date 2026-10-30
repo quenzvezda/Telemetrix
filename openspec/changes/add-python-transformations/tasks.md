@@ -23,7 +23,7 @@ On 2026-10-31 the reviewer asked for issue #7 to be implemented to completion, a
 
 ## 5. Observability, examples and deployment
 
-- [ ] 5.1 Add transformation metrics and correlated run logs; verify `dotnet test --filter "FullyQualifiedName~TransformationMetrics"` observes runs, duration, samples in/out and skips with label, version and outcome
+- [x] 5.1 Add transformation metrics and correlated run logs; verify `dotnet test --filter "FullyQualifiedName~TransformationMetrics"` observes runs, duration, samples in/out and skips with label, version and outcome
 - [ ] 5.2 Add the four examples and registry under `deploy/transformations/` with a README (contract, installation, folder mount, dependencies, trust boundary); verify `dotnet test tests/Telemetrix.Transformer.Tests --filter FullyQualifiedName~TransformationExamples` runs each example through the real runner with the documented results
 - [ ] 5.3 Install `python3` in the Transformer image and add compose variables and the read-only scripts mount, disabled by default; verify `docker compose -f deploy/docker-compose.yml --profile pipeline config` renders the mount and `docker build --target transformer -f deploy/DeliveryReview.Dockerfile .` runs `python3 --version`
 
