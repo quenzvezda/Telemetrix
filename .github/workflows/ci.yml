@@ -40,6 +40,30 @@ jobs:
       # Integration tests use Testcontainers; Docker is available on ubuntu-latest runners.
       - run: dotnet test --no-build -c Release
 
+  python-sdk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        # Oldest supported and newest tested Python for telemetrix-query.
+        python: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build the wheel
+        run: |
+          python -m pip install build
+          python -m build --wheel --outdir dist sdk/python
+      # A separate consumer: a clean environment with only the wheel installed.
+      - name: Install into a clean environment
+        run: |
+          python -m venv "$RUNNER_TEMP/consumer"
+          "$RUNNER_TEMP/consumer/bin/pip" install "$(ls dist/telemetrix_query-*.whl)[test]"
+      # Integration tests use testcontainers; Docker is available on ubuntu-latest runners.
+      - run: '"$RUNNER_TEMP/consumer/bin/python" -m pytest sdk/python/tests -v'
+
   delivery-review:
     runs-on: ubuntu-latest
     timeout-minutes: 15
