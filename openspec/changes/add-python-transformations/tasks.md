@@ -5,7 +5,7 @@ On 2026-10-31 the reviewer asked for issue #7 to be implemented to completion, a
 ## 1. Decisions and contract
 
 - [x] 1.1 Record ADR-0016 (managed child process), ADR-0017 (label in Batch schema v2) and ADR-0018 (raw preservation, derived Tags, durable run record), the M10 roadmap row, CONTEXT.md terms and FR-26–FR-28 in the design document; verify `npx -y @fission-ai/openspec@1.14.3 validate add-python-transformations --strict` passes
-- [ ] 1.2 Add `TelemetryBatch.Transformation`, schema version 2 and the shared label rule to `Telemetrix.Contracts`; accept v1/v2 and dead-letter invalid labels in `DeserializeValidated`; verify `dotnet test --filter "FullyQualifiedName~TelemetryJson|FullyQualifiedName~InvalidBatch"` covers v1 bytes unchanged, v2 round-trip, v1 with a label, an invalid label and v3
+- [x] 1.2 Add `TelemetryBatch.Transformation`, schema version 2 and the shared label rule to `Telemetrix.Contracts`; accept v1/v2 and dead-letter invalid labels in `DeserializeValidated`; verify `dotnet test --filter "FullyQualifiedName~TelemetryJson|FullyQualifiedName~InvalidBatch"` covers v1 bytes unchanged, v2 round-trip, v1 with a label, an invalid label and v3
 
 ## 2. Bridge label assignment
 

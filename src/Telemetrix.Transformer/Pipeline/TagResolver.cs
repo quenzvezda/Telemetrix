@@ -49,7 +49,7 @@ public sealed class TagResolver(ITagCatalog catalog, IOptions<TagResolutionOptio
 
             var deadLetter = unknown.Count == 0 ? null : new TelemetryBatch(batch.SchemaVersion,
                 batch.BatchId, batch.Source, batch.Endpoint, batch.PlantId, batch.LineId,
-                batch.AssetId, batch.CreatedAt, unknown);
+                batch.AssetId, batch.CreatedAt, unknown, batch.Transformation);
             return new TagResolution(known, deadLetter);
         }
         finally { gate.Release(); }
