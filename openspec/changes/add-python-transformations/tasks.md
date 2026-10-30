@@ -9,7 +9,7 @@ On 2026-10-31 the reviewer asked for issue #7 to be implemented to completion, a
 
 ## 2. Bridge label assignment
 
-- [ ] 2.1 Add `Transformations:Assets` options with startup validation and assign labels in `AssetBatcher`; verify `dotnet test tests/Telemetrix.Edge.Bridge.Tests --filter "FullyQualifiedName~AssetBatcher|FullyQualifiedName~TransformationAssignment"` shows labeled Assets as v2, unlabeled as v1 and `../evil.py` rejected
+- [x] 2.1 Add `Transformations:Assets` options with startup validation and assign labels in `AssetBatcher`; verify `dotnet test tests/Telemetrix.Edge.Bridge.Tests --filter "FullyQualifiedName~AssetBatcher|FullyQualifiedName~TransformationAssignment"` shows labeled Assets as v2, unlabeled as v1 and `../evil.py` rejected
 
 ## 3. Registry and Python runtime
 
