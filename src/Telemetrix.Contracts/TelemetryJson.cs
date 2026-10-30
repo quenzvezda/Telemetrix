@@ -45,7 +45,7 @@ public static class TelemetryJson
             if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("schemaVersion", out var version)
                 || version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out var number))
                 throw new TelemetryValidationException("schema-violation", "schemaVersion must be an integer in a batch object.");
-            if (number != TelemetryBatch.CurrentSchemaVersion)
+            if (number is < TelemetryBatch.UnlabeledSchemaVersion or > TelemetryBatch.CurrentSchemaVersion)
                 throw new TelemetryValidationException("unsupported-schema-version", $"Unsupported schemaVersion: {number}.");
         }
 
@@ -60,6 +60,13 @@ public static class TelemetryJson
             || string.IsNullOrWhiteSpace(batch.LineId) || string.IsNullOrWhiteSpace(batch.AssetId)
             || batch.Samples.Count == 0 || batch.Samples.Any(sample => sample is null || string.IsNullOrWhiteSpace(sample.Tag)))
             throw new TelemetryValidationException("schema-violation", "Batch identity and sample tags must be present and nonempty.");
+        if (batch.Transformation is { } label)
+        {
+            if (batch.SchemaVersion == TelemetryBatch.UnlabeledSchemaVersion)
+                throw new TelemetryValidationException("schema-violation", "A schemaVersion 1 batch cannot select a transformation.");
+            if (!TransformationLabel.IsValid(label))
+                throw new TelemetryValidationException("schema-violation", "The transformation must be a registered label, not a path.");
+        }
         return batch;
     }
 

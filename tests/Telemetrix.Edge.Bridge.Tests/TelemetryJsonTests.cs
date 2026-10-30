@@ -53,6 +53,36 @@ public class TelemetryJsonTests
     }
 
     [Fact]
+    public void UnlabeledBatchesKeepTheVersionOneShape()
+    {
+        var batch = new TelemetryBatch(TelemetryBatch.SchemaVersionFor(null), Guid.NewGuid(), "opcua",
+            "opc.tcp://plantsim:4840", "Plant01", "Line01", "Pump01", Timestamp,
+            [new BatchSample("FlowRate", 52.8, Timestamp, Timestamp, 0)]);
+
+        using var document = JsonDocument.Parse(TelemetryJson.Serialize(batch));
+
+        Assert.Equal(1, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.False(document.RootElement.TryGetProperty("transformation", out _));
+    }
+
+    [Fact]
+    public void LabeledBatchesRoundTripAsVersionTwo()
+    {
+        var batch = new TelemetryBatch(TelemetryBatch.SchemaVersionFor("celsius-to-fahrenheit"), Guid.NewGuid(),
+            "opcua", "opc.tcp://plantsim:4840", "Plant01", "Line01", "Tank01", Timestamp,
+            [new BatchSample("Temperature", 25, Timestamp, Timestamp, 0)], "celsius-to-fahrenheit");
+
+        var bytes = TelemetryJson.Serialize(batch);
+        using var document = JsonDocument.Parse(bytes);
+        var validated = TelemetryJson.DeserializeValidated(bytes);
+
+        Assert.Equal(2, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal("celsius-to-fahrenheit", document.RootElement.GetProperty("transformation").GetString());
+        Assert.Equal(2, validated.SchemaVersion);
+        Assert.Equal("celsius-to-fahrenheit", validated.Transformation);
+    }
+
+    [Fact]
     public void NonUtcTimestampsPreserveTheirInstantsAndPrecision()
     {
         var source = Timestamp.ToOffset(TimeSpan.FromHours(7)).AddTicks(1234567);

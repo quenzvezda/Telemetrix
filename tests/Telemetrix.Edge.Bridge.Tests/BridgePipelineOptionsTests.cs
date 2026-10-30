@@ -38,6 +38,30 @@ public class BridgePipelineOptionsTests : IDisposable
         Assert.Contains(key, exception.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("../evil.py")]
+    [InlineData("Pump-Cleaning")]
+    [InlineData("/usr/bin/python3")]
+    public async Task TransformationLabelsThatAreNotRegistryNamesFailStartup(string label)
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Buffer:Path"] = Path.Combine(directory, "bridge.db"),
+            ["Transformations:Assets:Pump01"] = label
+        });
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.Configure<OpcUaOptions>(options => options.Endpoint = "opc.tcp://localhost:50000");
+        builder.Services.AddSingleton<ISourceAdapter, UnusedSource>();
+        builder.Services.AddBridgePipeline(builder.Configuration);
+        using var host = builder.Build();
+
+        var exception = await Assert.ThrowsAsync<OptionsValidationException>(
+            () => host.StartAsync(TestContext.Current.CancellationToken));
+
+        Assert.Contains("Transformations:Assets", exception.Message, StringComparison.Ordinal);
+    }
+
     private sealed class UnusedSource : ISourceAdapter
     {
         public Task RunAsync(ChannelWriter<Sample> writer, CancellationToken cancellationToken) =>

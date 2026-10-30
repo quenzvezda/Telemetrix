@@ -56,7 +56,7 @@ internal sealed class DeliveryTestEnvironment : IAsyncDisposable
         }).Build();
     }
 
-    public IHost Host(Action<IServiceCollection>? configure = null)
+    public IHost Host(Action<IServiceCollection>? configure = null, IDictionary<string, string?>? settings = null)
     {
         var builder = Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder();
         builder.Configuration.Sources.Clear();
@@ -66,6 +66,7 @@ internal sealed class DeliveryTestEnvironment : IAsyncDisposable
             ["Kafka:BootstrapServers"] = Kafka.GetBootstrapAddress(),
             ["ConnectionStrings:Telemetry"] = Database.GetConnectionString()
         });
+        if (settings is not null) builder.Configuration.AddInMemoryCollection(settings);
         builder.Services.AddTransformerPipeline(builder.Configuration);
         configure?.Invoke(builder.Services);
         return builder.Build();

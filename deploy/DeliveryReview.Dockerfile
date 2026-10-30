@@ -15,6 +15,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-
 WORKDIR /app
 
 FROM runtime AS transformer
+# Python 3 runs operator-supplied transformations when they are enabled (ADR-0016).
+RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/*
 COPY --from=build /out/transformer .
 ENTRYPOINT ["dotnet", "Telemetrix.Transformer.dll"]
 

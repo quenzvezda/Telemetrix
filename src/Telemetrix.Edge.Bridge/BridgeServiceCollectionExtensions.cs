@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using Telemetrix.Contracts;
 using Telemetrix.Edge.Bridge.Batching;
 using Telemetrix.Edge.Bridge.Publishing;
 using Telemetrix.Edge.Bridge.Sources.OpcUa;
@@ -18,6 +19,11 @@ public static class BridgeServiceCollectionExtensions
         services.AddOptions<BatchingOptions>().Bind(configuration.GetSection(BatchingOptions.SectionName))
             .Validate(options => options.MaxSamples > 0, "Batching:MaxSamples must be positive.")
             .Validate(options => options.MaxAge > TimeSpan.Zero, "Batching:MaxAge must be positive.")
+            .ValidateOnStart();
+        services.AddOptions<TransformationAssignmentOptions>()
+            .Bind(configuration.GetSection(TransformationAssignmentOptions.SectionName))
+            .Validate(options => options.IsValid(),
+                "Transformations:Assets values must be transformation labels matching " + TransformationLabel.Pattern + ".")
             .ValidateOnStart();
         services.AddOptions<KafkaOptions>().Bind(configuration.GetSection(KafkaOptions.SectionName))
             .Validate(options => !string.IsNullOrWhiteSpace(options.BootstrapServers),
@@ -39,7 +45,8 @@ public static class BridgeServiceCollectionExtensions
             provider.GetRequiredService<TimeProvider>(), mqtt ? "mqtt" : "opcua",
             mqtt ? provider.GetRequiredService<IOptions<MqttOptions>>().Value.Endpoint
                 : provider.GetRequiredService<IOptions<OpcUaOptions>>().Value.Endpoint,
-            provider.GetRequiredService<BridgeMetrics>()));
+            provider.GetRequiredService<BridgeMetrics>(),
+            provider.GetRequiredService<IOptions<TransformationAssignmentOptions>>().Value.Labels()));
         services.AddSingleton<IBatchPublisher, KafkaBatchPublisher>();
         // Hosted services start in registration order: topic readiness precedes source ingestion.
         services.AddHostedService<TopicInitializer>();

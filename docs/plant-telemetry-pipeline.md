@@ -142,6 +142,8 @@ JSON first for readability; switch to Avro or Protobuf with a schema registry as
 }
 ```
 
+A batch whose asset has a transformation label uses `"schemaVersion": 2` and adds `"transformation": "celsius-to-fahrenheit"`; unlabeled batches stay version 1 (ADR-0017).
+
 `statusCode` is the raw OPC UA StatusCode (0 = Good); the transformer maps it to Good, Uncertain or Bad. Sample values use `double?`; source adapters convert booleans to 1/0, and that numeric value travels through batches into storage. Strings are out of scope for v1 (ADR-0010).
 
 ### Database tables
@@ -208,6 +210,9 @@ IDs let you reference requirements from tests and commit messages. "Must" items 
 | FR-23 | Transformer | Resolve asset and tag names to database ids; send unknown-tag samples to the DLQ by default, with automatic tag creation as a configurable opt-in (ADR-0011) | Must |
 | FR-24 | Transformer | Write samples in bulk, then commit offsets; never commit before the write succeeds | Must |
 | FR-25 | Transformer | Republish cleaned batches to `plant.telemetry.clean` | Should |
+| FR-26 | Bridge | Assign an optional transformation label per asset to its batches (`schemaVersion` 2); unlabeled batches stay version 1 (ADR-0017) | Could |
+| FR-27 | Transformer | Run the registered Python transformation selected by a batch's label after quality and range checks, and validate its output before storage (ADR-0016) | Could |
+| FR-28 | Transformer | Keep raw measurements unchanged; store transformation output under derived tags and record each run and flagged/rejected sample durably with the batch (ADR-0018) | Could |
 | FR-30 | Database | Store raw samples in the `measurement` hypertable and reject duplicate (tag, time) pairs | Must |
 | FR-31 | Database | Maintain 1-minute rollups as a continuous aggregate | Should |
 | FR-32 | Database | Drop raw data older than 30 days and keep rollups for 1 year (retention policies) | Should |

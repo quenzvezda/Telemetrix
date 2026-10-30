@@ -124,6 +124,28 @@ public class AssetBatcherTests
         Assert.Equal(2, Assert.Single(await ReadAllAsync(output.Reader)).Samples[0].Value);
     }
 
+    [Fact]
+    public async Task ConfiguredAssetsCarryTheirOwnTransformationLabelAndOthersStayVersionOne()
+    {
+        var input = Channel.CreateUnbounded<Sample>();
+        var output = Channel.CreateUnbounded<TelemetryBatch>();
+        foreach (var asset in new[] { "Pump01", "Tank01", "Mixer01" }) input.Writer.TryWrite(Sample(asset, 1));
+        input.Writer.Complete();
+        var options = new TransformationAssignmentOptions
+        {
+            Assets = { ["Pump01"] = "pump-cleaning", ["Tank01"] = "celsius-to-fahrenheit", ["Mixer01"] = " " }
+        };
+
+        await new AssetBatcher(new BatchingOptions(), time, "opcua", "opc.tcp://localhost:50000",
+                transformations: options.Labels())
+            .RunAsync(input.Reader, output.Writer, TestContext.Current.CancellationToken);
+
+        var batches = (await ReadAllAsync(output.Reader)).ToDictionary(batch => batch.AssetId);
+        Assert.Equal((2, "pump-cleaning"), (batches["Pump01"].SchemaVersion, batches["Pump01"].Transformation));
+        Assert.Equal((2, "celsius-to-fahrenheit"), (batches["Tank01"].SchemaVersion, batches["Tank01"].Transformation));
+        Assert.Equal((1, (string?)null), (batches["Mixer01"].SchemaVersion, batches["Mixer01"].Transformation));
+    }
+
     private AssetBatcher Batcher(BatchingOptions? options = null) =>
         new(options ?? new BatchingOptions(), time, "opcua", "opc.tcp://localhost:50000");
 

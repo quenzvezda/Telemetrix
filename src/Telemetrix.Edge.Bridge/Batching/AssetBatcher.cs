@@ -10,9 +10,10 @@ public sealed class AssetBatcher
     private readonly string source;
     private readonly string endpoint;
     private readonly BridgeMetrics? metrics;
+    private readonly IReadOnlyDictionary<string, string> transformations;
 
     public AssetBatcher(BatchingOptions options, TimeProvider timeProvider, string source, string endpoint,
-        BridgeMetrics? metrics = null)
+        BridgeMetrics? metrics = null, IReadOnlyDictionary<string, string>? transformations = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(options.MaxSamples);
         if (options.MaxAge <= TimeSpan.Zero)
@@ -25,6 +26,7 @@ public sealed class AssetBatcher
         this.source = source;
         this.endpoint = endpoint;
         this.metrics = metrics;
+        this.transformations = transformations ?? new Dictionary<string, string>();
     }
 
     // Completing the input is graceful shutdown; cancellation aborts a blocked pipeline.
@@ -108,8 +110,10 @@ public sealed class AssetBatcher
         async Task FlushAsync(string asset, OpenBatch batch)
         {
             var now = timeProvider.GetUtcNow();
-            var message = new TelemetryBatch(TelemetryBatch.CurrentSchemaVersion,
-                Guid.CreateVersion7(now), source, endpoint, batch.Plant, batch.Line, asset, now, batch.Samples);
+            var transformation = transformations.GetValueOrDefault(asset);
+            var message = new TelemetryBatch(TelemetryBatch.SchemaVersionFor(transformation),
+                Guid.CreateVersion7(now), source, endpoint, batch.Plant, batch.Line, asset, now, batch.Samples,
+                transformation);
             await output.WriteAsync(message, lifetime.Token);
             open.Remove(asset);
         }

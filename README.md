@@ -12,6 +12,8 @@ Telemetrix is a C# / .NET 10 project for industrial telemetry ingestion, event s
 
 M1–M8 are accepted and archived; see the [accepted specifications](openspec/specs/) and [M8 review](docs/m8-review.md). PlantSim and MqttSim share the seven-tag pumping-line model; Bridge selects OPC UA or MQTT by configuration. M8 adds health endpoints, correlated JSON logs, OpenTelemetry metrics, SQL rollups/retention, a Grafana dashboard and measured load profiles. The reviewer deferred two M8 manual checks until M9 is complete; they remain unverified and are tracked in the [M9 checklist](openspec/changes/add-opcua-security/tasks.md). The clean topic is deferred to the separate sink (ADR-0012).
 
+M10 (accepted, [issue #7](https://github.com/quenzvezda/Telemetrix/issues/7)) adds optional Python transformations: the Bridge labels an Asset's Batches, and the Transformer runs the registered script for that label after quality and range checks. Raw Measurements stay unchanged; output lands under derived Tags with a durable run record. Scripting is off by default; see [deploy/transformations](deploy/transformations/README.md) and the [M10 review](docs/m10-review.md).
+
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
 ## Architecture
@@ -462,6 +464,7 @@ docker compose -f deploy/docker-compose.yml ps -a
 | [tools/Telemetrix.DeliveryProbe/](tools/Telemetrix.DeliveryProbe/) | Deterministic test source and read-only verifier for the M4 container crash check |
 | [scripts/Test-M4Delivery.ps1](scripts/Test-M4Delivery.ps1) | Isolated kill-under-load review harness |
 | [deploy/](deploy/) | Compose stack, database initialization, and Grafana provisioning |
+| [deploy/transformations/](deploy/transformations/README.md) | Python transformation registry, four example scripts and the script contract |
 | [Design](docs/plant-telemetry-pipeline.md) | Architecture, data model, and FR/NFR requirements |
 | [Domain glossary](CONTEXT.md) | Shared vocabulary for samples, batches, assets, tags, quality, and gaps |
 | [Architecture decisions](docs/adr/) | Decision records and tradeoffs |

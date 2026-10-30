@@ -1,8 +1,12 @@
+using System.Text.Json.Serialization;
+
 namespace Telemetrix.Contracts;
 
 public sealed record TelemetryBatch
 {
-    public const int CurrentSchemaVersion = 1;
+    // Version 2 adds the optional transformation label; unlabeled batches stay version 1 (ADR-0017).
+    public const int CurrentSchemaVersion = 2;
+    public const int UnlabeledSchemaVersion = 1;
 
     public TelemetryBatch(
         int schemaVersion,
@@ -13,7 +17,8 @@ public sealed record TelemetryBatch
         string lineId,
         string assetId,
         DateTimeOffset createdAt,
-        IReadOnlyList<BatchSample> samples)
+        IReadOnlyList<BatchSample> samples,
+        string? transformation = null)
     {
         SchemaVersion = schemaVersion;
         BatchId = batchId;
@@ -24,7 +29,11 @@ public sealed record TelemetryBatch
         AssetId = assetId;
         CreatedAt = createdAt.ToUniversalTime();
         Samples = Array.AsReadOnly(samples.ToArray());
+        Transformation = transformation;
     }
+
+    public static int SchemaVersionFor(string? transformation) =>
+        transformation is null ? UnlabeledSchemaVersion : CurrentSchemaVersion;
 
     public int SchemaVersion { get; }
     public Guid BatchId { get; }
@@ -35,4 +44,7 @@ public sealed record TelemetryBatch
     public string AssetId { get; }
     public DateTimeOffset CreatedAt { get; }
     public IReadOnlyList<BatchSample> Samples { get; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Transformation { get; }
 }

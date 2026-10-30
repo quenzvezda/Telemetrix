@@ -26,6 +26,9 @@ public class InvalidBatchTests
     [InlineData("bad-time", "schema-violation")]
     [InlineData("tombstone", "schema-violation")]
     [InlineData("null", "schema-violation")]
+    [InlineData("v1-label", "schema-violation")]
+    [InlineData("path-label", "schema-violation")]
+    [InlineData("newline-label", "schema-violation")]
     public void InvalidPayloadIsAcknowledgedByDlqBeforeCommitting(string kind, string reason)
     {
         var result = Result(kind);
@@ -101,7 +104,10 @@ public class InvalidBatchTests
         var sample = json["samples"]![0]!;
         switch (kind)
         {
-            case "version": json["schemaVersion"] = 2; break;
+            case "version": json["schemaVersion"] = 3; break;
+            case "v1-label": json["transformation"] = "celsius-to-fahrenheit"; break;
+            case "path-label": json["schemaVersion"] = 2; json["transformation"] = "../evil.py"; break;
+            case "newline-label": json["schemaVersion"] = 2; json["transformation"] = "pump-cleaning\n"; break;
             case "missing": json.AsObject().Remove("batchId"); break;
             case "missing-value": sample.AsObject().Remove("value"); break;
             case "missing-time": sample.AsObject().Remove("sourceTimestamp"); break;
