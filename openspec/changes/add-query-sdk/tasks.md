@@ -22,5 +22,5 @@ On 2026-10-31 the reviewer asked for issue #8 to be implemented to completion, a
 
 ## 5. Documentation and milestone verification
 
-- [ ] 5.1 Write the SDK README (installation, reader login, configuration, query semantics, errors, compatibility and versioning, deferred .NET) and add a notebook and a post-storage analysis example; verify `python -m pytest sdk/python/tests/integration -k examples` runs both examples against the seeded database
+- [x] 5.1 Write the SDK README (installation, reader login, configuration, query semantics, errors, compatibility and versioning, deferred .NET) and add a notebook and a post-storage analysis example; verify `python -m pytest sdk/python/tests/integration -k examples` runs both examples against the seeded database
 - [ ] 5.2 Verify the M11 "Done when" criterion: a separate consumer installs the wheel and queries Tag metadata, Asset Measurements with a Quality filter and Rollups as a reader login; record the review package in `docs/m11-review.md`, run the full Release .NET suite with zero warnings and open the PR

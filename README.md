@@ -14,6 +14,8 @@ M1–M8 are accepted and archived; see the [accepted specifications](openspec/sp
 
 M10 (accepted, [issue #7](https://github.com/quenzvezda/Telemetrix/issues/7)) adds optional Python transformations: the Bridge labels an Asset's Batches, and the Transformer runs the registered script for that label after quality and range checks. Raw Measurements stay unchanged; output lands under derived Tags with a durable run record. Scripting is off by default; see [deploy/transformations](deploy/transformations/README.md) and the [M10 review](docs/m10-review.md).
 
+M11 (in review, [issue #8](https://github.com/quenzvezda/Telemetrix/issues/8)) adds the read-only Python Query SDK `telemetrix-query`: notebooks and jobs query Tags, Measurements, one-minute Rollups and Gaps without writing SQL, as a login in the `telemetrix_reader` role from migration 004. A .NET package is deferred; see [sdk/python](sdk/python/README.md).
+
 See the [roadmap](ROADMAP.md) for progress and the [design document](docs/plant-telemetry-pipeline.md) for requirements.
 
 ## Architecture
@@ -385,6 +387,17 @@ docker compose -f deploy/docker-compose.yml exec -T timescaledb psql -X -v ON_ER
 
 Expected: the first query returns `7` for the seed catalog (more if tags were explicitly created), and the second includes `public | measurement`. The initialization script seeds two assets and seven tags. Running Bridge and Transformer adds live measurements.
 
+#### Query telemetry from Python
+
+The Query SDK reads the same database without SQL, as a read-only login. After applying the migrations and creating a reader login ([sdk/python](sdk/python/README.md#database-access)):
+
+```powershell
+pip install ./sdk/python
+$env:TELEMETRIX_DATABASE_URL = "postgresql://analyst@localhost:5432/telemetry"
+$env:PGPASSWORD = Read-Host -MaskInput "Password"
+python sdk/python/examples/asset_health_report.py --asset Pump01 --hours 1
+```
+
 #### Test Grafana's database connection
 
 Sign in at <http://localhost:3000> with `admin` / `admin` on first start, then set a new Grafana password when prompted. On later visits, use the password you set.
@@ -465,6 +478,7 @@ docker compose -f deploy/docker-compose.yml ps -a
 | [scripts/Test-M4Delivery.ps1](scripts/Test-M4Delivery.ps1) | Isolated kill-under-load review harness |
 | [deploy/](deploy/) | Compose stack, database initialization, and Grafana provisioning |
 | [deploy/transformations/](deploy/transformations/README.md) | Python transformation registry, four example scripts and the script contract |
+| [sdk/python/](sdk/python/README.md) | Read-only Python Query SDK `telemetrix-query`, its tests and examples |
 | [Design](docs/plant-telemetry-pipeline.md) | Architecture, data model, and FR/NFR requirements |
 | [Domain glossary](CONTEXT.md) | Shared vocabulary for samples, batches, assets, tags, quality, and gaps |
 | [Architecture decisions](docs/adr/) | Decision records and tradeoffs |
