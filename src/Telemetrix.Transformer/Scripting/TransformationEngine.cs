@@ -15,6 +15,12 @@ public interface IDerivedTagCatalog
         CancellationToken cancellationToken);
 }
 
+public interface ITransformationRunStore
+{
+    Task<bool> ExistsAsync(Guid batchId, string label, CancellationToken cancellationToken);
+    Task<bool> SchemaReadyAsync(CancellationToken cancellationToken);
+}
+
 // Runs one labeled Batch through its script and turns the result into a durable record (ADR-0018).
 public sealed class TransformationEngine(TransformationRegistry registry, ITransformationRuntime runtime,
     IDerivedTagCatalog derivedTags, IOptions<TransformationOptions> options, TimeProvider timeProvider)
