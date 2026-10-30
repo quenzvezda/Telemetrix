@@ -1,6 +1,8 @@
 # M10 review package: Python transformations
 
-Change: [`add-python-transformations`](../openspec/changes/add-python-transformations/) · Issue: [#7](https://github.com/quenzvezda/Telemetrix/issues/7) · Branch: `m10-add-python-transformations`
+Change: [`add-python-transformations`](../openspec/changes/archive/2026-10-31-add-python-transformations/) · Issue: [#7](https://github.com/quenzvezda/Telemetrix/issues/7) · Branch: `m10-add-python-transformations`
+
+**Accepted:** the reviewer approved the PR on 2026-10-31; the change is archived and its requirements are in `openspec/specs/`.
 
 On 2026-10-31 the reviewer asked for issue #7 to be implemented to completion, using the agent's recommendation for each open decision. This package lists those decisions first, because they are the part most worth challenging, then the code to read, the automated evidence and the manual checks for the issue's acceptance criteria.
 
@@ -23,7 +25,7 @@ Unlabeled Batches and disabled scripting keep the exact pre-M10 behaviour. Disab
 
 | Commit | Read |
 | --- | --- |
-| `docs(adr): record python transformation decisions for m10` | ADR-0016–0018, `openspec/changes/add-python-transformations/design.md` (contract and outcome tables) |
+| `docs(adr): record python transformation decisions for m10` | ADR-0016–0018, `openspec/changes/archive/2026-10-31-add-python-transformations/design.md` (contract and outcome tables) |
 | `feat(contracts): add batch schema v2 with a transformation label` | `TelemetryBatch.cs`, `TransformationLabel.cs`, `TelemetryJson.DeserializeValidated` |
 | `feat(bridge): assign transformation labels per asset` | `TransformationAssignmentOptions.cs`, `AssetBatcher` flush |
 | `feat(transformer): load the python transformation registry` | `Scripting/TransformationRegistry.cs` (path containment, hash pin) |
@@ -42,6 +44,7 @@ Unlabeled Batches and disabled scripting keep the exact pre-M10 behaviour. Disab
 | `dotnet build -c Release` | 0 warnings, 0 errors |
 | `dotnet test -c Release` | 333 tests: 332 passed, 1 skipped (the explicit long `LoadProfileTests` profile), 0 failed; integration tests 6 min 22 s |
 | `openspec validate add-python-transformations --strict` | valid |
+| PR #14 CI | `secrets`, `build-test`, `openspec`, `delivery-review` (M4 SIGKILL) and `edge-review` (M5 outage) all passed |
 | Two Assets, two scripts (`TransformationPipelineTests`) | Pump01 → `pump-cleaning`, Tank01 → `celsius-to-fahrenheit`, two distinct `sha256:` versions recorded |
 | Outcomes (`TransformationPipelineTests`) | unknown-label, script-error (with traceback), timeout, malformed-output (NaN), output-tag-conflict, empty success; raw Measurements of all ten Batches stored unchanged; worker restarted after the timeout |
 | Compatibility | v1 Batch with scripting on: no run row; labeled Batch with scripting off and no migration: stored and committed; scripting on without migration: startup refused |
