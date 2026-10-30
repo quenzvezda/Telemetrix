@@ -84,3 +84,13 @@ _Avoid_: Verdict, status
 **Dead-letter**:
 A batch the transformer cannot process, set aside with the reason instead of blocking the stream.
 _Avoid_: Error queue, poison message
+
+## Consumers
+
+**Query SDK**:
+The supported Python package (`telemetrix-query`) that reads the hierarchy, tags, measurements, rollups and gaps from the database for notebooks, applications and scheduled jobs. Read-only; it never imports transformer code.
+_Avoid_: Client library, driver, API (there is no query service)
+
+**Reader role**:
+The `telemetrix_reader` database role that may only read telemetry tables. Consumer logins are members of it.
+_Avoid_: Read-only user, viewer
