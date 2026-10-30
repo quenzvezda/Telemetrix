@@ -42,7 +42,7 @@ docker compose -f deploy/docker-compose.yml down -v   # reset, drops Kafka and D
 
 ## Code conventions
 
-- Projects are `Telemetrix.<Name>`; folders inside `Edge.Bridge` (Sources, Batching, Buffer, Publishing) and `Transformer` (Consuming, Pipeline, Storage) are the module boundaries.
+- Projects are `Telemetrix.<Name>`; folders inside `Edge.Bridge` (Sources, Batching, Buffer, Publishing) and `Transformer` (Consuming, Pipeline, Scripting, Storage) are the module boundaries.
 - Message records and their JSON options live only in `Telemetrix.Contracts`; both services serialise through it.
 - Package versions live only in `Directory.Packages.props` (central package management); `PackageReference` carries no `Version`. Add a package in the milestone that first needs it.
 - Shared MSBuild settings (TFM, nullable, analyzers) live in `Directory.Build.props`; project files stay minimal.
