@@ -69,6 +69,18 @@ _Avoid_: Alarm (an alarm is about the process, not the connection)
 The service that turns raw batches into measurements: validates, assigns quality, enriches, stores.
 _Avoid_: Processor, sink (a separate sink is a stretch goal)
 
+**Transformation**:
+An operator-supplied Python script, registered under a stable label, that the transformer runs on a labeled batch after quality and range checks. It never changes raw measurements.
+_Avoid_: Plugin, hook, rule
+
+**Derived tag**:
+A tag whose measurements are produced by a transformation (`TemperatureF`), with its own unit and valid range, marked with the producing label.
+_Avoid_: Virtual tag, computed tag
+
+**Disposition**:
+What a transformation decided about one input sample: unchanged, modified, flagged or rejected.
+_Avoid_: Verdict, status
+
 **Dead-letter**:
 A batch the transformer cannot process, set aside with the reason instead of blocking the stream.
 _Avoid_: Error queue, poison message

@@ -1,6 +1,6 @@
 # Roadmap
 
-Nine milestones, each ending in something you can see working. A thin path runs end to end by M3; M4–M9 harden it. Build the client side before the simulator or dashboards.
+Nine milestones plus post-M9 backlog milestones, each ending in something you can see working. A thin path runs end to end by M3; M4–M9 harden it. Build the client side before the simulator or dashboards.
 
 Status values: Not started → In progress → In review → Done.
 
@@ -21,6 +21,7 @@ Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.m
 | M7 | MQTT input | `add-mqtt-source` | FR-03, FR-17 | Same tags land in the database from MQTT with no transformer change | Done |
 | M8 | Observability and load | `add-observability` | FR-31, FR-32, FR-40, FR-41, NFR-06, NFR-07, NFR-12 | Dashboard shows trends, pump state and gaps; p95 latency < 10 s; 5,000 samples/s without growing lag | Done |
 | M9 | Security | `add-opcua-security` | NFR-09, NFR-10 | An untrusted client certificate is rejected; no secret in the repo | Done |
+| M10 | Python transformations ([issue #7](https://github.com/quenzvezda/Telemetrix/issues/7)) | `add-python-transformations` | FR-21, FR-24, FR-26, FR-27, FR-28, NFR-01, NFR-03, NFR-05, NFR-06, NFR-07, NFR-12 | Two Asset Batches select two registered Python scripts by label; raw Measurements stay intact, derived Measurements and every failure are recorded, and replay after a script change stores nothing twice | In progress |
 
 M3 was accepted and archived on 2026-10-18 with all 14 tasks complete. Its four capabilities are in main specs; see the [archived change](openspec/changes/archive/2026-10-18-add-end-to-end-slice/) and [review evidence](docs/m3-group6-review.md). The observed stopped-consumer backlog remains documented; zero lag and M4 delivery guarantees are not claimed.
 
@@ -38,6 +39,8 @@ M8 was accepted for closure and archived on 2026-10-25 after the reviewer approv
 
 M9 was accepted by the reviewer on 2026-10-25 through [PR #6](https://github.com/quenzvezda/Telemetrix/pull/6) and archived with all 13 tasks complete. Its four connection-security requirements are synced into main specs. The reviewer completed the deferred M8 checks: two migration runs preserved all 173,369 paused measurements, and the secured dashboard showed live trends, pump trip/recovery and a 73-second source gap for both assets. A historical display regression was fixed and visually verified: missing days no longer connect trends or carry forward pump state. The final focused dashboard suite passes all five tests; Release build has zero warnings/errors. The earlier full local regression passed 236 tests with one explicit long load profile excluded; final remote CI is recorded on PR #6. D5 remains 500 samples / five seconds per asset. See the [review evidence](docs/m9-review.md) and [archived change](openspec/changes/archive/2026-10-25-add-opcua-security/). All nine milestones and the carried-forward manual checks are complete.
 
+M10 started on 2026-10-31 from backlog [issue #7](https://github.com/quenzvezda/Telemetrix/issues/7). The reviewer asked for implementation to completion using the agent's recommendation for each open design decision; those recommendations are recorded for review in [ADR-0016](docs/adr/0016-run-python-transformations-in-a-managed-child-process.md), [ADR-0017](docs/adr/0017-select-transformations-by-a-label-in-batch-schema-v2.md) and [ADR-0018](docs/adr/0018-preserve-raw-measurements-and-store-derived-tags.md). Scripting is disabled by default; final acceptance and archival remain the reviewer's.
+
 NFR-13 (tests) is not a milestone: every change lands its own unit and integration tests, and CI (`.github/workflows/ci.yml`) stays green.
 
 ## Open decisions
@@ -45,6 +48,8 @@ NFR-13 (tests) is not a milestone: every change lands its own unit and integrati
 No open decisions remain. D5 was resolved after the approved M8 measurement checkpoint; final outcomes are recorded in `docs/adr/` and the affected planning artifacts.
 
 ## Resolved decisions
+
+- M10 design (issue #7): managed Python child process (ADR-0016), label in Batch schema version 2 assigned per Asset by the Bridge (ADR-0017), raw Measurements preserved with derived Tags and a durable per-Batch run record (ADR-0018). Recommended by the agent and adopted on 2026-10-31 at the reviewer's request, pending review in the M10 PR.
 
 - D5 (needed by M8): retain 500 samples / 5 seconds per asset, whichever comes first. The reviewer explicitly accepted this choice on 2026-10-25 after the baseline/alternative comparison. See [ADR-0015](docs/adr/0015-retain-measured-batch-thresholds.md) and [measured evidence](docs/load-test.md). Existing defaults remain unchanged.
 
