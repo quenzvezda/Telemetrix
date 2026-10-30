@@ -38,6 +38,9 @@ services:
       Kafka__BootstrapServers: kafka:9092
       Buffer__Path: /buffer/bridge.db
       Telemetry__Prometheus__Enabled: "true"
+      # Empty means unlabeled (schemaVersion 1); see deploy/transformations/README.md.
+      Transformations__Assets__Pump01: "${PUMP01_TRANSFORMATION:-}"
+      Transformations__Assets__Tank01: "${TANK01_TRANSFORMATION:-}"
     ports: ["5101:5101"]
     volumes:
       - edgebuffer:/buffer
@@ -59,7 +62,12 @@ services:
       ConnectionStrings__Telemetry: Host=timescaledb;Database=telemetry;Username=telemetry;Password=${POSTGRES_PASSWORD}
       PlantEvents__Enabled: "${PLANT_EVENTS_ENABLED:-false}"
       Telemetry__Prometheus__Enabled: "true"
+      Transformations__Enabled: "${TRANSFORMATIONS_ENABLED:-false}"
+      Transformations__Directory: /transformations
     ports: ["5102:5102"]
+    volumes:
+      # Scripts are trusted configuration; mounted read-only (ADR-0016).
+      - ${TRANSFORMATIONS_DIR:-./transformations}:/transformations:ro
     depends_on:
       kafka:
         condition: service_healthy
