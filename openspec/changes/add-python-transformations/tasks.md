@@ -13,7 +13,7 @@ On 2026-10-31 the reviewer asked for issue #7 to be implemented to completion, a
 
 ## 3. Registry and Python runtime
 
-- [ ] 3.1 Add `Transformations` options and the registry loader (labels, contained relative paths, SHA-256 versions and pins, declared outputs); verify `dotnet test tests/Telemetrix.Transformer.Tests --filter FullyQualifiedName~TransformationRegistry` covers a valid registry and each startup failure
+- [x] 3.1 Add `Transformations` options and the registry loader (labels, contained relative paths, SHA-256 versions and pins, declared outputs); verify `dotnet test tests/Telemetrix.Transformer.Tests --filter FullyQualifiedName~TransformationRegistry` covers a valid registry and each startup failure
 - [ ] 3.2 Add the Python runner and `PythonWorker` (handshake, load, transform, stdout isolation, timeout kill, crash restart, start failure as transient); verify `dotnet test tests/Telemetrix.Transformer.Tests --filter FullyQualifiedName~PythonWorker` covers success, exception, timeout, `os._exit`, print noise, NaN and load failure
 
 ## 4. Validation, dispositions and storage
