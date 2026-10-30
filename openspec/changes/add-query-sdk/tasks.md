@@ -8,7 +8,7 @@ On 2026-10-31 the reviewer asked for issue #8 to be implemented to completion, a
 
 ## 2. Read-only database access
 
-- [ ] 2.1 Add migration `004_query_reader.sql` (reader role, SELECT grants, default privileges); verify `dotnet test tests/Telemetrix.Integration.Tests --filter "FullyQualifiedName~QueryReaderMigration|FullyQualifiedName~TransformationStorageTests.ShellRunner"` shows the migration applies twice, the reader can SELECT every table and a later table, and cannot INSERT, UPDATE, DELETE, TRUNCATE or CREATE
+- [x] 2.1 Add migration `004_query_reader.sql` (reader role, SELECT grants, default privileges); verify `dotnet test tests/Telemetrix.Integration.Tests --filter "FullyQualifiedName~QueryReaderMigration|FullyQualifiedName~TransformationStorageTests.ShellRunner"` shows the migration applies twice, the reader can SELECT every table and a later table, and cannot INSERT, UPDATE, DELETE, TRUNCATE or CREATE
 
 ## 3. Python package
 
