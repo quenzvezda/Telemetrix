@@ -1,0 +1,46 @@
+{
+  "transformations": {
+    "pump-outliers": {
+      "script": "outlier_detection.py",
+      "parameters": {
+        "tags": ["FlowRate", "DischargePressure", "MotorTemperature", "Vibration"],
+        "threshold": 3.5,
+        "minSamples": 5
+      }
+    },
+    "pump-cleaning": {
+      "script": "data_cleaning.py",
+      "parameters": {
+        "tags": {
+          "FlowRate": { "output": "FlowRateClean", "maxStep": 15 },
+          "DischargePressure": { "output": "DischargePressureClean", "maxStep": 2 }
+        }
+      },
+      "outputs": {
+        "FlowRateClean": { "unit": "m3/h", "minValid": 0, "maxValid": 80 },
+        "DischargePressureClean": { "unit": "bar", "minValid": 0, "maxValid": 8 }
+      }
+    },
+    "celsius-to-fahrenheit": {
+      "script": "celsius_to_fahrenheit.py",
+      "parameters": { "sourceUnit": "degC", "suffix": "F" },
+      "outputs": {
+        "MotorTemperatureF": { "unit": "degF", "minValid": -4, "maxValid": 248 },
+        "TemperatureF": { "unit": "degF", "minValid": -4, "maxValid": 176 }
+      }
+    },
+    "tank-normalization": {
+      "script": "normalization.py",
+      "parameters": {
+        "tags": {
+          "Level": { "output": "LevelNorm", "min": 0, "max": 100 },
+          "Temperature": { "output": "TemperatureNorm", "min": -20, "max": 80 }
+        }
+      },
+      "outputs": {
+        "LevelNorm": { "unit": "1", "minValid": 0, "maxValid": 1 },
+        "TemperatureNorm": { "unit": "1", "minValid": 0, "maxValid": 1 }
+      }
+    }
+  }
+}
