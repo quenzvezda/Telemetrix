@@ -12,8 +12,8 @@ On 2026-10-31 the reviewer asked for issue #8 to be implemented to completion, a
 
 ## 3. Python package
 
-- [ ] 3.1 Scaffold `sdk/python` (pyproject, models, errors, settings, interval parsing, cursor binding, SQL composition); verify `python -m pytest sdk/python/tests/unit` covers settings from the environment and redaction, aware/naive/offset intervals, cursor round-trip and mismatch, limits and composed filters
-- [ ] 3.2 Add `TelemetrixClient`: read-only session, capabilities, catalog, Measurement, Rollup and Gap queries with pages and iterators, timeouts, cancellation and error mapping; verify `python -m pytest sdk/python/tests/unit` still passes and `python -c "import telemetrix_query"` works from an installed wheel
+- [x] 3.1 Scaffold `sdk/python` (pyproject, models, errors, settings, interval parsing, cursor binding, SQL composition); verify `python -m pytest sdk/python/tests/unit` covers settings from the environment and redaction, aware/naive/offset intervals, cursor round-trip and mismatch, limits and composed filters
+- [x] 3.2 Add `TelemetrixClient`: read-only session, capabilities, catalog, Measurement, Rollup and Gap queries with pages and iterators, timeouts, cancellation and error mapping; verify `python -m pytest sdk/python/tests/unit` still passes and `python -c "import telemetrix_query"` works from an installed wheel
 
 ## 4. Verification against TimescaleDB
 

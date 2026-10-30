@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "telemetrix-query"
+version = "0.1.0"
+description = "Read-only query SDK for Telemetrix telemetry stored in TimescaleDB"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["psycopg[binary]>=3.2,<4"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8", "testcontainers>=4.8,<5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+telemetrix_query = ["py.typed"]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+markers = ["integration: needs Docker; starts a TimescaleDB container"]
