@@ -218,6 +218,9 @@ IDs let you reference requirements from tests and commit messages. "Must" items 
 | FR-32 | Database | Drop raw data older than 30 days and keep rollups for 1 year (retention policies) | Should |
 | FR-40 | Dashboard | Show live trends per tag, current pump status, and data gaps | Should |
 | FR-41 | All | Expose `/health` endpoints and metrics: samples in, batches out, buffer depth, consumer lag, rows written | Must |
+| FR-50 | Query SDK | Provide an installable Python package that queries plants, lines, assets, tags, measurements, rollups and gaps without SQL or transformer code; .NET deferred (ADR-0019) | Could |
+| FR-51 | Query SDK | Query half-open, timezone-aware source-time intervals with typed UTC results, bounded keyset pages or streaming, timeouts, cancellation and distinct errors (ADR-0020) | Could |
+| FR-52 | Database | Grant consumers SELECT only through the `telemetrix_reader` role (migration 004); SDK sessions are read-only and credentials stay outside the repository (ADR-0021) | Could |
 
 ## Non-functional requirements
 
@@ -261,6 +264,7 @@ Everything is free and runs in Docker on one machine. Use the current .NET LTS (
 | Logs and metrics | Microsoft.Extensions.Logging (JSON console), OpenTelemetry | Optional Prometheus scrape |
 | Dashboard | Grafana | PostgreSQL data source |
 | Tests | xUnit, Testcontainers for .NET | Real Kafka and Postgres in integration tests |
+| Query SDK | Python 3.11+, [psycopg 3](https://www.psycopg.org/psycopg3/) | `sdk/python`, read-only consumer package; tested with pytest and testcontainers |
 
 ### OPC UA or MQTT for the plant side?
 

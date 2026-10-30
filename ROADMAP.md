@@ -22,6 +22,7 @@ Requirement IDs (FR-xx / NFR-xx) are defined in [docs/plant-telemetry-pipeline.m
 | M8 | Observability and load | `add-observability` | FR-31, FR-32, FR-40, FR-41, NFR-06, NFR-07, NFR-12 | Dashboard shows trends, pump state and gaps; p95 latency < 10 s; 5,000 samples/s without growing lag | Done |
 | M9 | Security | `add-opcua-security` | NFR-09, NFR-10 | An untrusted client certificate is rejected; no secret in the repo | Done |
 | M10 | Python transformations ([issue #7](https://github.com/quenzvezda/Telemetrix/issues/7)) | `add-python-transformations` | FR-21, FR-24, FR-26, FR-27, FR-28, NFR-01, NFR-03, NFR-05, NFR-06, NFR-07, NFR-12 | Two Asset Batches select two registered Python scripts by label; raw Measurements stay intact, derived Measurements and every failure are recorded, and replay after a script change stores nothing twice | Done |
+| M11 | Query SDK ([issue #8](https://github.com/quenzvezda/Telemetrix/issues/8)) | `add-query-sdk` | FR-50, FR-51, FR-52, NFR-10, NFR-13 | A separate consumer installs the Python package and, as a read-only login, queries Tag metadata, an Asset's Measurements with a Quality filter and one-minute Rollups without writing SQL | In review |
 
 M3 was accepted and archived on 2026-10-18 with all 14 tasks complete. Its four capabilities are in main specs; see the [archived change](openspec/changes/archive/2026-10-18-add-end-to-end-slice/) and [review evidence](docs/m3-group6-review.md). The observed stopped-consumer backlog remains documented; zero lag and M4 delivery guarantees are not claimed.
 
@@ -43,6 +44,8 @@ M10 started on 2026-10-31 from backlog [issue #7](https://github.com/quenzvezda/
 
 M10 was accepted by the reviewer on 2026-10-31 through [PR #14](https://github.com/quenzvezda/Telemetrix/pull/14) and archived with all 14 tasks complete. Its 14 new `python-transformations` requirements, the per-Asset label requirement and the two modified `telemetry-transform` requirements are synced into main specs. Local Release ran 333 tests (332 passed, the explicit load profile skipped); PR CI passed build/test, strict OpenSpec, secret scan, the M4 SIGKILL and the M5 edge-outage jobs. A 500-sample Batch costs at most 6.8 ms p95 in the runner; the M8 load profiles were not repeated with scripting enabled. See the [review package](docs/m10-review.md) and [archived change](openspec/changes/archive/2026-10-31-add-python-transformations/).
 
+M11 started on 2026-10-31 from backlog [issue #8](https://github.com/quenzvezda/Telemetrix/issues/8). The reviewer asked for implementation to completion using the agent's recommendation for each open decision; those recommendations are recorded for review in [ADR-0019](docs/adr/0019-ship-a-python-query-sdk-first.md) (Python first, .NET deferred), [ADR-0020](docs/adr/0020-stable-query-api-with-half-open-utc-intervals-and-keyset-pages.md) and [ADR-0021](docs/adr/0021-read-only-reader-role-and-external-credentials.md). Final acceptance and archival remain the reviewer's.
+
 NFR-13 (tests) is not a milestone: every change lands its own unit and integration tests, and CI (`.github/workflows/ci.yml`) stays green.
 
 ## Open decisions
@@ -50,6 +53,8 @@ NFR-13 (tests) is not a milestone: every change lands its own unit and integrati
 No open decisions remain. D5 was resolved after the approved M8 measurement checkpoint; final outcomes are recorded in `docs/adr/` and the affected planning artifacts.
 
 ## Resolved decisions
+
+- M11 design (issue #8): a Python package `telemetrix-query` first with .NET deferred (ADR-0019), a typed query API with half-open UTC intervals and keyset pages and no SQL escape hatch (ADR-0020), a `telemetrix_reader` role from migration 004 with read-only SDK sessions and external credentials (ADR-0021). Recommended by the agent at the reviewer's request; pending review.
 
 - M10 design (issue #7): managed Python child process (ADR-0016), label in Batch schema version 2 assigned per Asset by the Bridge (ADR-0017), raw Measurements preserved with derived Tags and a durable per-Batch run record (ADR-0018). Recommended by the agent at the reviewer's request and accepted with PR #14 on 2026-10-31.
 
